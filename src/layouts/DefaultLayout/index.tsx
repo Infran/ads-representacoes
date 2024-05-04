@@ -5,13 +5,11 @@ import Box from "@mui/material/Box";
 export default function DefaultLayout() {
   return (
     <>
-      <Box sx={{ display: "flex" }}>
+      <Box   sx={{ display: "flex", paddingTop:8}}>
         <Sidebar />
         <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Outlet />
-      
-      
-      </Box>
+          <Outlet />
+        </Box>
       </Box>
     </>
   );
