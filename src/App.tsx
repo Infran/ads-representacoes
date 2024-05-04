@@ -28,7 +28,6 @@ import AppRouter from "./Router"
 // const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 
-
 function App() {
   return <AppRouter />
 }

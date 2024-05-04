@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import { Home } from "./pages/Home";
-import { CreateProduct } from "./pages/CreateProduct";
-import { CreateClient } from "./pages/CreateClient";
+import { Home } from "./pages/Home/Home";
+import { CreateProduct } from "./pages/CreateProduct/CreateProduct";
+import { CreateClient } from "./pages/CreateClient/CreateClient";
 import DefaultLayout from "./layouts/DefaultLayout";
 
 const AppRouter = () => {
