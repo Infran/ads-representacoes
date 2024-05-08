@@ -1,15 +1,17 @@
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase"
 import { useState } from "react";
+import { login } from "../../context/ContextAuth";
 
 export const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    
+
     const handlerEmailChange = (event) => setEmail(event.target.value)
     const handlerPasswordChange = (event) => setPassword(event.target.value)
 
-    const submitLogin = () => signInWithEmailAndPassword(auth,email,password)
+    // const submitLogin = () => signInWithEmailAndPassword(auth,email,password)
+    // const submitLogin = () => login(email,password);
+    function submitLogin(event) { event.preventDefault(); login(email, password); }
+
 
     return (
         <section>
@@ -29,7 +31,6 @@ export const Login = () => {
                     </ul>
                     <button type="submit">Login</button>
                 </fieldset>
-                <a>Login</a>
             </form>
         </section>
     )
