@@ -1,9 +1,9 @@
 import * as React from "react";
 import { styled, useTheme, Theme, CSSObject } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
-import CssBaseline from "@mui/material/CssBaseline";
 import Toolbar from "@mui/material/Toolbar";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
 import Divider from "@mui/material/Divider";
@@ -11,14 +11,15 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import MenuIcon from "@mui/icons-material/Menu" 
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import MenuIcon from "@mui/icons-material/Menu";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 
 import { useNavigate } from "react-router-dom";
-import { Home as HomeIcon, PersonAdd, PostAdd } from "@mui/icons-material";
+import { Home as HomeIcon, Person} from "@mui/icons-material";
 
 const drawerWidth = 240;
 
@@ -164,11 +165,12 @@ export default function Sidebar() {
               <ListItemText primary="Home" sx={{ opacity: open ? 1 : 0 }} />
             </ListItemButton>
           </ListItem>
+          <Divider />
           <ListItem
             disablePadding
             sx={{ display: "block" }}
             onClick={() => {
-              navigate("/CriarCliente");
+              navigate("/Clientes");
             }}
           >
             <ListItemButton
@@ -185,10 +187,10 @@ export default function Sidebar() {
                   justifyContent: "center",
                 }}
               >
-                <PersonAdd />
+                <Person />
               </ListItemIcon>
               <ListItemText
-                primary="Cadastrar Cliente"
+                primary="Clientes"
                 sx={{ opacity: open ? 1 : 0 }}
               />
             </ListItemButton>
@@ -197,7 +199,7 @@ export default function Sidebar() {
             disablePadding
             sx={{ display: "block" }}
             onClick={() => {
-              navigate("/CriarProduto");
+              navigate("/Produtos");
             }}
           >
             <ListItemButton
@@ -214,10 +216,10 @@ export default function Sidebar() {
                   justifyContent: "center",
                 }}
               >
-                <PostAdd />
+                <LocalShippingIcon />
               </ListItemIcon>
               <ListItemText
-                primary="Cadastrar Produto"
+                primary="Produtos"
                 sx={{ opacity: open ? 1 : 0 }}
               />
             </ListItemButton>
