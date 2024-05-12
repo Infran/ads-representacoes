@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { login } from "../../context/ContextAuth";
+import { useAuth } from "../../context/ContextAuth";
 
 export const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const { login, logout } = useAuth();
 
     const handlerEmailChange = (event) => setEmail(event.target.value)
     const handlerPasswordChange = (event) => setPassword(event.target.value)
@@ -32,6 +33,7 @@ export const Login = () => {
                     <button type="submit">Login</button>
                 </fieldset>
             </form>
+            <button type="button" onClick={logout}>Logout</button>
         </section>
     )
 }
