@@ -17,9 +17,14 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
 
 import { useNavigate } from "react-router-dom";
-import { Home as HomeIcon, Person} from "@mui/icons-material";
+import { Home as HomeIcon, Person } from "@mui/icons-material";
+import { useAuth } from "../../context/ContextAuth";
+import { Avatar } from "@mui/material";
+import { deepOrange } from "@mui/material/colors";
 
 const drawerWidth = 240;
 
@@ -96,6 +101,7 @@ export default function Sidebar() {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
+  const { logout, currentUser } = useAuth();
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -125,6 +131,22 @@ export default function Sidebar() {
           <Typography variant="h6" noWrap component="div">
             ADS REPRESENTAÇÕES
           </Typography>
+          <Avatar
+            sx={{ bgcolor: deepOrange[500] }}
+            alt={currentUser?.displayName}
+            src={currentUser?.photoURL ?? "/broken-image.jpg"}
+          />
+          <IconButton
+            color="inherit"
+            aria-label="signout"
+            onClick={logout}
+            edge="end"
+            sx={{
+              marginLeft: 5,
+            }}
+          >
+            <LogoutIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
       <Drawer variant="permanent" open={open}>
