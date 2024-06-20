@@ -12,7 +12,7 @@ const PageHeader: FC<PageHeaderProps> = (props) => {
   return (
     <Paper elevation={1} sx={{ padding: 2 }}>
       <Box display={"flex"} flexDirection={"row"} alignItems={"center"} gap={4}>
-        <Paper elevation={3} sx={{ width: 100, height: 100 }}>
+        <Paper elevation={3}>
           <Box
             display={"flex"}
             flexDirection={"column"}
