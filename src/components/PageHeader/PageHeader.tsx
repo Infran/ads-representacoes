@@ -2,10 +2,13 @@ import { Person } from "@mui/icons-material";
 import Box from "@mui/material/Box";
 import { Paper, Typography } from "@mui/material";
 import { FC } from "react";
+import { OverridableComponent } from "@mui/material/OverridableComponent";
+import { SvgIconTypeMap } from "@mui/material/SvgIcon";
 
 interface PageHeaderProps {
   title: string;
   description: string;
+  icon: OverridableComponent<SvgIconTypeMap<{}, "svg">>;
 }
 
 const PageHeader: FC<PageHeaderProps> = (props) => {
@@ -22,7 +25,7 @@ const PageHeader: FC<PageHeaderProps> = (props) => {
             alignItems={"center"}
             justifyContent={"center"}
           >
-            <Person />
+            <props.icon />
             <Typography>{props.title}</Typography>
           </Box>
         </Paper>
