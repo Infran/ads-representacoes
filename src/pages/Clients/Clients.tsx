@@ -12,6 +12,7 @@ export const Clients = () => {
         <PageHeader
           title="Clientes"
           description="Utilize esta seção para Adicionar, Editar ou Excluir um Cliente."
+          icon={PersonAdd}
         />
 
         <Paper>
