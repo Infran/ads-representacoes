@@ -187,6 +187,13 @@
   dependencies:
     regenerator-runtime "^0.14.0"
 
+"@babel/runtime@^7.24.7":
+  version "7.24.7"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.24.7.tgz#f4f0d5530e8dbdf59b3451b9b3e594b6ba082e12"
+  integrity sha512-UwgBRMjJP+xv857DCngvqXI3Iq6J4v0wXmwc6sapg+zyhbwmQX67LUEFrkK5tbyJ30jGuG3ZvWpBiB9LCy1kWw==
+  dependencies:
+    regenerator-runtime "^0.14.0"
+
 "@babel/template@^7.22.15", "@babel/template@^7.24.0":
   version "7.24.0"
   resolved "https://registry.yarnpkg.com/@babel/template/-/template-7.24.0.tgz#c6a524aa93a4a05d66aaf31654258fae69d87d50"
@@ -1040,6 +1047,18 @@
     prop-types "^15.8.1"
     react-is "^18.2.0"
 
+"@mui/x-data-grid@^7.7.0":
+  version "7.7.0"
+  resolved "https://registry.yarnpkg.com/@mui/x-data-grid/-/x-data-grid-7.7.0.tgz#4b417de6f85e888b953d5d4f4bb7abfabed62717"
+  integrity sha512-s3Oii9EKcYPnL7M4g5evNley/J0slLL6xWRi0VwYqTHPGntBAMntUktMZ63bD/xko99f5ZcFoRBYTc55+mJ+AQ==
+  dependencies:
+    "@babel/runtime" "^7.24.7"
+    "@mui/system" "^5.15.15"
+    "@mui/utils" "^5.15.14"
+    clsx "^2.1.1"
+    prop-types "^15.8.1"
+    reselect "^4.1.8"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -1523,6 +1542,11 @@ clsx@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/clsx/-/clsx-2.1.0.tgz#e851283bcb5c80ee7608db18487433f7b23f77cb"
   integrity sha512-m3iNNWpd9rl3jvvcBnu70ylMdrXt8Vlq4HYadnU5fwcOtvkSQWPmj7amUcDT2qYI7risszBjI5AUIUox9D16pg==
+
+clsx@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/clsx/-/clsx-2.1.1.tgz#eed397c9fd8bd882bfb18deab7102049a2f32999"
+  integrity sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==
 
 color-convert@^1.9.0:
   version "1.9.3"
@@ -2447,6 +2471,11 @@ require-directory@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/require-directory/-/require-directory-2.1.1.tgz#8c64ad5fd30dab1c976e2344ffe7f792a6a6df42"
   integrity sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==
+
+reselect@^4.1.8:
+  version "4.1.8"
+  resolved "https://registry.yarnpkg.com/reselect/-/reselect-4.1.8.tgz#3f5dc671ea168dccdeb3e141236f69f02eaec524"
+  integrity sha512-ab9EmR80F/zQTMNeneUr4cv+jSwPJgIlvEmVwLerwrWVbpLlBuls9XHzIeTFy4cegU2NHBp3va0LKOzU5qFEYQ==
 
 resolve-from@^4.0.0:
   version "4.0.0"

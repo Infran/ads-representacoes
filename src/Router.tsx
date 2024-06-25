@@ -1,13 +1,20 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import { Home } from "./pages/Home/Home";
-import { Products } from "./pages/Products/Products";
+import Products from "./pages/Products/Products";
 import { Clients } from "./pages/Clients/Clients";
 import DefaultLayout from "./layouts/DefaultLayout";
 import { Login } from "./components/Login/Login";
 import { AuthProvider } from "./context/ContextAuth";
 
+
+
 const AppRouter = () => {
+
+const checkAtuh = () => {
+  
+}
+
   return (
     <>
       <Router>
