@@ -18,10 +18,9 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import LogoutIcon from '@mui/icons-material/Logout';
-import PersonIcon from '@mui/icons-material/Person';
 
 import { useNavigate } from "react-router-dom";
-import { Home as HomeIcon, Person } from "@mui/icons-material";
+import { DocumentScanner, Home as HomeIcon, NoteAdd, Person } from "@mui/icons-material";
 import { useAuth } from "../../context/ContextAuth";
 import { Avatar } from "@mui/material";
 import { deepOrange } from "@mui/material/colors";
@@ -76,7 +75,6 @@ const DrawerHeader = styled("div")(({ theme }) => ({
   alignItems: "center",
   justifyContent: "flex-end",
   padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
   ...theme.mixins.toolbar,
 }));
 
@@ -128,11 +126,9 @@ export default function Sidebar() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            ADS REPRESENTAÇÕES
-          </Typography>
+          
           <Avatar
-            sx={{ bgcolor: deepOrange[500] }}
+            sx={{ bgcolor: deepOrange[500], marginLeft: "auto"}}
             alt={currentUser?.displayName}
             src={currentUser?.photoURL ?? "/broken-image.jpg"}
           />
@@ -142,15 +138,17 @@ export default function Sidebar() {
             onClick={logout}
             edge="end"
             sx={{
-              marginLeft: 5,
             }}
           >
             <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>
-      <Drawer variant="permanent" open={open}>
+      <Drawer variant="permanent" open={open} >
         <DrawerHeader>
+        <Typography noWrap component="div">
+            ADS REPRESENTAÇÕES
+          </Typography>
           <IconButton onClick={handleDrawerClose}>
             {theme.direction === "rtl" ? (
               <ChevronRightIcon />
@@ -158,9 +156,10 @@ export default function Sidebar() {
               <ChevronLeftIcon />
             )}
           </IconButton>
+          
         </DrawerHeader>
         <Divider />
-        <List>
+        <List sx={{height:"100vh"}}>
           <ListItem
             disablePadding
             sx={{ display: "block" }}
@@ -246,8 +245,69 @@ export default function Sidebar() {
               />
             </ListItemButton>
           </ListItem>
+          {/* Gerar orçamento button */}
+          <ListItem
+            disablePadding
+            sx={{ display: "block" }}
+            onClick={() => {
+              navigate("/Orcamentos");
+            }}
+          >
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? "initial" : "center",
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                <NoteAdd />
+              </ListItemIcon>
+              <ListItemText
+                primary="Orçamentos"
+                sx={{ opacity: open ? 1 : 0 }}
+              />
+            </ListItemButton>
+          </ListItem>
         </List>
         <Divider />
+        {/* Drawer footer with logout button */}
+        <List sx={{backgroundColor:"red"}}>
+          <ListItem
+            disablePadding
+            sx={{ display: "block", paddingTop: "auto"}}
+            onClick={logout}
+          >
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? "initial" : "center",
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : "auto",
+                  justifyContent: "center",
+                  color: "white"
+                }}
+              >
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Sair"
+                sx={{ opacity: open ? 1 : 0, color: "white"}}
+              />
+            </ListItemButton>
+          </ListItem>
+        </List>
       </Drawer>
     </Box>
   );

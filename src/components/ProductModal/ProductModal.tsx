@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Button,
@@ -7,33 +7,34 @@ import {
   Modal,
   TextField,
   Typography,
-} from '@mui/material';
-import { styled } from '@mui/system';
-import { IProduct } from '../../interfaces/iproduct';
+} from "@mui/material";
+import { styled } from "@mui/system";
+import { IProduct } from "../../interfaces/iproduct";
 
 const modalStyle = {
-  position: 'absolute' as 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
+  position: "absolute" as "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
   width: 600,
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
+  bgcolor: "background.paper",
+  border: "2px solid #000",
   boxShadow: 24,
   p: 4,
 };
 
 const FormControlStyled = styled(FormControl)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
+  display: "flex",
+  flexDirection: "column",
   gap: theme.spacing(2),
 }));
 
 interface ProductModalProps {
   open: boolean;
   handleClose: () => void;
-  product?: IProduct; // Make product optional
+  product: IProduct; 
   handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleNcmChange: (event: React.ChangeEvent<HTMLInputElement>) => void; // Add handleNcmChange
   handleAddProduct: () => void;
 }
 
@@ -42,16 +43,15 @@ const ProductModal: React.FC<ProductModalProps> = ({
   handleClose,
   product, // Product can be undefined, handle this case
   handleChange,
+  handleNcmChange, // Add handleNcmChange
   handleAddProduct,
 }) => {
-  // Provide default values or empty strings if product is undefined
-  const productName = product?.name || '';
-  const productDescription = product?.description || '';
-  const productNcm = product?.ncm || '';
-  const productIcms = product?.icms || '';
-  const productQuantity = product?.quantity || '';
-  const productUnitValue = product?.unitValue || '';
-  const productTotal = product?.total || '';
+  const productName = product?.name || "";
+  const productDescription = product?.description || "";
+  const productNcm = product?.ncm || "";
+  const productIcms = product?.icms || "";
+  const productQuantity = product?.quantity || "";
+  const productUnitValue = product?.unitValue || "";
 
   return (
     <Modal open={open} onClose={handleClose}>
@@ -60,6 +60,15 @@ const ProductModal: React.FC<ProductModalProps> = ({
           Adicionar Produto
         </Typography>
         <FormControlStyled>
+          <TextField
+            id="ncm"
+            name="ncm"
+            label="NCM"
+            variant="outlined"
+            fullWidth
+            value={productNcm}
+            onChange={handleNcmChange} // Use handleNcmChange here
+          />
           <TextField
             id="name"
             name="name"
@@ -76,30 +85,19 @@ const ProductModal: React.FC<ProductModalProps> = ({
             value={productDescription}
             onChange={handleChange}
           />
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                id="ncm"
-                name="ncm"
-                label="NCM"
-                variant="outlined"
-                fullWidth
-                value={productNcm}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                id="icms"
-                name="icms"
-                label="%ICMS"
-                variant="outlined"
-                fullWidth
-                value={productIcms}
-                onChange={handleChange}
-              />
-            </Grid>
-          </Grid>
+          <TextField
+            id="icms"
+            name="icms"
+            label="ICMS"
+            variant="outlined"
+            fullWidth
+            value={productIcms ? productIcms : "18"}
+            onChange={handleChange}
+            InputProps={{
+              endAdornment: "%",
+            }}
+            sx={{ textAlign: "end" }}
+          />
           <Grid container spacing={2}>
             <Grid item xs={6}>
               <TextField
@@ -124,14 +122,6 @@ const ProductModal: React.FC<ProductModalProps> = ({
               />
             </Grid>
           </Grid>
-          <TextField
-            id="total"
-            name="total"
-            label="Total"
-            variant="outlined"
-            value={productTotal}
-            onChange={handleChange}
-          />
           <Button variant="contained" onClick={handleAddProduct}>
             Adicionar
           </Button>

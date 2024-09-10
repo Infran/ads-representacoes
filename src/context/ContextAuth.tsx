@@ -1,98 +1,83 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { auth } from '../firebase'
-import { onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, User, UserCredential } from "firebase/auth";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from '../firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, updateProfile, signOut, User, UserCredential } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { useNavigate } from "react-router-dom";
 
-const AuthContext = React.createContext<AuthContextReturn>(null);
-
-export function useAuth() {
-    return useContext(AuthContext);
+// Definindo o tipo para o contexto de autenticação
+interface AuthContextType {
+  currentUser: User | null;
+  login: (email: string, password: string) => Promise<void | User>;
+  logout: () => void;
+  loading: boolean;
 }
 
-export function AuthProvider({ children }) {
-    const [currentUser, setCurrentUser] = useState<User>();
-    const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
 
-    function login(email: string, password: string) {
-        return signInWithEmailAndPassword(auth, email, password)
-            // .then((userCredential) => {
-            //     const user = userCredential.user;
-            //     console.log('user = ',user);
-            //     console.log('userCredential = ',userCredential);
-            //     // setCurrentUser(user);
-            // })
-            .catch((error: FirebaseError) => {
-                const errorCode = error.code;
-                const errorMensage = error.message;
+// Criando o contexto de autenticação
+export const AuthContext = createContext<AuthContextType>({
+  currentUser: null,
+  login: () => Promise.resolve(),
+  logout: () => {},
+  loading: true,
+});
 
-                console.log('errorCode = ', errorCode);
-                console.log('errorMensage = ', errorMensage);
-            })
-    }
-
-    function logout() {
-        return signOut(auth);
-    }
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setLoading(true)
-            if (user) {
-                console.log(user);
-                // User is signed in, see docs for a list of available properties
-                // https://firebase.google.com/docs/reference/js/auth.user
-                // const uid = user.uid;
-                setCurrentUser(user);
-                setLoading(false);
-
-                // ...
-            } else {
-                console.log('User is signed out');
-                setCurrentUser(null);
-                navigate("/Login");
-                // User is signed out
-                // ...
-                setLoading(false);
-            }
-        });
-
-        return unsubscribe;
-    }, []);
-
-    function update(){
-        updateProfile(auth.currentUser, {
-            displayName: "Jane Q. User", photoURL: "https://example.com/jane-q-user/profile.jpg"
-          }).then(() => {
-            // Profile updated!
-            // ...
-          }).catch((error) => {
-            // An error occurred
-            // ...
-          });
-    }
-
-    const value: AuthContextReturn = {
-        currentUser,
-        login,
-        logout,
-        loading
-    }
-
-
-    return (
-        <AuthContext.Provider value={value}>
-            {!loading && children}
-        </AuthContext.Provider>
-    )
+// Hook personalizado para acessar o contexto de autenticação
+export function useAuth(): AuthContextType {
+  return useContext(AuthContext);
 }
 
-//TODO: move to own file
-export interface AuthContextReturn {
-    currentUser: User,
-    login: (email: string, password: string) => Promise<void | UserCredential>,
-    logout: () => Promise<void>,
-    loading: boolean,
+// Componente provedor de autenticação
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Função para realizar o login
+  const login = async (email: string, password: string) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      setCurrentUser(user); // Define o usuário atual
+      return user; // Retorna o usuário logado, caso precise usar depois
+    } catch (error: any) {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.error('Error logging in:', errorCode, errorMessage);
+      throw error; // Lança o erro para ser tratado no submitLogin
+    }
+  };
+  
+
+  const logout = () => {
+    signOut(auth).then(() => {
+      setCurrentUser(null);
+      window.location.href = '/Login';
+    });
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Contexto de valor para ser fornecido aos componentes descendentes
+  const authContextValue: AuthContextType = {
+    currentUser,
+    login,
+    logout,
+    loading,
+  };
+
+  // Renderiza o provedor de contexto de autenticação
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 }

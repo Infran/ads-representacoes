@@ -7,4 +7,6 @@ export interface IProduct {
   quantity?: number;
   unitValue?: number;
   total?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

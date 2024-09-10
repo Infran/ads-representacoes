@@ -9,6 +9,8 @@ export class ProductModel implements IProduct {
     public icms?: string,
     public quantity?: number,
     public unitValue?: number,
-    public total?: number
+    public total?: number,
+    public createdAt?: Date,
+    public updatedAt?: Date
   ) {}
 } 
