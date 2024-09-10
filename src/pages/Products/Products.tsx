@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { Box, Button, Paper, TextField } from '@mui/material';
 import { styled } from '@mui/system';
 import PageHeader from './../../components/PageHeader/PageHeader';
-import { DataTable } from '../../components/DataTable/DataTable';
+import { ProductTable } from '../../components/ProductTable/ProductTable';
 import ProductModal from '../../components/ProductModal/ProductModal';
 import { Search, AddCircle, Storefront } from '@mui/icons-material';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { IProduct } from '../../interfaces/iproduct';
 import { addProduct, fetchProducts } from '../../utils/firebaseUtils';
+import ncmData from '../../../src/tabela_ncm.json';
 
 const StyledPaper = styled(Paper)({
   padding: 16,
@@ -26,6 +27,59 @@ const Products = () => {
   const [product, setProduct] = useState<IProduct>();
   const [productList, setProductList] = useState<IProduct[]>([]);
 
+  // const produtos: IProduct[] = [
+  //   {
+  //     id: 1,
+  //     name: "Produto A",
+  //     description: "Este é o primeiro produto",
+  //     ncm: "12345678",
+  //     icms: "18%",
+  //     quantity: 5,
+  //     unitValue: 25.50,
+  //     total: 127.50
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Produto B",
+  //     description: "Este é o segundo produto",
+  //     ncm: "87654321",
+  //     icms: "12%",
+  //     quantity: 8,
+  //     unitValue: 35.75,
+  //     total: 286.00
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Produto C",
+  //     description: "Este é o terceiro produto",
+  //     ncm: "54321678",
+  //     icms: "15%",
+  //     quantity: 3,
+  //     unitValue: 42.90,
+  //     total: 128.70
+  //   },
+  //   {
+  //     id: 4,
+  //     name: "Produto D",
+  //     description: "Este é o quarto produto",
+  //     ncm: "98765432",
+  //     icms: "10%",
+  //     quantity: 10,
+  //     unitValue: 19.99,
+  //     total: 199.90
+  //   },
+  //   {
+  //     id: 5,
+  //     name: "Produto E",
+  //     description: "Este é o quinto produto",
+  //     ncm: "13579246",
+  //     icms: "20%",
+  //     quantity: 2,
+  //     unitValue: 55.00,
+  //     total: 110.00
+  //   }
+  // ];
+
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -38,6 +92,30 @@ const Products = () => {
       ...prevProduct,
       [name]: value,
     }));
+  };
+
+  const handleNcmChange = (event) => {
+    const { value } = event.target;
+    const ncm = value.replace(/\D/g, ''); // Remove todos os caracteres que não são dígitos
+
+    const ncmEntry = ncmData.Nomenclaturas.find(item => 
+      item.Codigo.replace(/\D/g, '') === ncm
+    );
+
+    if (ncmEntry) {
+      setProduct((prevProduct) => ({
+        ...prevProduct,
+        ncm: value,
+        description: ncmEntry.Descricao,
+      }));
+    } else {
+      console.error("NCM not found");
+      setProduct((prevProduct) => ({
+        ...prevProduct,
+        ncm: value,
+        description: "",
+      }));
+    }
   };
 
   const handleAddProduct = () => {
@@ -57,7 +135,7 @@ const Products = () => {
 
   return (
     <>
-      <Box display="flex" flexDirection="column" gap={2} sx={{ width: "94vw", padding: 2 }}>
+      <Box display="flex" flexDirection="column" gap={2} sx={{ padding: 2, width:"94vw" }}>
         <PageHeader
           title="Produtos"
           description="Utilize esta seção para Adicionar, Editar ou Excluir um Produto."
@@ -95,7 +173,7 @@ const Products = () => {
             </Box>
           </Box>
         </StyledPaper>
-        <DataTable rows={productList} />
+        <ProductTable rows={productList} />
       </Box>
 
       <ProductModal
@@ -103,10 +181,10 @@ const Products = () => {
         handleClose={handleClose}
         product={product}
         handleChange={handleChange}
+        handleNcmChange={handleNcmChange}
         handleAddProduct={handleAddProduct}
       />
        
-    
     </>
   );
 };

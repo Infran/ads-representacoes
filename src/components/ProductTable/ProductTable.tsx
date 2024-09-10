@@ -17,9 +17,9 @@ const columns: GridColDef[] = [
   { field: "total", headerName: "Total", width: 230, sortable: true, filterable: true },
 ];
 
-export const DataTable:FC<DataTableProps> = (props) => {
+export const ProductTable:FC<DataTableProps> = (props) => {
   return (
-    <div style={{ height: 600, width: "" }}>
+    <div style={{ height: 600 }}>
       <DataGrid
         rows={props.rows}
         columns={columns}
