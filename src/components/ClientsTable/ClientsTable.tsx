@@ -1,6 +1,5 @@
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { FC } from "react";
-import { ClientModel } from "../../models/client.model";
 import { IClient } from "../../interfaces/iclient";
 
 interface DataTableProps {
@@ -14,8 +13,6 @@ const columns: GridColDef[] = [
   { field: "celular", headerName: "Celular", width: 200, sortable: true, filterable: true },
   { field: "phone", headerName: "Telefone", width: 200, sortable: true, filterable: true },
   { field: "address", headerName: "Endereço", width: 200, sortable: true, filterable: true },
-  { field: "cidade", headerName: "Cidade", width: 200, sortable: true, filterable: true },
-  { field: "estado", headerName: "Estado", width: 200, sortable: true, filterable: true },
 ];
 
 export const ClientsTable:FC<DataTableProps> = (props) => {

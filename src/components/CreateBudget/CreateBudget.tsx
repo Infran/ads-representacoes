@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react";
-import { IClient } from "../../interfaces/iclient";
-import { IProduct } from "../../interfaces/iproduct";
-import { IBudget } from "../../interfaces/ibudget";
 import {
   Autocomplete,
   Container,
@@ -12,7 +9,6 @@ import {
   Box,
   Grid,
 } from "@mui/material";
-import { fetchClients, fetchProducts } from "../../utils/firebaseUtils";
 import {
   ArrowDropDown,
   ArrowDropUp,
@@ -20,33 +16,35 @@ import {
   PersonAdd,
   Storefront,
 } from "@mui/icons-material";
+import { IClient } from "../../interfaces/iclient";
+import { IProduct } from "../../interfaces/iproduct";
+import { IBudget } from "../../interfaces/ibudget";
+import { fetchClients, fetchProducts } from "../../utils/firebaseUtils";
 import ClientModal from "../Modal/ClientModal/ClientModal";
 import ProductModal from "../Modal/ProductModal/ProductModal";
 import "./CreateBudget.css";
 
-// selected products
-interface ISelectedProduct {
+export interface ISelectedProduct {
   product: IProduct;
   quantity: number;
 }
 
 const CreateBudget: React.FC = () => {
   const [budget, setBudget] = useState<IBudget>({} as IBudget);
-
   const [openClientModal, setOpenClientModal] = useState(false);
   const [openProductModal, setOpenProductModal] = useState(false);
   const [clientList, setClientList] = useState<IClient[]>([]);
   const [productList, setProductList] = useState<IProduct[]>([]);
-
-  //selected client and products
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>(
     []
   );
 
   useEffect(() => {
     const fetchData = async () => {
-      const clients = await fetchClients();
-      const products = await fetchProducts();
+      const [clients, products] = await Promise.all([
+        fetchClients(),
+        fetchProducts(),
+      ]);
       setClientList(clients);
       setProductList(products);
     };
@@ -54,45 +52,46 @@ const CreateBudget: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log(budget);
-  }, [budget]);
-
-  useEffect(() => {
-    const totalValue = selectedProducts.reduce((acc, product) => {
-      return acc + product.product.unitValue * product.quantity;
-    }, 0);
-
-    console.log(totalValue);
-    setBudget((prevBudget) => ({ ...prevBudget, totalValue }));
+    const totalValue = selectedProducts.reduce(
+      (acc, { product, quantity }) => acc + product.unitValue * quantity,
+      0
+    );
+    setBudget((prev) => ({ ...prev, totalValue }));
   }, [selectedProducts]);
 
-  const handleOpenClientModal = () => setOpenClientModal(true);
-  const handleCloseClientModal = () => setOpenClientModal(false);
+  const handleAddProduct = (product: IProduct) => {
+    setSelectedProducts((prev) => [
+      ...prev,
+      { product, quantity: 1 } as ISelectedProduct,
+    ]);
+    
+  };
 
-  const handleOpenProductModal = () => setOpenProductModal(true);
-  const handleCloseProductModal = () => setOpenProductModal(false);
+  const handleRemoveProduct = (index: number) => {
+    setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateProductQuantity = (index: number, delta: number) => {
+    setSelectedProducts((prev) =>
+      prev
+        .map((p, i) =>
+          i === index ? { ...p, quantity: p.quantity + delta } : p
+        )
+        .filter((p) => p.quantity > 0)
+    );
+  };
 
   return (
     <Container>
-      <Typography variant="h4" component="h1" gutterBottom>
+      <Typography variant="h4" gutterBottom>
         Cadastro de Orçamento
       </Typography>
 
-      <Paper sx={{ padding: 2 }}>
-        <Typography variant="h4" component="h2" gutterBottom>
-          <span style={{ borderBottom: "2px solid #1976d2" }}>
-            Dados do Cliente
-          </span>
+      <Paper sx={{ padding: 2, marginBottom: 2 }}>
+        <Typography variant="h5" gutterBottom>
+          Dados do Cliente
         </Typography>
-
-        <Container
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-          }}
-          className="clienteContainer"
-        >
+        <Box display="flex" gap={2}>
           <Autocomplete
             options={clientList}
             getOptionLabel={(option) => option.name}
@@ -100,254 +99,159 @@ const CreateBudget: React.FC = () => {
             onChange={(event, value) =>
               setBudget({ ...budget, client: value || ({} as IClient) })
             }
-            sx={{ flexGrow: 0.99 }}
+            sx={{ flexGrow: 1 }}
           />
-          <Button variant="contained" onClick={handleOpenClientModal}>
-            <Box display="flex" gap={0.5}>
-              Adicionar <PersonAdd />
-            </Box>
-          </Button>
-        </Container>
-
-        {budget.client && budget.client.name && (
-          <Box
-            mt={2}
-            sx={{
-              border: "1px solid #ccc",
-              padding: 2,
-              borderRadius: 4,
-              backgroundColor: "#f5f5f5",
-            }}
+          <Button
+            variant="contained"
+            onClick={() => setOpenClientModal(true)}
+            startIcon={<PersonAdd />}
           >
+            Adicionar
+          </Button>
+        </Box>
+
+        {budget.client?.name && (
+          <Box mt={2} p={2} borderRadius={4} bgcolor="#f5f5f5">
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <Typography variant="h6">Nome:</Typography>
-                <Typography variant="body1">{budget.client.name}</Typography>
+                <Typography variant="subtitle1">
+                  Nome: {budget.client.name}
+                </Typography>
+                <Typography variant="subtitle1">
+                  Email: {budget.client.email}
+                </Typography>
               </Grid>
               <Grid item xs={6}>
-                <Typography variant="h6">Email:</Typography>
-                <Typography variant="body1">{budget.client.email}</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="h6">Telefone:</Typography>
-                <Typography variant="body1">{budget.client.phone}</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography variant="h6">Endereço:</Typography>
-                <Typography variant="body1">{budget.client.address}</Typography>
+                <Typography variant="subtitle1">
+                  Telefone: {budget.client.phone}
+                </Typography>
+                <Typography variant="subtitle1">
+                  Endereço: {budget.client.address}
+                </Typography>
               </Grid>
             </Grid>
           </Box>
         )}
       </Paper>
 
-      <Paper sx={{ padding: 2, marginTop: 2 }}>
-        <Typography variant="h4" component="h2" gutterBottom>
-          <span style={{ borderBottom: "2px solid #1976d2" }}>Produtos</span>
+      <Paper sx={{ padding: 2, marginBottom: 2 }}>
+        <Typography variant="h5" gutterBottom>
+          Produtos
         </Typography>
-
-        <Container
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-          }}
-          className="clienteContainer"
-        >
+        <Box display="flex" gap={2}>
           <Autocomplete
             options={productList}
             getOptionLabel={(option) => option.name}
             renderInput={(params) => <TextField {...params} label="Produto" />}
-            onChange={(event, value) => {
-              if (value) {
-                setSelectedProducts((prevProducts) => [
-                  ...prevProducts,
-                  { product: value, quantity: 1 },
-                ]);
-                setBudget({ ...budget, products: selectedProducts });
-              }
-            }}
-            sx={{ flexGrow: 0.99 }}
+            onChange={(event, value) => value && handleAddProduct(value)}
+            sx={{ flexGrow: 1 }}
           />
-          <Button variant="contained" onClick={handleOpenProductModal}>
-            <Box display="flex" gap={0.5}>
-              Adicionar <Storefront />
-            </Box>
+          <Button
+            variant="contained"
+            onClick={() => setOpenProductModal(true)}
+            startIcon={<Storefront />}
+          >
+            Adicionar
           </Button>
-        </Container>
+        </Box>
 
         {selectedProducts.length > 0 && (
           <>
-            {/* list all the items in selectedProducts each in a paper card */}
             {selectedProducts.map((product, index) => (
               <Paper
                 key={index}
                 sx={{
                   padding: 2,
-                  marginTop: 2,
+                  marginY: 2,
                   display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                <Box sx={{ flexGrow: 0.49 }}>
-                  <Typography variant="h6">{product.product.name}</Typography>
-                  <Typography variant="body1">
+                <Box flexGrow={1}>
+                  <Typography variant="subtitle1">
+                    {product.product.name}
+                  </Typography>
+                  <Typography variant="body2">
                     Valor Unitário: R$ {product.product.unitValue}
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", flexDirection: "row" }}>
-                  <Box sx={{ display: "flex", flexDirection: "row" }}>
-                    <Typography variant="h6">{product.quantity}</Typography>
-                    <Box sx={{ display: "flex", flexDirection: "column" }}>
-                      <Button
-                        variant="contained"
-                        sx={{}}
-                        onClick={() => {
-                          setSelectedProducts((prevProducts) => {
-                            const newProducts = [...prevProducts];
-                            newProducts[index].quantity++;
-                            return newProducts;
-                          });
-                        }}
-                      >
-                        <ArrowDropUp />
-                      </Button>
-                      <Button
-                        variant="contained"
-                        sx={{}}
-                        onClick={() => {
-                          if (product.quantity > 1) {
-                            setSelectedProducts((prevProducts) => {
-                              const newProducts = [...prevProducts];
-                              newProducts[index].quantity--;
-                              return newProducts;
-                            });
-
-                          } else {
-                            setSelectedProducts((prevProducts) => {
-                              const newProducts = [...prevProducts];
-                              newProducts.splice(index, 1);
-                              return newProducts;
-                            });
-                          }
-                        }}
-                      >
-                        <ArrowDropDown />
-                      </Button>
-                    </Box>
-                  </Box>
+                <Box display="flex" alignItems="center">
                   <Button
-                    variant="contained"
-                    sx={{}}
-                    onClick={() => {
-                      setSelectedProducts((prevProducts) => {
-                        const newProducts = [...prevProducts];
-                        newProducts.splice(index, 1);
-                        return newProducts;
-                      });
-                    }}
+                    size="small"
+                    onClick={() => updateProductQuantity(index, 1)}
                   >
-                    <Delete />
+                    <ArrowDropUp />
+                  </Button>
+                  <Typography>{product.quantity}</Typography>
+                  <Button
+                    size="small"
+                    onClick={() => updateProductQuantity(index, -1)}
+                  >
+                    <ArrowDropDown />
+                  </Button>
+                  <Button
+                    color="secondary"
+                    onClick={() => handleRemoveProduct(index)}
+                    startIcon={<Delete />}
+                  >
+                    Remover
                   </Button>
                 </Box>
               </Paper>
             ))}
-
-            {/* total value */}
-
-            <Box
-              mt={2}
-              sx={{
-                border: "1px solid #ccc",
-                padding: 2,
-                borderRadius: 4,
-                backgroundColor: "#f5f5f5",
-              }}
-            >
-              <Typography variant="h6">Valor Total:</Typography>
-              <Typography variant="body1">R$ {budget.totalValue}</Typography>
+            <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
+              <Typography variant="h6">
+                Valor Total: R$ {budget.totalValue}
+              </Typography>
             </Box>
           </>
         )}
-
-        {/* total value */}
       </Paper>
 
-      {/* datas de aproximda de entrega e validade */}
-      <Paper sx={{ padding: 2, marginTop: 2 }}>
-        <Typography variant="h4" component="h2" gutterBottom>
-          <span style={{ borderBottom: "2px solid #1976d2" }}>
-            Datas e Observações
-          </span>
+      <Paper sx={{ padding: 2, marginBottom: 2 }}>
+        <Typography variant="h5" gutterBottom>
+          Datas e Observações
         </Typography>
-
-        <Container
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "space-between",
-          }}
-          className="clienteContainer"
-        >
-          <Box sx={{ flexGrow: 0.49 }}>
-            {/*data de entrega */}
-            <Typography variant="body1">Data de Entrega:</Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
             <TextField
-              id="deliveryDate"
+              label="Data de Entrega"
               type="date"
-              sx={{ width: "100%" }}
-              onChange={(event) =>
-                setBudget({ ...budget, estimatedDate: event.target.value })
+              fullWidth
+              onChange={(e) =>
+                setBudget({ ...budget, estimatedDate: e.target.value })
               }
             />
-          </Box>
-
-          <Box sx={{ flexGrow: 0.49 }}>
-            {/*data de validade  */}
-            <Typography variant="body1">Data de Validade:</Typography>
+          </Grid>
+          <Grid item xs={6}>
             <TextField
-              id="validityDate"
+              label="Data de Validade"
               type="date"
-              sx={{ width: "100%" }}
-              onChange={(event) =>
-                setBudget({ ...budget, maxDealDate: event.target.value })
+              fullWidth
+              onChange={(e) =>
+                setBudget({ ...budget, maxDealDate: e.target.value })
               }
             />
-          </Box>
-
-        </Container>
-
-        {/* Garantia */}
-        <Box sx={{ marginTop: 2 }}>
-          <Typography variant="body1">Garantia:</Typography>
-          <TextField
-            id="warranty"
-            fullWidth
-            onChange={(event) =>
-              setBudget({ ...budget, guarantee: event.target.value })
-            }
-          />
-        </Box>
-
-        {/* imposto */}
-        <Box sx={{ marginTop: 2 }}>
-          <Typography variant="body1">Imposto:</Typography>
-          <TextField
-            id="tax"
-            fullWidth
-            value="NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS"
-            onChange={(event) =>
-              setBudget({ ...budget, tax: event.target.value })
-            }
-          />
-        </Box>
-
+          </Grid>
+        </Grid>
+        <TextField
+          label="Garantia"
+          fullWidth
+          margin="normal"
+          onChange={(e) => setBudget({ ...budget, guarantee: e.target.value })}
+        />
+        <TextField
+          label="Imposto"
+          fullWidth
+          margin="normal"
+          defaultValue="NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS"
+          onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
+        />
       </Paper>
 
       <Button
         variant="contained"
-        sx={{ marginTop: 2 }}
+        sx={{ mt: 2 }}
         onClick={() => console.log(budget)}
       >
         Salvar
@@ -355,12 +259,11 @@ const CreateBudget: React.FC = () => {
 
       <ClientModal
         open={openClientModal}
-        handleClose={handleCloseClientModal}
+        handleClose={() => setOpenClientModal(false)}
       />
-
       <ProductModal
         open={openProductModal}
-        handleClose={handleCloseProductModal}
+        handleClose={() => setOpenProductModal(false)}
       />
     </Container>
   );

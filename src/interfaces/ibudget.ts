@@ -1,10 +1,10 @@
+import { ISelectedProduct } from '../components/CreateBudget/CreateBudget';
 import { IClient } from './iclient';
-import { IProduct } from './iproduct';
 
 export interface IBudget {
   id?: number;
   client: IClient;
-  products: IProduct[];
+  products: ISelectedProduct[];
   estimatedDate: string;
   maxDealDate: string;
   guarantee: string;
