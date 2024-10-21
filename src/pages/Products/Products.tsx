@@ -3,7 +3,7 @@ import { Box, Button, Paper, TextField } from '@mui/material';
 import { styled } from '@mui/system';
 import PageHeader from './../../components/PageHeader/PageHeader';
 import { ProductTable } from '../../components/ProductTable/ProductTable';
-import ProductModal from '../../components/ProductModal/ProductModal';
+import ProductModal from '../../components/Modal/ProductModal/ProductModal';
 import { Search, AddCircle, Storefront } from '@mui/icons-material';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { IProduct } from '../../interfaces/iproduct';

@@ -4,9 +4,9 @@ import PageHeader from './../../components/PageHeader/PageHeader';
 import { Search, PersonAdd } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import { addClient, fetchClients } from '../../utils/firebaseUtils';
-import { IClient } from '../../interfaces/icliente';
+import { IClient } from '../../interfaces/iclient';
 import { ClientsTable } from '../../components/ClientsTable/ClientsTable';
-import ClientModal from '../../components/ClientModal/ClientModal';
+import ClientModal from '../../components/Modal/ClientModal/ClientModal';
 
 const StyledPaper = styled(Paper)({
   padding: 16,

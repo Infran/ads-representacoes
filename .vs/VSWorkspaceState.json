@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\src"
   ],
-  "SelectedNode": "\\yarn.lock",
+  "SelectedNode": "\\src\\main.tsx",
   "PreviewInSolutionExplorer": false
 }

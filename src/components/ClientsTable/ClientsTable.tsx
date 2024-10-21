@@ -1,7 +1,7 @@
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { FC } from "react";
 import { ClientModel } from "../../models/client.model";
-import { IClient } from "../../interfaces/icliente";
+import { IClient } from "../../interfaces/iclient";
 
 interface DataTableProps {
   rows: IClient[];

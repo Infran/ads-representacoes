@@ -1,18 +1,9 @@
-import React, { FC, useState } from "react";
+import React from "react";
 import "./Budgets.css";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { AddCircle, NoteAdd, Search } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Paper,
-  TextField,
-  styled,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
-
-interface BudgetsProps {}
+import { Box, Button, Paper, TextField, styled } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const StyledPaper = styled(Paper)({
   padding: 16,
@@ -24,12 +15,11 @@ const StyledPaper = styled(Paper)({
 const ButtonGroup = styled(Box)({
   display: "flex",
   gap: 16,
-})
+});
+
 
 const Budgets = () => {
-  const [openModal, setOpenModal] = useState(false);
-  const handleOpen = () => setOpenModal(true);
-  const handleClose = () => setOpenModal(false);
+  const navigate = useNavigate();
   return (
     <>
       <Box
@@ -59,7 +49,9 @@ const Budgets = () => {
                   <Search />
                 </Box>
               </Button>
-              <Button variant="contained" onClick={handleOpen}>
+              <Button variant="contained" onClick={() => {
+                navigate("/Orcamentos/Adicionar")
+              }}>
                 <Box display="flex" gap={0.5}>
                   Adicionar
                   <AddCircle />

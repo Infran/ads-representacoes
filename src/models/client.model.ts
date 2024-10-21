@@ -1,4 +1,4 @@
-import { IClient } from "../interfaces/icliente";
+import { IClient } from "../interfaces/iclient";
 
 export class ClientModel implements IClient {
   constructor(

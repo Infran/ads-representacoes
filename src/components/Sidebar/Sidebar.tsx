@@ -20,7 +20,7 @@ import ListItemText from "@mui/material/ListItemText";
 import LogoutIcon from '@mui/icons-material/Logout';
 
 import { useNavigate } from "react-router-dom";
-import { DocumentScanner, Home as HomeIcon, NoteAdd, Person } from "@mui/icons-material";
+import { Home as HomeIcon, NoteAdd, Person } from "@mui/icons-material";
 import { useAuth } from "../../context/ContextAuth";
 import { Avatar } from "@mui/material";
 import { deepOrange } from "@mui/material/colors";
@@ -245,7 +245,6 @@ export default function Sidebar() {
               />
             </ListItemButton>
           </ListItem>
-          {/* Gerar orçamento button */}
           <ListItem
             disablePadding
             sx={{ display: "block" }}

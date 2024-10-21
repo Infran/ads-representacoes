@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -9,10 +9,12 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { IProduct } from "../../interfaces/iproduct";
+import { IProduct } from "../../../interfaces/iproduct";
+import { addProduct } from "../../../utils/firebaseUtils";
+import ncmData from "../../../tabela_ncm.json";
 
 const modalStyle = {
-  position: "absolute" as "absolute",
+  position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
@@ -32,33 +34,68 @@ const FormControlStyled = styled(FormControl)(({ theme }) => ({
 interface ProductModalProps {
   open: boolean;
   handleClose: () => void;
-  product: IProduct; 
-  handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleNcmChange: (event: React.ChangeEvent<HTMLInputElement>) => void; // Add handleNcmChange
-  handleAddProduct: () => void;
 }
 
-const ProductModal: React.FC<ProductModalProps> = ({
-  open,
-  handleClose,
-  product, // Product can be undefined, handle this case
-  handleChange,
-  handleNcmChange, // Add handleNcmChange
-  handleAddProduct,
-}) => {
-  const productName = product?.name || "";
-  const productDescription = product?.description || "";
-  const productNcm = product?.ncm || "";
-  const productIcms = product?.icms || "";
-  const productQuantity = product?.quantity || "";
-  const productUnitValue = product?.unitValue || "";
+const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
+  const [product, setProduct] = useState<IProduct>({} as IProduct);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setProduct({ ...product, [name]: value });
+  };
+
+  const handleAddProduct = async () => {
+    if (!product.name || !product.ncm || !product.quantity || !product.unitValue) {
+      setError("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    try {
+      await addProduct(product);
+      handleClose();
+      setProduct({} as IProduct); // Limpa o estado ao fechar o modal
+      setError(null);
+    } catch (error) {
+      console.error("Erro ao adicionar produto:", error);
+      setError("Ocorreu um erro ao adicionar o produto. Tente novamente.");
+    }
+  };
+
+  const handleNcmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    const ncm = value.replace(/\D/g, '');
+
+    const ncmEntry = ncmData.Nomenclaturas.find(item =>
+      item.Codigo.replace(/\D/g, '') === ncm
+    );
+
+    if (ncmEntry) {
+      setProduct((prevProduct) => ({
+        ...prevProduct,
+        ncm: value,
+        description: ncmEntry.Descricao,
+      }));
+    } else {
+      setProduct((prevProduct) => ({
+        ...prevProduct,
+        ncm: value,
+        description: "",
+      }));
+    }
+  };
 
   return (
-    <Modal open={open} onClose={handleClose}>
+    <Modal open={open} onClose={() => { handleClose(); setProduct({} as IProduct); }}>
       <Box sx={modalStyle}>
         <Typography variant="h6" component="h1" gutterBottom>
           Adicionar Produto
         </Typography>
+        {error && (
+          <Typography color="error" variant="body2">
+            {error}
+          </Typography>
+        )}
         <FormControlStyled>
           <TextField
             id="ncm"
@@ -66,15 +103,15 @@ const ProductModal: React.FC<ProductModalProps> = ({
             label="NCM"
             variant="outlined"
             fullWidth
-            value={productNcm}
-            onChange={handleNcmChange} // Use handleNcmChange here
+            value={product.ncm || ""}
+            onChange={handleNcmChange}
           />
           <TextField
             id="name"
             name="name"
             label="Nome do Produto"
             variant="outlined"
-            value={productName}
+            value={product.name || ""}
             onChange={handleChange}
           />
           <TextField
@@ -82,7 +119,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
             name="description"
             label="Descrição"
             variant="outlined"
-            value={productDescription}
+            value={product.description || ""}
             onChange={handleChange}
           />
           <TextField
@@ -91,7 +128,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
             label="ICMS"
             variant="outlined"
             fullWidth
-            value={productIcms ? productIcms : "18"}
+            value={product.icms || "18"}
             onChange={handleChange}
             InputProps={{
               endAdornment: "%",
@@ -106,7 +143,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 label="Quantidade"
                 variant="outlined"
                 fullWidth
-                value={productQuantity}
+                value={product.quantity || ""}
                 onChange={handleChange}
               />
             </Grid>
@@ -117,7 +154,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 label="Valor (Unit)"
                 variant="outlined"
                 fullWidth
-                value={productUnitValue}
+                value={product.unitValue || ""}
                 onChange={handleChange}
               />
             </Grid>
