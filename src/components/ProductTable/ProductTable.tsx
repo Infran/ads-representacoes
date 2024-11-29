@@ -11,19 +11,17 @@ const columns: GridColDef[] = [
   { field: "name", headerName: "Produto", width: 220, sortable: true, filterable: true, editable: true },
   { field: "description", headerName: "Descrição", width: 400, sortable: true, filterable: true, editable: true },
   { field: "ncm", headerName: "NCM", width: 200, sortable: true, filterable: true },
-  { field: "icms", headerName: "%ICMS", width: 200, sortable: true, filterable: true },
   { field: "quantity", headerName: "Quantidade", width: 200, sortable: true, filterable: true, editable: true },
   { field: "unitValue", headerName: "Valor(Unit)", width: 230, sortable: true, filterable: true, editable: true },
-  { field: "total", headerName: "Total", width: 230, sortable: true, filterable: true },
 ];
 
 export const ProductTable:FC<DataTableProps> = (props) => {
   return (
-    <div style={{ height: 600 }}>
+    <div style={{ height: 600, border: "1px solid #ccc" }}>
       <DataGrid
         rows={props.rows}
         columns={columns}
-        style={{ fontSize: "20px" }}
+        style={{ fontSize: "20px", backgroundColor: "white", color: "black" }}  
         initialState={{
           pagination: {
             paginationModel: { page: 0, pageSize: 10 },

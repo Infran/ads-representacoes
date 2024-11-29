@@ -2,7 +2,7 @@ import { ISelectedProduct } from '../components/CreateBudget/CreateBudget';
 import { IClient } from './iclient';
 
 export interface IBudget {
-  id?: number;
+  id: number;
   client: IClient;
   products: ISelectedProduct[];
   estimatedDate: string;
@@ -10,6 +10,6 @@ export interface IBudget {
   guarantee: string;
   tax?: string;
   totalValue: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date
+  updatedAt: Date;
 }

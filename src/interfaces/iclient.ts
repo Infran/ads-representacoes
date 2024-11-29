@@ -4,6 +4,7 @@ export interface IClient {
   email?: string;
   mobile?: string;
   phone?: string;
+  mobilePhone?: string;
   address?: string;
   city?: string;
   state?: string;

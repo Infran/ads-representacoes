@@ -7,8 +7,7 @@ import ProductModal from '../../components/Modal/ProductModal/ProductModal';
 import { Search, AddCircle, Storefront } from '@mui/icons-material';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { IProduct } from '../../interfaces/iproduct';
-import { addProduct, fetchProducts } from '../../utils/firebaseUtils';
-import ncmData from '../../../src/tabela_ncm.json';
+import { fetchProducts } from '../../services/productServices';
 
 const StyledPaper = styled(Paper)({
   padding: 16,
@@ -24,7 +23,6 @@ const ButtonGroup = styled(Box)({
 
 const Products = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [product, setProduct] = useState<IProduct>();
   const [productList, setProductList] = useState<IProduct[]>([]);
 
   // const produtos: IProduct[] = [
@@ -86,44 +84,6 @@ const Products = () => {
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setProduct(prevProduct => ({
-      ...prevProduct,
-      [name]: value,
-    }));
-  };
-
-  const handleNcmChange = (event) => {
-    const { value } = event.target;
-    const ncm = value.replace(/\D/g, ''); // Remove todos os caracteres que não são dígitos
-
-    const ncmEntry = ncmData.Nomenclaturas.find(item => 
-      item.Codigo.replace(/\D/g, '') === ncm
-    );
-
-    if (ncmEntry) {
-      setProduct((prevProduct) => ({
-        ...prevProduct,
-        ncm: value,
-        description: ncmEntry.Descricao,
-      }));
-    } else {
-      console.error("NCM not found");
-      setProduct((prevProduct) => ({
-        ...prevProduct,
-        ncm: value,
-        description: "",
-      }));
-    }
-  };
-
-  const handleAddProduct = () => {
-    console.log('Adicionar produto:', product);
-    addProduct(product);
-    handleClose();
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       const products = await fetchProducts();
@@ -179,10 +139,6 @@ const Products = () => {
       <ProductModal
         open={openModal}
         handleClose={handleClose}
-        product={product}
-        handleChange={handleChange}
-        handleNcmChange={handleNcmChange}
-        handleAddProduct={handleAddProduct}
       />
        
     </>

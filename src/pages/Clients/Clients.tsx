@@ -3,7 +3,7 @@ import { styled } from '@mui/system';
 import PageHeader from './../../components/PageHeader/PageHeader';
 import { Search, PersonAdd } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
-import { addClient, fetchClients } from '../../utils/firebaseUtils';
+import { fetchClients } from '../../services/clientServices';
 import { IClient } from '../../interfaces/iclient';
 import { ClientsTable } from '../../components/ClientsTable/ClientsTable';
 import ClientModal from '../../components/Modal/ClientModal/ClientModal';
@@ -22,25 +22,12 @@ const ButtonGroup = styled(Box)({
 
 const Clients = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [client, setClient] = useState<IClient>();
   const [clientList, setClientList] = useState<IClient[]>([]);
 
-  const theme = useTheme();
   const isSmallScreen = useMediaQuery(useTheme().breakpoints.down('sm'));
 
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setClient({ ...client, [name]: value });
-  };
-
-  const handleAddClient = () => {
-    console.log('Adicionar cliente:', client);
-    addClient(client);
-    handleClose();
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,9 +84,6 @@ const Clients = () => {
       <ClientModal
         open={openModal}
         handleClose={handleClose}
-        client={client}
-        handleChange={handleChange}
-        handleAddClient={handleAddClient}
       />
     </>
   );

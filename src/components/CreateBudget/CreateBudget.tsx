@@ -19,10 +19,12 @@ import {
 import { IClient } from "../../interfaces/iclient";
 import { IProduct } from "../../interfaces/iproduct";
 import { IBudget } from "../../interfaces/ibudget";
-import { fetchClients, fetchProducts } from "../../utils/firebaseUtils";
+import { searchClients } from "../../services/clientServices";
+import { searchProducts } from "../../services/productServices";
 import ClientModal from "../Modal/ClientModal/ClientModal";
 import ProductModal from "../Modal/ProductModal/ProductModal";
-import "./CreateBudget.css";
+import useDebounce from "../../hooks/useDebounce";
+import { addBudget } from "../../services/budgetServices";
 
 export interface ISelectedProduct {
   product: IProduct;
@@ -35,28 +37,49 @@ const CreateBudget: React.FC = () => {
   const [openProductModal, setOpenProductModal] = useState(false);
   const [clientList, setClientList] = useState<IClient[]>([]);
   const [productList, setProductList] = useState<IProduct[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>(
-    []
-  );
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState<ISelectedProduct[]>([]);
 
+  const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 1000);
+  const debouncedProductSearchTerm = useDebounce(productSearchTerm, 1000);
+
+  // Adicionar orçamento
+  const handleAddBudget = (budget: IBudget) => {
+    try {
+      addBudget(budget);
+      alert("Orçamento cadastrado com sucesso!");
+    } catch (error) {
+      alert("Erro ao cadastrar orçamento.");
+      console.error(error);
+    }
+  };
+
+  // Atualizar lista de clientes ao pesquisar
   useEffect(() => {
-    const fetchData = async () => {
-      const [clients, products] = await Promise.all([
-        fetchClients(),
-        fetchProducts(),
-      ]);
-      setClientList(clients);
-      setProductList(products);
-    };
-    fetchData();
-  }, []);
+    if (debouncedClientSearchTerm) {
+      searchClients(debouncedClientSearchTerm).then(setClientList);
+    } else {
+      setClientList([]);
+    }
+  }, [debouncedClientSearchTerm]);
 
+  // Atualizar lista de produtos ao pesquisar
+  useEffect(() => {
+    if (debouncedProductSearchTerm) {
+      searchProducts(debouncedProductSearchTerm).then(setProductList);
+    } else {
+      setProductList([]);
+    }
+  }, [debouncedProductSearchTerm]);
+
+  // Calcular valor total do orçamento ao alterar produtos
   useEffect(() => {
     const totalValue = selectedProducts.reduce(
       (acc, { product, quantity }) => acc + product.unitValue * quantity,
       0
     );
-    setBudget((prev) => ({ ...prev, totalValue }));
+    setBudget((prev) => ({ ...prev, totalValue, products: selectedProducts }));
   }, [selectedProducts]);
 
   const handleAddProduct = (product: IProduct) => {
@@ -64,11 +87,12 @@ const CreateBudget: React.FC = () => {
       ...prev,
       { product, quantity: 1 } as ISelectedProduct,
     ]);
-    
   };
 
   const handleRemoveProduct = (index: number) => {
-    setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+    if (window.confirm("Tem certeza que deseja remover este produto?")) {
+      setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   const updateProductQuantity = (index: number, delta: number) => {
@@ -81,12 +105,20 @@ const CreateBudget: React.FC = () => {
     );
   };
 
+  const isBudgetValid = Boolean(
+    budget.client &&
+      selectedProducts.length > 0 &&
+      budget.estimatedDate &&
+      budget.maxDealDate
+  );
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
         Cadastro de Orçamento
       </Typography>
 
+      {/* Dados do Cliente */}
       <Paper sx={{ padding: 2, marginBottom: 2 }}>
         <Typography variant="h5" gutterBottom>
           Dados do Cliente
@@ -95,7 +127,17 @@ const CreateBudget: React.FC = () => {
           <Autocomplete
             options={clientList}
             getOptionLabel={(option) => option.name}
-            renderInput={(params) => <TextField {...params} label="Cliente" />}
+            noOptionsText="Pesquise um cliente cadastrado."
+            inputValue={clientSearchTerm}
+            onInputChange={(e, value) => setClientSearchTerm(value)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Busque um cliente"
+                required
+                onChange={(e) => setClientSearchTerm(e.target.value)}
+              />
+            )}
             onChange={(event, value) =>
               setBudget({ ...budget, client: value || ({} as IClient) })
             }
@@ -117,14 +159,18 @@ const CreateBudget: React.FC = () => {
                 <Typography variant="subtitle1">
                   Nome: {budget.client.name}
                 </Typography>
+                {budget.client.email && (
                 <Typography variant="subtitle1">
                   Email: {budget.client.email}
                 </Typography>
+                )}
               </Grid>
               <Grid item xs={6}>
+                {budget.client.phone && (
                 <Typography variant="subtitle1">
                   Telefone: {budget.client.phone}
-                </Typography>
+                </Typography>  
+                )}
                 <Typography variant="subtitle1">
                   Endereço: {budget.client.address}
                 </Typography>
@@ -134,6 +180,7 @@ const CreateBudget: React.FC = () => {
         )}
       </Paper>
 
+      {/* Produtos */}
       <Paper sx={{ padding: 2, marginBottom: 2 }}>
         <Typography variant="h5" gutterBottom>
           Produtos
@@ -142,7 +189,17 @@ const CreateBudget: React.FC = () => {
           <Autocomplete
             options={productList}
             getOptionLabel={(option) => option.name}
-            renderInput={(params) => <TextField {...params} label="Produto" />}
+            noOptionsText="Pesquise um produto cadastrado."
+            inputValue={productSearchTerm}
+            onInputChange={(e, value) => setProductSearchTerm(value)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Busque um produto"
+                required
+                onChange={(e) => setProductSearchTerm(e.target.value)}
+              />
+            )}
             onChange={(event, value) => value && handleAddProduct(value)}
             sx={{ flexGrow: 1 }}
           />
@@ -201,13 +258,14 @@ const CreateBudget: React.FC = () => {
             ))}
             <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
               <Typography variant="h6">
-                Valor Total: R$ {budget.totalValue}
+                Valor Total: R$ {budget.totalValue.toFixed(2)}
               </Typography>
             </Box>
           </>
         )}
       </Paper>
 
+      {/* Datas e Observações */}
       <Paper sx={{ padding: 2, marginBottom: 2 }}>
         <Typography variant="h5" gutterBottom>
           Datas e Observações
@@ -218,9 +276,12 @@ const CreateBudget: React.FC = () => {
               label="Data de Entrega"
               type="date"
               fullWidth
+              required
+              value={budget.estimatedDate}
               onChange={(e) =>
                 setBudget({ ...budget, estimatedDate: e.target.value })
               }
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
           <Grid item xs={6}>
@@ -228,9 +289,12 @@ const CreateBudget: React.FC = () => {
               label="Data de Validade"
               type="date"
               fullWidth
+              required
+              value={budget.maxDealDate}
               onChange={(e) =>
                 setBudget({ ...budget, maxDealDate: e.target.value })
               }
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
         </Grid>
@@ -238,21 +302,25 @@ const CreateBudget: React.FC = () => {
           label="Garantia"
           fullWidth
           margin="normal"
+          required
           onChange={(e) => setBudget({ ...budget, guarantee: e.target.value })}
         />
         <TextField
           label="Imposto"
           fullWidth
           margin="normal"
+          required
           defaultValue="NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS"
           onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
         />
       </Paper>
 
+      {/* Botão Salvar */}
       <Button
         variant="contained"
         sx={{ mt: 2 }}
-        onClick={() => console.log(budget)}
+        onClick={() => handleAddBudget(budget)}
+        disabled={!isBudgetValid}
       >
         Salvar
       </Button>

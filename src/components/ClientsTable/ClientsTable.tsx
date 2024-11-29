@@ -10,7 +10,7 @@ const columns: GridColDef[] = [
   { field: "id", headerName: "ID", width: 200, sortable: true, filterable: true },
   { field: "name", headerName: "Nome", width: 220, sortable: true, filterable: true, editable: true },
   { field: "email", headerName: "Email", width: 400, sortable: true, filterable: true, editable: true },
-  { field: "celular", headerName: "Celular", width: 200, sortable: true, filterable: true },
+  { field: "mobilePhone", headerName: "Celular", width: 200, sortable: true, filterable: true },
   { field: "phone", headerName: "Telefone", width: 200, sortable: true, filterable: true },
   { field: "address", headerName: "Endereço", width: 200, sortable: true, filterable: true },
 ];
@@ -21,7 +21,7 @@ export const ClientsTable:FC<DataTableProps> = (props) => {
       <DataGrid
         rows={props.rows}
         columns={columns}
-        style={{ fontSize: "20px" }}
+        style={{ fontSize: "20px", backgroundColor: "white" }}
         initialState={{
           pagination: {
             paginationModel: { page: 0, pageSize: 10 },
