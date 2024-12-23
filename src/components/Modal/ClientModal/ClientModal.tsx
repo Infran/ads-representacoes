@@ -55,6 +55,7 @@ const ClientModal: React.FC<ClientModalProps> = ({ open, handleClose }) => {
       handleClose();
       setClient({} as IClient);
       setError(null);
+      window.location.reload();
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
       setError("Ocorreu um erro ao adicionar o cliente. Tente novamente.");
@@ -102,7 +103,6 @@ const ClientModal: React.FC<ClientModalProps> = ({ open, handleClose }) => {
             variant="outlined"
             value={client.phone || ""}
             onChange={handleChange}
-            
           />
           <TextField
             id="mobilePhone"
@@ -140,7 +140,10 @@ const ClientModal: React.FC<ClientModalProps> = ({ open, handleClose }) => {
             </Button>
             <Button
               variant="contained"
-              onClick={handleAddClient}
+              onClick={()=> {
+                handleAddClient();
+                
+              }}
               disabled={!isFormValid}
             >
               Adicionar

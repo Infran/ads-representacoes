@@ -95,7 +95,7 @@ const Products = () => {
 
   return (
     <>
-      <Box display="flex" flexDirection="column" gap={2} sx={{ padding: 2, width:"94vw" }}>
+      <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Produtos"
           description="Utilize esta seção para Adicionar, Editar ou Excluir um Produto."

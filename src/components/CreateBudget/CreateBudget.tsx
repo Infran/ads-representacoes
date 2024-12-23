@@ -55,6 +55,13 @@ const CreateBudget: React.FC = () => {
     }
   };
 
+  const moneyFormatter = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  }
+
   // Atualizar lista de clientes ao pesquisar
   useEffect(() => {
     if (debouncedClientSearchTerm) {
@@ -105,6 +112,8 @@ const CreateBudget: React.FC = () => {
     );
   };
 
+  
+
   const isBudgetValid = Boolean(
     budget.client &&
       selectedProducts.length > 0 &&
@@ -129,7 +138,7 @@ const CreateBudget: React.FC = () => {
             getOptionLabel={(option) => option.name}
             noOptionsText="Pesquise um cliente cadastrado."
             inputValue={clientSearchTerm}
-            onInputChange={(e, value) => setClientSearchTerm(value)}
+            onInputChange={(_e, value) => setClientSearchTerm(value)}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -138,7 +147,7 @@ const CreateBudget: React.FC = () => {
                 onChange={(e) => setClientSearchTerm(e.target.value)}
               />
             )}
-            onChange={(event, value) =>
+            onChange={(_event, value) =>
               setBudget({ ...budget, client: value || ({} as IClient) })
             }
             sx={{ flexGrow: 1 }}
@@ -191,7 +200,7 @@ const CreateBudget: React.FC = () => {
             getOptionLabel={(option) => option.name}
             noOptionsText="Pesquise um produto cadastrado."
             inputValue={productSearchTerm}
-            onInputChange={(e, value) => setProductSearchTerm(value)}
+            onInputChange={(_e, value) => setProductSearchTerm(value)}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -200,7 +209,7 @@ const CreateBudget: React.FC = () => {
                 onChange={(e) => setProductSearchTerm(e.target.value)}
               />
             )}
-            onChange={(event, value) => value && handleAddProduct(value)}
+            onChange={(_event, value) => value && handleAddProduct(value)}
             sx={{ flexGrow: 1 }}
           />
           <Button
@@ -229,7 +238,7 @@ const CreateBudget: React.FC = () => {
                     {product.product.name}
                   </Typography>
                   <Typography variant="body2">
-                    Valor Unitário: R$ {product.product.unitValue}
+                    Valor Unitário: {moneyFormatter(product.product.unitValue)}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">
@@ -258,7 +267,7 @@ const CreateBudget: React.FC = () => {
             ))}
             <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
               <Typography variant="h6">
-                Valor Total: R$ {budget.totalValue.toFixed(2)}
+                Valor Total: {moneyFormatter(budget.totalValue)}
               </Typography>
             </Box>
           </>
@@ -268,13 +277,14 @@ const CreateBudget: React.FC = () => {
       {/* Datas e Observações */}
       <Paper sx={{ padding: 2, marginBottom: 2 }}>
         <Typography variant="h5" gutterBottom>
-          Datas e Observações
+          Prazos e Observações
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={6}>
             <TextField
-              label="Data de Entrega"
-              type="date"
+              label="Prazo para Entrega"
+              type="text"
+              placeholder="EX.: Á COMBINAR / 20 DIAS"
               fullWidth
               required
               value={budget.estimatedDate}
@@ -286,10 +296,11 @@ const CreateBudget: React.FC = () => {
           </Grid>
           <Grid item xs={6}>
             <TextField
-              label="Data de Validade"
-              type="date"
+              label="Validade da Proposta"
+              type="text"
               fullWidth
               required
+              placeholder="Ex.: 28 DDL"
               value={budget.maxDealDate}
               onChange={(e) =>
                 setBudget({ ...budget, maxDealDate: e.target.value })

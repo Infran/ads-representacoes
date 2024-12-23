@@ -10,3 +10,7 @@ export interface IProduct {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+
+
+  

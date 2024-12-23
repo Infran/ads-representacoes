@@ -40,7 +40,7 @@ const Clients = () => {
   
   return (
     <>
-      <Box display="flex" flexDirection="column" gap={2} sx={{ width: "94vw", padding: 2 }}>
+      <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Clientes"
           description="Utilize esta seção para Adicionar, Editar ou Excluir um Cliente."
@@ -78,7 +78,8 @@ const Clients = () => {
             </Box>
           </Box>
         </StyledPaper>
-        <ClientsTable rows={clientList} />
+        <ClientsTable rows={clientList}
+         />
       </Box>
 
       <ClientModal

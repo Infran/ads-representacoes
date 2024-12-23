@@ -10,6 +10,28 @@ import ProtectedRoutes from "./utils/ProtectedRoutes";
 import { useContext } from "react";
 import CreateBudget from "./components/CreateBudget/CreateBudget";
 
+// const budget: IBudget = {
+//   id: 1,
+//   client: {
+//     name: "Hiago Gabriel Oliveira Pinto",
+//     email: "hiago@email.com",
+//     phone: "(11) 4991-6085",
+//     mobilePhone: "(11) 99999-9999",
+//     address: "ADIMIX IND.COM.ADITIVOS PARA PANIFICACAO LTDA RUA GIL TEIXEIRA LINO,140 - PQ. INDUSTRIAL II",
+//   },
+//   products: [
+//     {quantity: 1, product: {id: 2, name: "CONJUNTO DE DRENAGEM MONTADO COM PURGADOR DE BOIA 1\"", description: "CONJUNTO DE DRENAGEM MONTADO COM PURGADOR DE BOIA 1\"", ncm: "123456", icms: "12%", unitValue: 23100.00}},
+//     {quantity: 1, product: {id: 3, name: "CONJUNTO DE DRENAGEM MONTADO COM PURGADOR DE BOIA 1\"", description: "CONJUNTO DE DRENAGEM MONTADO COM PURGADOR DE BOIA 1\"", ncm: "123456", icms: "12%", unitValue: 100.00}},
+//   ], 
+//   estimatedDate: "25/06/2024",
+//   maxDealDate: "28 DDL",
+//   guarantee: "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO",
+//   tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
+//   totalValue: 80000.00,
+//   createdAt: new Date("2024-06-25"),
+//   updatedAt: new Date()
+// };
+
 const AppRouter = () => {
   const { currentUser: user } = useContext(AuthContext)
   if (!user) {

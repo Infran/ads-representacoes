@@ -8,6 +8,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { IBudget } from "../interfaces/ibudget";
 
 export const getNextBudgetId = async () => {
   const docRef = doc(db, "meta", "lastBudgetId");
@@ -27,7 +28,7 @@ export const getNextBudgetId = async () => {
 export const fetchBudgets = async () => {
   const budgetsCollection = collection(db, "budgets");
   const budgetsSnapshot = await getDocs(budgetsCollection);
-  return budgetsSnapshot.docs.map((doc) => doc.data());
+  return budgetsSnapshot.docs.map((doc) => doc.data() as IBudget);
 };
 
 export const addBudget = async (budget) => {
@@ -38,7 +39,7 @@ export const addBudget = async (budget) => {
   return docRef.id;
 };
 
-export const getBudget = async (budgetId) => {
+export const getBudgetById = async (budgetId) => {
   const docRef = doc(db, "budgets", budgetId);
   const docSnap = await getDoc(docRef);
   return docSnap.data();

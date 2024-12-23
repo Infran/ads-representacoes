@@ -4,13 +4,29 @@ import Box from "@mui/material/Box";
 
 export default function DefaultLayout() {
   return (
-    <>
-      <Box  sx={{ display: "flex", paddingTop:8, minHeight:"720px", maxWidth:"1280px" }}>
-        <Sidebar />
-        <Box component="main" sx={{ flexGrow: 1, p: 3, width:"100%" }}>
-          <Outlet />
-        </Box>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh", // Garante que o layout ocupe toda a altura da tela
+        maxWidth: "100%",  // Garante largura completa
+      }}
+    >
+      <Sidebar />
+      <Box
+        component="main"
+        sx={{
+          width: "100%", // Ocupa toda a largura disponível
+          display: "flex",
+          overflow: "auto", // Adiciona barra de rolagem quando necessário
+          flexDirection: "column", // Componentes internos em coluna
+          alignItems: "stretch", // Garante que ocupem largura total
+          backgroundColor: "#f9f9f9", // Fundo para destacar o conteúdo
+          marginTop: 8, // Espaçamento superior
+          padding: 2, // Espaçamento interno
+        }}
+      >
+        <Outlet />
       </Box>
-    </>
+    </Box>
   );
 }

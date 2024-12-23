@@ -5,6 +5,8 @@ import {
   setDoc,
   addDoc,
   getDoc,
+  limit,
+  query,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -16,11 +18,17 @@ export const fetchClients = async () => {
 
 export const searchClients = async (searchTerm) => {
   const clientsCollection = collection(db, "clients");
-  const clientsSnapshot = await getDocs(clientsCollection);
+  const clientsQuery = query(
+    clientsCollection,
+    limit(10)
+  );
+
+  const clientsSnapshot = await getDocs(clientsQuery);
   const clients = clientsSnapshot.docs.map((doc) => doc.data());
-  return clients.filter((client) =>
+  const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  return filteredClients;
 };
 
 export const getNextClientId = async () => {

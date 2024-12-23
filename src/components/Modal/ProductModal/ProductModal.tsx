@@ -54,12 +54,19 @@ const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
     if (name === "quantity" && isNaN(Number(value))) return;
 
     if (name === "unitValue") {
-      setMaskedUnitValue(brMoneyMask(value));
-      setProduct((prevProduct) => ({
-        ...prevProduct,
-        unitValue: parseFloat(value.replace(",", ".").replace(/\./g, "")),
-      }));
-    } else {
+      setMaskedUnitValue(brMoneyMask(value)); // Formata a máscara no valor exibido
+      setProduct((prevProduct) => {
+        const cleanedValue = value
+          .replace(/\./g, "") // Remove os pontos (separadores de milhar)
+          .replace(",", "."); // Substitui a vírgula decimal por ponto
+    
+        return {
+          ...prevProduct,
+          unitValue: parseFloat(cleanedValue), // Converte corretamente para float
+        };
+      });
+    }
+     else {
       setProduct({ ...product, [name]: value });
     }
   };
@@ -95,6 +102,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
       handleClose();
       setProduct({} as IProduct);
       setError(null);
+      window.location.reload();
     } catch (error) {
       console.error("Erro ao adicionar produto:", error);
       setError("Ocorreu um erro ao adicionar o produto. Tente novamente.");
@@ -162,7 +170,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
               <TextField
                 id="quantity"
                 name="quantity"
-                label="Quantidade"
+                label="Quantidade em Estoque"
                 variant="outlined"
                 fullWidth
                 value={product.quantity || ""}
