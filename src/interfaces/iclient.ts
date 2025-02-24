@@ -1,13 +1,15 @@
+import { Timestamp } from "firebase/firestore";
+
 export interface IClient {
-  id?: number;
-  name?: string;
+  id: string
+  name: string;
   email?: string;
-  mobile?: string;
   phone?: string;
-  mobilePhone?: string;
+  cnpj?: string;
+  cep: string;
   address?: string;
   city?: string;
   state?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }

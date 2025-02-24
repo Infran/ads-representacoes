@@ -216,12 +216,12 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
           </div>
           <div style={styles.clientInfoContainer}>
             <div style={styles.clientInfoContainerGrid}>
-              <Text>Att.: {budget.client.name.toLocaleUpperCase()}</Text>
-              <Text>Cel.: {budget.client.mobilePhone}</Text>
+              <Text>Att.: {budget.representative.name.toLocaleUpperCase()}</Text>
+              <Text>Depto.: {budget.representative.role}</Text>
             </div>
             <div style={styles.clientInfoContainerGrid}>
-              <Text>Fone: {budget.client.phone}</Text>
-              <Text>E-mail: {budget.client.email}</Text>
+              <Text>Fone: {budget.representative.phone}</Text>
+              <Text>E-mail: {budget.representative.email}</Text>
             </div>
             {/*live divider */}
           </div>
@@ -233,7 +233,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
             <Text>Orçamento num.: {budget.id}</Text>
           </div>
           <div style={styles.budgetInfoContainer}>
-            <Text>Prezado(a) {getClientFirstName(budget.client.name)},</Text>
+            <Text>Prezado(a) {getClientFirstName(budget.representative.name)},</Text>
             <Text>
               Conforme solicitação, estamos enviando orçamento para fornecimento
               dos ítens abaixo relacionados:
@@ -249,11 +249,12 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
               <Text style={styles.tableContentSmallSpacing}>Valor Total</Text>
             </div>
             <div style={styles.tableContentContainer}>
-              {budget.products.map((product, index) => (
+              {budget.selectedProducts.map((product, index) => (
                 <div style={styles.tableContent}>
                   <Text style={styles.tableContentSmallSpacing}>{index + 1}</Text>
                   <Text style={styles.tableContentLargeSpacing}>
-                    {product.product.name}
+                    {product.product.name} {/*  break line */} {"\n"}
+                    NCM: {product.product.ncm}
                   </Text>
                   <Text style={styles.tableContentSmallSpacing}>{product.quantity}</Text>
                   <Text style={styles.tableContentSmallSpacing}>{getFormattedMoney(product.product.unitValue)}</Text>
@@ -286,15 +287,12 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
               <Text style={{ marginTop: "10px" }}>Impostos:</Text>
             </div>
             <div style={styles.budgetFooterInfo}>
-              <Text>CIF</Text>
-              <Text>28 DDL </Text>
+              <Text>{budget.shippingTerms}</Text>
+              <Text>{budget.paymentTerms}</Text>
               <Text>À COMBINAR</Text>
-              <Text>15 DIAS UTEIS</Text>
-              <Text>
-                06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA /
-                12 MESES DA INSTALAÇÃO P/ PRODUTO
-              </Text>
-              <Text>NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS</Text>
+              <Text>{budget.maxDealDate}</Text>
+              <Text>{budget.guarantee}</Text>
+              <Text>{budget.tax}</Text>
             </div>
           </div>
           <Text style={styles.budgetFooterInfo}> Atenciosamente </Text>

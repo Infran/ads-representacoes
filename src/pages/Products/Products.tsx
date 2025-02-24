@@ -1,97 +1,56 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Paper, TextField } from '@mui/material';
-import { styled } from '@mui/system';
+import { Box, CircularProgress} from '@mui/material';
 import PageHeader from './../../components/PageHeader/PageHeader';
-import { ProductTable } from '../../components/ProductTable/ProductTable';
+import { ProductTable } from '../../components/Tables/ProductTable/ProductTable';
 import ProductModal from '../../components/Modal/ProductModal/ProductModal';
-import { Search, AddCircle, Storefront } from '@mui/icons-material';
-import { useTheme, useMediaQuery } from '@mui/material';
+import {Storefront } from '@mui/icons-material';
 import { IProduct } from '../../interfaces/iproduct';
-import { fetchProducts } from '../../services/productServices';
-
-const StyledPaper = styled(Paper)({
-  padding: 16,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-});
-
-const ButtonGroup = styled(Box)({
-  display: 'flex',
-  gap: 16,
-});
+import { getProducts } from '../../services/productServices';
+import SearchBar from '../../components/SearchBar/SearchBar';
 
 const Products = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [productList, setProductList] = useState<IProduct[]>([]);
-
-  // const produtos: IProduct[] = [
-  //   {
-  //     id: 1,
-  //     name: "Produto A",
-  //     description: "Este é o primeiro produto",
-  //     ncm: "12345678",
-  //     icms: "18%",
-  //     quantity: 5,
-  //     unitValue: 25.50,
-  //     total: 127.50
-  //   },
-  //   {
-  //     id: 2,
-  //     name: "Produto B",
-  //     description: "Este é o segundo produto",
-  //     ncm: "87654321",
-  //     icms: "12%",
-  //     quantity: 8,
-  //     unitValue: 35.75,
-  //     total: 286.00
-  //   },
-  //   {
-  //     id: 3,
-  //     name: "Produto C",
-  //     description: "Este é o terceiro produto",
-  //     ncm: "54321678",
-  //     icms: "15%",
-  //     quantity: 3,
-  //     unitValue: 42.90,
-  //     total: 128.70
-  //   },
-  //   {
-  //     id: 4,
-  //     name: "Produto D",
-  //     description: "Este é o quarto produto",
-  //     ncm: "98765432",
-  //     icms: "10%",
-  //     quantity: 10,
-  //     unitValue: 19.99,
-  //     total: 199.90
-  //   },
-  //   {
-  //     id: 5,
-  //     name: "Produto E",
-  //     description: "Este é o quinto produto",
-  //     ncm: "13579246",
-  //     icms: "20%",
-  //     quantity: 2,
-  //     unitValue: 55.00,
-  //     total: 110.00
-  //   }
-  // ];
-
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const [productsList, setProductsList] = useState<IProduct[]>([]);
+  const [filteredProductsList, setFilteredProductsList] = useState<IProduct[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
 
+  const handleEdit = (id: string) => {
+    console.log('Editando produto com ID:', id);
+  };
+
+  const handleDelete = (id: string) => {
+    console.log('Excluindo produto com ID:', id);
+  };
+
+  const handleSearch = () => {
+    const filtered = productsList.filter((product) => {
+      return (
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.unitValue.toString().includes(searchTerm)
+      );
+    });
+    setFilteredProductsList(filtered);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      const products = await fetchProducts();
-      setProductList(products);
-    };
-    fetchData();
-    console.log('Produtos:', productList);
-  }, []);
+      const fetchData = async () => {
+        try {
+          const products = await getProducts();
+          setProductsList(products);
+          setFilteredProductsList(products);
+        } catch (error) {
+          console.error('Erro ao buscar clientes:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }, []);
 
   return (
     <>
@@ -101,39 +60,21 @@ const Products = () => {
           description="Utilize esta seção para Adicionar, Editar ou Excluir um Produto."
           icon={Storefront}
         />
-        <StyledPaper>
-          <Box
-            display="flex"
-            flexDirection={isSmallScreen ? 'column' : 'row'}
-            gap={2}
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <ButtonGroup>
-              <Button variant="contained" type="submit">
-                <Box display="flex" gap={0.5}>
-                  Pesquisar
-                  <Search />
-                </Box>
-              </Button>
-              <Button variant="contained" onClick={handleOpen}>
-                <Box display="flex" gap={0.5}>
-                  Adicionar
-                  <AddCircle />
-                </Box>
-              </Button>
-            </ButtonGroup>
-            <Box flex={1}>
-              <TextField
-                label="Digite o nome do produto"
-                variant="outlined"
-                size="small"
-                fullWidth
-              />
-            </Box>
-          </Box>
-        </StyledPaper>
-        <ProductTable rows={productList} />
+       <SearchBar
+       search={searchTerm}
+       onSearchChange={(e) => setSearchTerm(e.target.value)}
+       onSearch={handleSearch}
+       onAdd={handleOpen}
+       inputLabel='Digite o nome do produto'
+       />
+       {loading ? (
+                 <Box display="flex" justifyContent="center" alignItems="center" height={200}>
+                   {/* loading spinner */}
+                   Carregando... <CircularProgress />
+                 </Box>
+               ) : (
+        <ProductTable rows={filteredProductsList} onEdit={handleEdit} onDelete={handleDelete} />
+        )}
       </Box>
 
       <ProductModal

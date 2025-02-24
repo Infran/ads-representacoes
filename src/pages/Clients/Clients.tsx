@@ -1,43 +1,57 @@
-import { Box, Button, Paper, TextField, useMediaQuery, useTheme } from '@mui/material';
-import { styled } from '@mui/system';
+import { Box, CircularProgress } from '@mui/material';
 import PageHeader from './../../components/PageHeader/PageHeader';
-import { Search, PersonAdd } from '@mui/icons-material';
+import { PersonAdd } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
-import { fetchClients } from '../../services/clientServices';
+import { getClients } from '../../services/clientServices';
 import { IClient } from '../../interfaces/iclient';
-import { ClientsTable } from '../../components/ClientsTable/ClientsTable';
+import { ClientsTable } from '../../components/Tables/ClientsTable/ClientsTable';
 import ClientModal from '../../components/Modal/ClientModal/ClientModal';
-
-const StyledPaper = styled(Paper)({
-  padding: 16,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-});
-
-const ButtonGroup = styled(Box)({
-  display: 'flex',
-  gap: 16,
-});
+import SearchBar from '../../components/SearchBar/SearchBar';
 
 const Clients = () => {
   const [openModal, setOpenModal] = useState(false);
   const [clientList, setClientList] = useState<IClient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredClients, setFilteredClients] = useState<IClient[]>([]);
 
-  const isSmallScreen = useMediaQuery(useTheme().breakpoints.down('sm'));
+  const handleSearch = () => {
+    const filtered = clientList.filter((client) => {
+      return (
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.address?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }) 
+    setFilteredClients(filtered);
+  };
 
-  const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      const clients = await fetchClients();
-      setClientList(clients);
+      try {
+        const clients = await getClients();
+        setClientList(clients);
+        setFilteredClients(clients);
+      } catch (error) {
+        console.error('Erro ao buscar clientes:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
-    console.log('Clientes:', clientList);
   }, []);
-  
+
+  const onEdit = (id: string) => {
+    console.log('Editar cliente:', id);
+  };
+
+  const onDelete = (id: string) => {
+    console.log('Deletar cliente:', id);
+  };
+
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
@@ -46,46 +60,23 @@ const Clients = () => {
           description="Utilize esta seção para Adicionar, Editar ou Excluir um Cliente."
           icon={PersonAdd}
         />
-        <StyledPaper>
-          <Box
-            display="flex"
-            flexDirection={isSmallScreen ? 'column' : 'row'}
-            gap={2}
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <ButtonGroup>
-              <Button variant="contained" type="submit">
-                <Box display="flex" gap={0.5}>
-                  Pesquisar
-                  <Search />
-                </Box>
-              </Button>
-              <Button variant="contained" onClick={handleOpen}>
-                <Box display="flex" gap={0.5}>
-                  Adicionar
-                  <PersonAdd />
-                </Box>
-              </Button>
-            </ButtonGroup>
-            <Box flex={1}>
-              <TextField
-                label="Digite o nome do cliente"
-                variant="outlined"
-                size="small"
-                fullWidth
-              />
-            </Box>
+        <SearchBar
+            search={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            onSearch={handleSearch}
+            onAdd={() => setOpenModal(true)}
+            inputLabel="Digite o nome do cliente"
+            />
+        {loading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" height={200}>
+            {/* loading spinner */}
+            Carregando... <CircularProgress />
           </Box>
-        </StyledPaper>
-        <ClientsTable rows={clientList}
-         />
+        ) : (
+          <ClientsTable rows={filteredClients} onEdit={onEdit} onDelete={onDelete} />
+        )}
       </Box>
-
-      <ClientModal
-        open={openModal}
-        handleClose={handleClose}
-      />
+      <ClientModal open={openModal} handleClose={handleClose} />
     </>
   );
 };

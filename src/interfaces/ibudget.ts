@@ -1,15 +1,20 @@
-import { ISelectedProduct } from '../components/CreateBudget/CreateBudget';
+import { ISelectedProducts } from '../components/CreateBudget/CreateBudget';
+import { Timestamp } from 'firebase/firestore';
 import { IClient } from './iclient';
+import { IRepresentative } from './irepresentative';
 
 export interface IBudget {
-  id: number;
+  id: string;
   client: IClient;
-  products: ISelectedProduct[];
+  representative: IRepresentative;
+  selectedProducts: ISelectedProducts[];
   estimatedDate: string;
   maxDealDate: string;
   guarantee: string;
   tax?: string;
+  shippingTerms: string;
+  paymentTerms: string;
   totalValue: number;
-  createdAt: Date
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }

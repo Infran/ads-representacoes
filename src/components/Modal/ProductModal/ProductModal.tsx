@@ -13,6 +13,7 @@ import { styled } from "@mui/system";
 import { IProduct } from "../../../interfaces/iproduct";
 import { addProduct } from "../../../services/productServices";
 import ncmData from "../../../tabela_ncm.json";
+import { brMoneyMask } from "../../../utils/Masks";
 
 const modalStyle = {
   position: "absolute",
@@ -37,38 +38,38 @@ interface ProductModalProps {
   handleClose: () => void;
 }
 
-const brMoneyMask = (value: string) => {
-  return value
-    .replace(/\D/g, "")
-    .replace(/(\d{1,})(\d{2})$/, "$1,$2")
-    .replace(/(?=(\d{3})+(\D))\B/g, ".");
-};
-
 const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
   const [product, setProduct] = useState<IProduct>({} as IProduct);
   const [error, setError] = useState<string | null>(null);
   const [maskedUnitValue, setMaskedUnitValue] = useState<string>("");
+
+  const handleGenericChange = (name: string, value: string) => {
+    setProduct((prevProduct) => ({ ...prevProduct, [name]: value }));
+  };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     if (name === "quantity" && isNaN(Number(value))) return;
 
     if (name === "unitValue") {
-      setMaskedUnitValue(brMoneyMask(value)); // Formata a máscara no valor exibido
-      setProduct((prevProduct) => {
-        const cleanedValue = value
-          .replace(/\./g, "") // Remove os pontos (separadores de milhar)
-          .replace(",", "."); // Substitui a vírgula decimal por ponto
-    
-        return {
-          ...prevProduct,
-          unitValue: parseFloat(cleanedValue), // Converte corretamente para float
-        };
-      });
+      handleUnitValueChange(value);
+    } else {
+      handleGenericChange(name, value);
     }
-     else {
-      setProduct({ ...product, [name]: value });
-    }
+  };
+
+  const handleUnitValueChange = (value: string) => {
+    setMaskedUnitValue(brMoneyMask(value)); // Formata a máscara no valor exibido
+    setProduct((prevProduct) => {
+      const cleanedValue = value
+        .replace(/\./g, "") // Remove os pontos (separadores de milhar)
+        .replace(",", "."); // Substitui a vírgula decimal por ponto
+
+      return {
+        ...prevProduct,
+        unitValue: parseFloat(cleanedValue), // Converte corretamente para float
+      };
+    });
   };
 
   const handleNcmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,7 +147,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
                 label="ICMS"
                 variant="outlined"
                 fullWidth
-                value={product.icms || "18"}
+                value={product.icms || ""}
                 onChange={handleChange}
                 InputProps={{
                   endAdornment: (

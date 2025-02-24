@@ -11,7 +11,6 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import MenuIcon from "@mui/icons-material/Menu";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -20,7 +19,7 @@ import ListItemText from "@mui/material/ListItemText";
 import LogoutIcon from '@mui/icons-material/Logout';
 
 import { useNavigate } from "react-router-dom";
-import { Home as HomeIcon, NoteAdd, Person } from "@mui/icons-material";
+import { Apartment, Groups, Home as HomeIcon, NoteAdd, Widgets } from "@mui/icons-material";
 import { useAuth } from "../../context/ContextAuth";
 import { Avatar } from "@mui/material";
 import { deepOrange } from "@mui/material/colors";
@@ -208,7 +207,7 @@ export default function Sidebar() {
                   justifyContent: "center",
                 }}
               >
-                <Person />
+                <Apartment />
               </ListItemIcon>
               <ListItemText
                 primary="Clientes"
@@ -216,6 +215,36 @@ export default function Sidebar() {
               />
             </ListItemButton>
           </ListItem>
+          <ListItem
+            disablePadding
+            sx={{ display: "block" }}
+            onClick={() => {
+              navigate("/Representantes");
+            }}
+          >
+            <ListItemButton
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? "initial" : "center",
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : "auto",
+                  justifyContent: "center",
+                }}
+              >
+                <Groups />
+              </ListItemIcon>
+              <ListItemText
+                primary="Representantes"
+                sx={{ opacity: open ? 1 : 0 }}
+              />
+            </ListItemButton>
+          </ListItem>
+          <Divider />
           <ListItem
             disablePadding
             sx={{ display: "block" }}
@@ -237,7 +266,7 @@ export default function Sidebar() {
                   justifyContent: "center",
                 }}
               >
-                <LocalShippingIcon />
+                < Widgets/>
               </ListItemIcon>
               <ListItemText
                 primary="Produtos"
@@ -274,6 +303,7 @@ export default function Sidebar() {
               />
             </ListItemButton>
           </ListItem>
+          <Divider />
         </List>
         <Divider />
         {/* Drawer footer with logout button */}

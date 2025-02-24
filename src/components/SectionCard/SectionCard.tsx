@@ -17,12 +17,13 @@ const SectionCard: FC<SectionCardProps> = ({ title, link }) => {
 
   return (
     <Box
-      width={300}
       sx={{
+        width: "100%",
+        maxWidth: 300, // Limita a largura máxima do card
         transition: "box-shadow 0.3s ease, transform 0.3s ease",
         "&:hover": {
-          boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.12)",
-          transform: "translateY(-3px)",
+          boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.15)", // Sombra mais pronunciada no hover
+          transform: "translateY(-5px)", // Efeito de levantar mais perceptível
         },
       }}
     >
@@ -30,13 +31,13 @@ const SectionCard: FC<SectionCardProps> = ({ title, link }) => {
         elevation={0}
         sx={{
           backgroundColor: "#ffffff",
-          border: "1px solid #E0E0E0", // Linha bem fina para separar os elementos
-          borderRadius: "4px",
+          border: "1px solid #E0E0E0",
+          borderRadius: "8px", // Bordas mais arredondadas
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          height: 150,
-          padding: 2,
+          height: 180, // Altura um pouco maior para melhor proporção
+          overflow: "hidden", // Garante que nada ultrapasse os limites do card
         }}
       >
         <CardContent
@@ -48,13 +49,18 @@ const SectionCard: FC<SectionCardProps> = ({ title, link }) => {
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
+            padding: 3, // Mais espaço interno
+            "&:hover": {
+              backgroundColor: "#F5F5F5", // Fundo mais claro no hover
+            },
           }}
         >
           <Typography
             variant="h6"
             sx={{
-              fontWeight: "500",
-              color: "#2C3E50", // Azul escuro elegante
+              fontWeight: "600", // Fonte um pouco mais grossa
+              color: "#2C3E50",
+              fontSize: "1.25rem", // Tamanho de fonte um pouco maior
             }}
           >
             {title}
@@ -64,6 +70,9 @@ const SectionCard: FC<SectionCardProps> = ({ title, link }) => {
           sx={{
             display: "flex",
             justifyContent: "flex-end",
+            padding: 2, // Espaçamento interno
+            backgroundColor: "#F9F9F9", // Fundo mais claro para a área do botão
+            borderTop: "1px solid #E0E0E0", // Linha sutil para separar
           }}
         >
           <Button
@@ -74,8 +83,10 @@ const SectionCard: FC<SectionCardProps> = ({ title, link }) => {
               textTransform: "uppercase",
               fontWeight: "bold",
               fontSize: "0.8rem",
+              padding: "6px 12px", // Padding mais confortável
               "&:hover": {
-                color: "#1565C0", // Azul escuro no hover
+                backgroundColor: "rgba(25, 118, 210, 0.08)", // Fundo sutil no hover
+                color: "#1565C0",
               },
             }}
           >

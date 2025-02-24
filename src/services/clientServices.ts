@@ -3,53 +3,88 @@ import {
   doc,
   getDocs,
   setDoc,
-  addDoc,
   getDoc,
   limit,
   query,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { IClient } from "../interfaces/iclient";
 
-export const fetchClients = async () => {
+// Tipando a função de buscar clientes
+export const getClients = async (): Promise<IClient[]> => {
   const clientsCollection = collection(db, "clients");
   const clientsSnapshot = await getDocs(clientsCollection);
-  return clientsSnapshot.docs.map((doc) => doc.data());
+
+  return clientsSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as IClient[];
 };
 
-export const searchClients = async (searchTerm) => {
+// Função de busca de clientes com filtro
+export const searchClients = async (searchTerm: string) => {
   const clientsCollection = collection(db, "clients");
-  const clientsQuery = query(
-    clientsCollection,
-    limit(10)
-  );
+  const clientsQuery = query(clientsCollection, limit(10)); // Limita a 10 clientes
 
   const clientsSnapshot = await getDocs(clientsQuery);
-  const clients = clientsSnapshot.docs.map((doc) => doc.data());
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const clients: IClient[] = clientsSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as IClient[];
+
+  // Filtrando os clientes com base no termo de busca
+   const  filteredClients = clients.filter(
+    (client) =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (client.email &&
+        client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (client.phone &&
+        client.phone.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
   return filteredClients;
 };
 
-export const getNextClientId = async () => {
-  const docRef = doc(db, "meta", "lastClientId");
-  const docSnap = await getDoc(docRef);
+// Função para buscar um cliente pelo ID
+export const getClientById = async (id: string): Promise<IClient | null> => {
+  try {
+    const clientDoc = doc(db, "clients", id);
+    const clientSnap = await getDoc(clientDoc);
 
-  if (docSnap.exists()) {
-    const currentId = docSnap.data().id;
-    const nextId = currentId + 1;
-    await setDoc(docRef, { id: nextId });
-    return nextId;
-  } else {
-    await setDoc(docRef, { id: 1 });
-    return 1;
+    if (!clientSnap.exists()) {
+      console.log("Documento não encontrado");
+      return null; // Retorna null se o documento não existir
+    }
+
+    return { id: clientSnap.id, ...clientSnap.data() } as IClient;
+  } catch (error) {
+    console.error("Erro ao buscar cliente: ", error);
+    throw error; // Rejeita a promessa para que o chamador possa lidar com o erro
   }
 };
 
-export const addClient = async (client) => {
-  const id = await getNextClientId();
-  const newClient = { ...client, id };
-  const clientsCollection = collection(db, "clients");
-  const docRef = await addDoc(clientsCollection, newClient);
-  return docRef.id;
+// Função para obter o próximo ID de cliente
+export const getNextClientId = async (): Promise<number> => {
+  const docRef = doc(db, "meta", "lastClientId");
+  const docSnap = await getDoc(docRef);
+
+  const nextId = docSnap.exists() ? docSnap.data().id + 1 : 1;
+  await setDoc(docRef, { id: nextId });
+
+  return nextId;
+};
+
+// Função para adicionar um novo cliente
+export const addClient = async (client: IClient): Promise<void> => {
+  try {
+    const id = await getNextClientId();
+    const newClient = { ...client, id };
+
+    const docRef = doc(db, "clients", id.toString());
+    await setDoc(docRef, newClient);
+
+    console.log("Cliente adicionado com sucesso!");
+  } catch (error) {
+    console.error("Erro ao adicionar cliente: ", error);
+  }
 };

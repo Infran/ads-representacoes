@@ -1,14 +1,15 @@
+import { Timestamp } from "firebase/firestore";
+
 export interface IProduct {
-  id?: number;
+  id: string;
   name?: string;
   description?: string;
   ncm?: string;
   icms?: string;
   quantity?: number;
-  unitValue?: number;
-  total?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  unitValue?: number 
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 

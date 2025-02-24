@@ -23,23 +23,26 @@ import { searchProducts } from "../../services/productServices";
 import ClientModal from "../Modal/ClientModal/ClientModal";
 import ProductModal from "../Modal/ProductModal/ProductModal";
 import useDebounce from "../../hooks/useDebounce";
-import { addBudget } from "../../services/budgetServices";
+import { addBudget, getBudgetById, updateBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import RepresentativeModal from "../Modal/RepresentativeModal/RepresentativeModal";
+import { useLocation } from "react-router-dom";
 
 export interface ISelectedProducts {
   product: IProduct;
   quantity: number;
 }
 
-const CreateBudget: React.FC = () => {
+const EditBudget: React.FC = () => {
   const [budget, setBudget] = useState<IBudget>({
     tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
     guarantee: "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
   } as IBudget);
   const [openClientModal, setOpenClientModal] = useState(false);
   const [openProductModal, setOpenProductModal] = useState(false);
+  const location = useLocation();
+  const budgetId = location.pathname.split("/")[3];
   const [representativeList, setRepresentativeList] = useState<
     IRepresentative[]
   >([]);
@@ -58,10 +61,10 @@ const CreateBudget: React.FC = () => {
   const debouncedProductSearchTerm = useDebounce(productSearchTerm, 1000);
 
   // Adicionar orçamento
-  const handleAddBudget = (budget: IBudget) => {
+  const handleUpdateBudget = async () => {
     try {
-      addBudget(budget);
-      alert("Orçamento cadastrado com sucesso!");
+      updateBudget(budgetId, budget);
+      alert("Orçamento Atualizado com sucesso!");
     } catch (error) {
       alert("Erro ao cadastrar orçamento.");
       console.error(error);
@@ -154,8 +157,13 @@ const CreateBudget: React.FC = () => {
   );
 
   useEffect(() => {
-    console.log(budget);
-  }, [budget]);
+    if (budgetId) {
+      getBudgetById(budgetId).then((budget) => {
+        setBudget(budget);
+        setSelectedProducts(budget.selectedProducts);
+      });
+    }
+  }, [budgetId]);
 
   return (
     <Container>
@@ -396,10 +404,10 @@ const CreateBudget: React.FC = () => {
       <Button
         variant="contained"
         sx={{ mt: 2 }}
-        onClick={() => handleAddBudget(budget)}
+        onClick={() => handleUpdateBudget(budget)}
         disabled={!budget || !isBudgetValid}
       >
-        Salvar
+        Salvar Edição
       </Button>
 
       <ClientModal
@@ -420,4 +428,4 @@ const CreateBudget: React.FC = () => {
   );
 };
 
-export default CreateBudget;
+export default EditBudget;

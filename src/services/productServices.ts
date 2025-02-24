@@ -5,8 +5,10 @@ import {
   setDoc,
   addDoc,
   getDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { IProduct } from "../interfaces/iproduct";
 
 export const getNextProductId = async () => {
   const docRef = doc(db, "meta", "lastProductId");
@@ -33,16 +35,30 @@ export const searchProducts = async (searchTerm) => {
   );
 };
 
-export const fetchProducts = async () => {
+export const getProducts = async (): Promise<IProduct[]> => {
   const productsCollection = collection(db, "products");
   const productsSnapshot = await getDocs(productsCollection);
-  return productsSnapshot.docs.map((doc) => doc.data());
+  return productsSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as IProduct[];
 };
 
 export const addProduct = async (product) => {
-  const id = await getNextProductId();
-  const newProduct = { ...product, id };
-  const productsCollection = collection(db, "products");
-  const docRef = await addDoc(productsCollection, newProduct);
-  return docRef.id;
+  try {
+    const id = await getNextProductId();
+    const createdAt = serverTimestamp();
+    const updatedAt = serverTimestamp();
+    
+    const newProduct = { ...product, id, createdAt, updatedAt };
+    const productsCollection = collection(db, "products");
+
+    const docRef = await addDoc(productsCollection, newProduct);
+    console.log("Produto adicionado com sucesso!");
+    
+    return docRef.id;
+  } catch (error) {
+    console.error("Erro ao adicionar produto: ", error);
+    throw error;
+  }
 };

@@ -32,7 +32,7 @@ export const Login = () => {
 
   return (
     <Container
-      maxWidth="100%"
+      maxWidth={false}
       sx={{
         height: "100vh",
         display: "flex",
