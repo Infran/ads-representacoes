@@ -23,7 +23,7 @@ import { searchProducts } from "../../services/productServices";
 import ClientModal from "../Modal/ClientModal/ClientModal";
 import ProductModal from "../Modal/ProductModal/ProductModal";
 import useDebounce from "../../hooks/useDebounce";
-import { addBudget, getBudgetById, updateBudget } from "../../services/budgetServices";
+import { getBudgetById, updateBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import RepresentativeModal from "../Modal/RepresentativeModal/RepresentativeModal";
@@ -404,7 +404,7 @@ const EditBudget: React.FC = () => {
       <Button
         variant="contained"
         sx={{ mt: 2 }}
-        onClick={() => handleUpdateBudget(budget)}
+        onClick={() => handleUpdateBudget()}
         disabled={!budget || !isBudgetValid}
       >
         Salvar Edição
