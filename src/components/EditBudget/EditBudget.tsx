@@ -20,13 +20,13 @@ import { IProduct } from "../../interfaces/iproduct";
 import { IBudget } from "../../interfaces/ibudget";
 import { IClient } from "../../interfaces/iclient";
 import { searchProducts } from "../../services/productServices";
-import ClientModal from "../Modal/ClientModal/ClientModal";
-import ProductModal from "../Modal/ProductModal/ProductModal";
+import ClientModal from "../Modal/Create/CreateClientModal/CreateClientModal";
+import ProductModal from "../Modal/Create/CreateProductModal/CreateProductModal";
 import useDebounce from "../../hooks/useDebounce";
 import { getBudgetById, updateBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
-import RepresentativeModal from "../Modal/RepresentativeModal/RepresentativeModal";
+import RepresentativeModal from "../Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
 import { useLocation } from "react-router-dom";
 
 export interface ISelectedProducts {

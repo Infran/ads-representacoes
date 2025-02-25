@@ -10,10 +10,10 @@ import {
   InputAdornment,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { IProduct } from "../../../interfaces/iproduct";
-import { addProduct } from "../../../services/productServices";
-import ncmData from "../../../tabela_ncm.json";
-import { brMoneyMask } from "../../../utils/Masks";
+import { IProduct } from "../../../../interfaces/iproduct";
+import { addProduct } from "../../../../services/productServices";
+import ncmData from "../../../../tabela_ncm.json";
+import { brMoneyMask } from "../../../../utils/Masks";
 
 const modalStyle = {
   position: "absolute",
@@ -33,12 +33,12 @@ const FormControlStyled = styled(FormControl)(({ theme }) => ({
   gap: theme.spacing(2),
 }));
 
-interface ProductModalProps {
+interface CreateProductModalProps {
   open: boolean;
   handleClose: () => void;
 }
 
-const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
+const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClose }) => {
   const [product, setProduct] = useState<IProduct>({} as IProduct);
   const [error, setError] = useState<string | null>(null);
   const [maskedUnitValue, setMaskedUnitValue] = useState<string>("");
@@ -229,4 +229,4 @@ const ProductModal: React.FC<ProductModalProps> = ({ open, handleClose }) => {
   );
 };
 
-export default ProductModal;
+export default CreateProductModal;

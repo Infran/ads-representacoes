@@ -198,8 +198,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
                 ADS Representações e Equipamentos
               </Text>
               <Text style={styles.subHeader} fixed>
-                Av. Tietê, 75 - Santo André - SP - CEP 09070-310 - Fone: (11)
-                4991-6085
+              R. Kitaro Ywasa, 269 - Mauá - SP - CEP 09390-670 - Fone: (11) 93007-0518
               </Text>
               <Text style={styles.subHeader} fixed>
                 vaportotal@uol.com.br
@@ -227,7 +226,11 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
           </div>
           <hr style={styles.divider} />
           <div style={styles.clientCompanyInfo}>
-            <Text>Ref.: ORÇAMENTO</Text>
+            {budget.reference && (
+              <Text>
+                Ref.: {budget.reference.toLocaleUpperCase()}
+              </Text>
+            )}
           </div>
           <div style={styles.budgetId}>
             <Text>Orçamento num.: {budget.id}</Text>

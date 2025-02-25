@@ -20,13 +20,13 @@ import { IProduct } from "../../interfaces/iproduct";
 import { IBudget } from "../../interfaces/ibudget";
 import { IClient } from "../../interfaces/iclient";
 import { searchProducts } from "../../services/productServices";
-import ClientModal from "../Modal/ClientModal/ClientModal";
-import ProductModal from "../Modal/ProductModal/ProductModal";
+import CreateClientModal from "../Modal/Create/CreateClientModal/CreateClientModal";
+import CreateProductModal from "../Modal/Create/CreateProductModal/CreateProductModal";
+import CreateRepresentativeModal from "../Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
 import useDebounce from "../../hooks/useDebounce";
 import { addBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
-import RepresentativeModal from "../Modal/RepresentativeModal/RepresentativeModal";
 
 export interface ISelectedProducts {
   product: IProduct;
@@ -390,6 +390,16 @@ const CreateBudget: React.FC = () => {
           value={budget.tax}
           onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
         />
+
+<TextField
+          label="Referência"
+          fullWidth
+          margin="normal"
+          required
+          value={budget.reference}
+          onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
+          placeholder="Orçamento / Proposta de fornecimento"
+        />
       </Paper>
 
       {/* Botão Salvar */}
@@ -402,17 +412,17 @@ const CreateBudget: React.FC = () => {
         Salvar
       </Button>
 
-      <ClientModal
+      <CreateClientModal
         open={openClientModal}
         handleClose={() => setOpenClientModal(false)}
       />
 
-      <RepresentativeModal
+      <CreateRepresentativeModal
         open={openClientModal}
         handleClose={() => setOpenClientModal(false)}
       />
 
-      <ProductModal
+      <CreateProductModal
         open={openProductModal}
         handleClose={() => setOpenProductModal(false)}
       />

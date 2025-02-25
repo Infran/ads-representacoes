@@ -15,6 +15,7 @@ export interface IBudget {
   shippingTerms: string;
   paymentTerms: string;
   totalValue: number;
+  reference: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

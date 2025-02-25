@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { getRepresentatives } from '../../services/representativeServices';
 import { IRepresentative } from '../../interfaces/irepresentative';
 import RepresentativeTable from '../../components/Tables/RepresentativeTable/RepresentativeTable';
-import RepresentativeModal from '../../components/Modal/RepresentativeModal/RepresentativeModal';
+import CreateRepresentativeModal from '../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal';
 
 const StyledPaper = styled(Paper)({
   padding: 16,
@@ -109,7 +109,7 @@ const Representatives = () => {
         )}
       </Box>
 
-      <RepresentativeModal open={openModal} handleClose={handleClose} />
+      <CreateRepresentativeModal open={openModal} handleClose={handleClose} />
     </>
   );
 };

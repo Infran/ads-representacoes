@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { getClients } from '../../services/clientServices';
 import { IClient } from '../../interfaces/iclient';
 import { ClientsTable } from '../../components/Tables/ClientsTable/ClientsTable';
-import ClientModal from '../../components/Modal/ClientModal/ClientModal';
+import CreateClientModal from '../../components/Modal/Create/CreateClientModal/CreateClientModal';
 import SearchBar from '../../components/SearchBar/SearchBar';
 
 const Clients = () => {
@@ -76,7 +76,7 @@ const Clients = () => {
           <ClientsTable rows={filteredClients} onEdit={onEdit} onDelete={onDelete} />
         )}
       </Box>
-      <ClientModal open={openModal} handleClose={handleClose} />
+      <CreateClientModal open={openModal} handleClose={handleClose} />
     </>
   );
 };

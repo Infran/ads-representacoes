@@ -21,7 +21,7 @@ import { getBudgets } from "../../services/budgetServices";
 import { IBudget } from "../../interfaces/ibudget";
 import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
 import ReactDOM from "react-dom";
-import DeleteBudgetModal from "../../components/Modal/DeleteBudgetModal";
+import DeleteBudgetModal from "../../components/Modal/Delete/DeleteBudgetModal";
 import SearchBar from "../../components/SearchBar/SearchBar";
 
 const Budgets = () => {

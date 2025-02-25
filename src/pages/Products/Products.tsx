@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, CircularProgress} from '@mui/material';
 import PageHeader from './../../components/PageHeader/PageHeader';
 import { ProductTable } from '../../components/Tables/ProductTable/ProductTable';
-import ProductModal from '../../components/Modal/ProductModal/ProductModal';
+import CreateProductModal from '../../components/Modal/Create/CreateProductModal/CreateProductModal';
 import {Storefront } from '@mui/icons-material';
 import { IProduct } from '../../interfaces/iproduct';
 import { getProducts } from '../../services/productServices';
@@ -77,7 +77,7 @@ const Products = () => {
         )}
       </Box>
 
-      <ProductModal
+      <CreateProductModal
         open={openModal}
         handleClose={handleClose}
       />

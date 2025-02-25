@@ -10,11 +10,11 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { IRepresentative } from "../../../interfaces/irepresentative";
-import { IClient } from "../../../interfaces/iclient";
-import { addRepresentative } from "../../../services/representativeServices";
-import { searchClients } from "../../../services/clientServices";
-import useDebounce from "../../../hooks/useDebounce";
+import { IRepresentative } from "../../../../interfaces/irepresentative";
+import { IClient } from "../../../../interfaces/iclient";
+import { addRepresentative } from "../../../../services/representativeServices";
+import { searchClients } from "../../../../services/clientServices";
+import useDebounce from "../../../../hooks/useDebounce";
 
 const modalStyle = {
   position: "absolute",
@@ -66,12 +66,12 @@ const StyledTextField = styled(TextField)({
   },
 });
 
-interface RepresentativeModalProps {
+interface CreateRepresentativeModalProps {
   open: boolean;
   handleClose: () => void;
 }
 
-const RepresentativeModal: React.FC<RepresentativeModalProps> = ({
+const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
   open,
   handleClose,
 }) => {
@@ -345,4 +345,4 @@ const RepresentativeModal: React.FC<RepresentativeModalProps> = ({
   );
 };
 
-export default RepresentativeModal;
+export default CreateRepresentativeModal;

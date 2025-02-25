@@ -9,8 +9,8 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { IClient } from "../../../interfaces/iclient";
-import { addClient } from "../../../services/clientServices";
+import { IClient } from "../../../../interfaces/iclient";
+import { addClient } from "../../../../services/clientServices";
 
 const modalStyle = {
   position: "absolute",
@@ -62,12 +62,12 @@ const StyledTextField = styled(TextField)({
   },
 });
 
-interface ClientModalProps {
+interface CreateClientModalProps {
   open: boolean;
   handleClose: () => void;
 }
 
-const ClientModal: React.FC<ClientModalProps> = ({ open, handleClose }) => {
+const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose }) => {
   const [client, setClient] = useState<IClient>({} as IClient);
   const [error, setError] = useState<string | null>(null);
 
@@ -273,4 +273,4 @@ const ClientModal: React.FC<ClientModalProps> = ({ open, handleClose }) => {
   );
 };
 
-export default ClientModal;
+export default CreateClientModal;
