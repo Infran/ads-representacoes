@@ -32,8 +32,13 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build project
-        run: npm run build
+      - name: Build project (Development)
+        if: github.ref == 'refs/heads/development'
+        run: npm run build:dev
+
+      - name: Build project (Production)
+        if: github.ref == 'refs/heads/main'
+        run: npm run build:prod
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
