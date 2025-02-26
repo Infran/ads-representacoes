@@ -16,7 +16,7 @@ jobs:
 
       - name: Fix npm optional dependencies issue
         run: |
-          rm -rf node_modules package-lock.json
+          rm -rf node_modules
           npm cache clean --force
 
       - name: Set up Node.js
@@ -38,7 +38,7 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Deploy to Development
-        if: github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/development'
         run: firebase deploy --project=ads-representacoes-dev --token ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Deploy to Production
