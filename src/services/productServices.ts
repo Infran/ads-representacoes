@@ -6,6 +6,7 @@ import {
   addDoc,
   getDoc,
   serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { IProduct } from "../interfaces/iproduct";
@@ -87,6 +88,16 @@ export const updateProduct = async (product: IProduct) => {
     console.log("Produto atualizado com sucesso!");
   } catch (error) {
     console.error("Erro ao atualizar produto: ", error);
+    throw error;
+  }
+};
+
+export const deleteProduct = async (id: string): Promise<void> => {
+  try {
+    const docRef = doc(db, "products", id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Erro ao excluir produto: ", error);
     throw error;
   }
 };

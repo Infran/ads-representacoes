@@ -5,8 +5,9 @@ import { ProductTable } from '../../components/Tables/ProductTable/ProductTable'
 import CreateProductModal from '../../components/Modal/Create/CreateProductModal/CreateProductModal';
 import {Storefront } from '@mui/icons-material';
 import { IProduct } from '../../interfaces/iproduct';
-import { getProducts } from '../../services/productServices';
+import { deleteProduct, getProducts } from '../../services/productServices';
 import SearchBar from '../../components/SearchBar/SearchBar';
+import DeleteProductModal from '../../components/Modal/Delete/DeleteProductModal';
 
 const Products = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -14,16 +15,36 @@ const Products = () => {
   const [filteredProductsList, setFilteredProductsList] = useState<IProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
 
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
+  const handleCloseDeleteModal = () => setOpenDeleteModal(false);
 
   const handleEdit = (id: string) => {
     console.log('Editando produto com ID:', id);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Excluindo produto com ID:', id);
+  const handleDelete = (product: IProduct) => {
+    setSelectedProduct(product);
+    setOpenDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedProduct) {
+      try {
+        await deleteProduct(selectedProduct.id.toString());
+        setProductsList((prevProducts) =>
+          prevProducts.filter((product) => product.id !== selectedProduct.id)
+        );
+        setOpenDeleteModal(false);
+        window.location.reload();
+      } catch (error) {
+        console.error('Erro ao excluir produto:', error);
+      }
+    }
+    
   };
 
   const handleSearch = () => {
@@ -81,7 +102,13 @@ const Products = () => {
         open={openModal}
         handleClose={handleClose}
       />
-       
+
+      <DeleteProductModal
+        open={openDeleteModal}
+        onClose={handleCloseDeleteModal}
+        product={selectedProduct}
+        onConfirm={handleConfirmDelete}
+        />
     </>
   );
 };

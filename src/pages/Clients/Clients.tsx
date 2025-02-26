@@ -2,20 +2,21 @@ import { Box, CircularProgress } from '@mui/material';
 import PageHeader from './../../components/PageHeader/PageHeader';
 import { PersonAdd } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
-import { getClients } from '../../services/clientServices';
+import { deleteClient, getClients } from '../../services/clientServices';
 import { IClient } from '../../interfaces/iclient';
 import { ClientsTable } from '../../components/Tables/ClientsTable/ClientsTable';
 import CreateClientModal from '../../components/Modal/Create/CreateClientModal/CreateClientModal';
 import SearchBar from '../../components/SearchBar/SearchBar';
-import EditClientModal from '../../components/Modal/Edit/EditClientModal/EditClientModal';
+import DeleteClientModal from '../../components/Modal/Delete/DeleteClientModal';
 
 const Clients = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [clientList, setClientList] = useState<IClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredClients, setFilteredClients] = useState<IClient[]>([]);
+  const [selectedClient, setSelectedClient] = useState<IClient | null>(null); // Estado para armazenar o cliente selecionado
 
   const handleSearch = () => {
     const filtered = clientList.filter((client) => {
@@ -25,12 +26,12 @@ const Clients = () => {
         client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.address?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }) 
+    });
     setFilteredClients(filtered);
   };
 
   const handleClose = () => setOpenModal(false);
-  const handleCloseEditModal = () => setOpenEditModal(false);
+  const handleCloseDeleteModal = () => setOpenDeleteModal(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,8 +52,23 @@ const Clients = () => {
     console.log('Editar cliente:', id);
   };
 
-  const onDelete = (id: string) => {
-    console.log('Deletar cliente:', id);
+  const onDelete = (client: IClient) => {
+    setSelectedClient(client); // Define o cliente selecionado
+    setOpenDeleteModal(true); // Abre o modal de exclusão
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedClient) {
+      try {
+        await deleteClient(selectedClient.id.toString()); // Exclui o cliente
+        setClientList((prev) => prev.filter((c) => c.id !== selectedClient.id)); // Atualiza a lista de clientes
+        setFilteredClients((prev) => prev.filter((c) => c.id !== selectedClient.id)); // Atualiza a lista filtrada
+        setOpenDeleteModal(false); // Fecha o modal
+        window.location.reload(); // Recarrega a página
+      } catch (error) {
+        console.error(' Erro ao excluir cliente:', error);
+      }
+    }
   };
 
   return (
@@ -64,22 +80,31 @@ const Clients = () => {
           icon={PersonAdd}
         />
         <SearchBar
-            search={searchTerm}
-            onSearchChange={(e) => setSearchTerm(e.target.value)}
-            onSearch={handleSearch}
-            onAdd={() => setOpenModal(true)}
-            inputLabel="Digite o nome do cliente"
-            />
+          search={searchTerm}
+          onSearchChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={handleSearch}
+          onAdd={() => setOpenModal(true)}
+          inputLabel="Digite o nome do cliente"
+        />
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" height={200}>
-            {/* loading spinner */}
             Carregando... <CircularProgress />
           </Box>
         ) : (
           <ClientsTable rows={filteredClients} onEdit={onEdit} onDelete={onDelete} />
         )}
       </Box>
+
+      {/* Modal de criação de cliente */}
       <CreateClientModal open={openModal} handleClose={handleClose} />
+
+      {/* Modal de exclusão de cliente */}
+      <DeleteClientModal
+        open={openDeleteModal}
+        onClose={handleCloseDeleteModal}
+        client={selectedClient}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 };

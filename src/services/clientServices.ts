@@ -7,6 +7,7 @@ import {
   limit,
   query,
   serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { IClient } from "../interfaces/iclient";
@@ -102,5 +103,16 @@ export const updateClient = async (client: IClient): Promise<void> => {
     console.log("Cliente atualizado com sucesso!");
   } catch (error) {
     console.error("Erro ao atualizar cliente: ", error);
+  }
+};
+
+
+export const deleteClient = async (id: string): Promise<void> => {
+  try {
+    const docRef = doc(db, "clients", id);
+    await deleteDoc(docRef);
+    console.log("Cliente excluído com sucesso!");
+  } catch (error) {
+    console.error("Erro ao excluir cliente: ", error);
   }
 };

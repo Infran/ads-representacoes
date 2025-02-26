@@ -9,7 +9,7 @@ interface CustomTableProps {
   rows: any[]; // Linhas da tabela (genérico)
   columns: GridColDef[]; // Colunas da tabela
   onEdit?: (id: string) => void; // Função de edição (opcional)
-  onDelete?: (id: string) => void; // Função de exclusão (opcional)
+  onDelete?: (any) => void; // Função de exclusão (opcional)
   pageSizeOptions?: number[]; // Opções de tamanho de página
   initialState?: {
     pagination?: {
@@ -46,6 +46,7 @@ const CustomTable: FC<CustomTableProps> = ({
     sortable: false,
     filterable: false, 
     display: "flex",
+    
     renderCell: (params) => {
       return (
         <div style={{ display: "flex", gap: "8px" }}>
@@ -58,7 +59,7 @@ const CustomTable: FC<CustomTableProps> = ({
           )}
           {onDelete && (
             <Tooltip title="Deletar">
-              <IconButton size="small" onClick={() => onDelete(params.id.toString())}>
+              <IconButton size="small" onClick={() => onDelete(params.row)}>
                 <DeleteIcon fontSize="small" color="error" />
               </IconButton>
             </Tooltip>

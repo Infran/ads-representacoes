@@ -400,7 +400,7 @@ const CreateBudget: React.FC = () => {
           margin="normal"
           required
           value={budget.reference}
-          onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
+          onChange={(e) => setBudget({ ...budget, reference: e.target.value })}
           placeholder="Orçamento / Proposta de fornecimento"
         />
       </Paper>

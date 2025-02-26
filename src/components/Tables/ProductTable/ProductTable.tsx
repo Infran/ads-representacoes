@@ -7,7 +7,7 @@ import EditProductModal from "../../Modal/Edit/EditProductModal/EditProductModal
 interface ProductTableProps {
   rows: IProduct[];
   onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (product: IProduct) => void;
 }
 
 const columns: GridColDef[] = [
@@ -18,6 +18,7 @@ const columns: GridColDef[] = [
     sortable: true,
     filterable: true,
     flex: 1,
+    editable: false,
   },
   {
     field: "name",
@@ -25,7 +26,7 @@ const columns: GridColDef[] = [
     width: 220,
     sortable: true,
     filterable: true,
-    editable: true,
+    editable: false,
     headerClassName: "data-grid-header",
     flex: 1,
   },
@@ -35,7 +36,7 @@ const columns: GridColDef[] = [
     width: 400,
     sortable: true,
     filterable: true,
-    editable: true,
+    editable: false,
     headerClassName: "data-grid-header",
     flex: 1,
   },
@@ -45,6 +46,7 @@ const columns: GridColDef[] = [
     width: 200,
     sortable: true,
     filterable: true,
+    editable: false,
     headerClassName: "data-grid-header",
     flex: 1,
   },
@@ -54,7 +56,7 @@ const columns: GridColDef[] = [
     width: 200,
     sortable: true,
     filterable: true,
-    editable: true,
+    editable: false,
     headerClassName: "data-grid-header",
     flex: 1,
   },
@@ -64,7 +66,7 @@ const columns: GridColDef[] = [
     width: 230,
     sortable: true,
     filterable: true,
-    editable: true,
+    editable: false,
     headerClassName: "data-grid-header",
     flex: 1,
   },
