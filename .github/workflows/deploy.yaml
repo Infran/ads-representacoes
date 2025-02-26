@@ -3,7 +3,7 @@ name: Deploy to Firebase
 on:
   push:
     branches:
-      - develop  # Corrigido de 'development' para 'develop'
+      - development
       - main
 
 jobs:
