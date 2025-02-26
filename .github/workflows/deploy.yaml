@@ -17,16 +17,16 @@ jobs:
       - name: Clean npm artifacts
         run: |
           rm -rf node_modules
-          rm -f package-lock.json
+          # rm -f package-lock.json  # Remova ou comente essa linha para manter o lock file
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: npm # Habilita cache do npm para acelerar instalações futuras
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --force # Força instalação mesmo com conflitos
+        run: npm install --force
 
       - name: Build project
         run: npm run build
@@ -40,4 +40,4 @@ jobs:
 
       - name: Deploy to Production
         if: github.ref == 'refs/heads/main'
-        run: firebase deploy --ads-representacoes --token ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --project=ads-representacoes --token ${{ secrets.FIREBASE_TOKEN }}
