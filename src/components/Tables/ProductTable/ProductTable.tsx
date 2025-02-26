@@ -1,7 +1,8 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import CustomTable from "../CustomTable/CustomTable";
 import { GridColDef } from "@mui/x-data-grid";
 import { IProduct } from "../../../interfaces/iproduct";
+import EditProductModal from "../../Modal/Edit/EditProductModal/EditProductModal";
 
 interface ProductTableProps {
   rows: IProduct[];
@@ -69,13 +70,39 @@ const columns: GridColDef[] = [
   },
 ];
 
-export const ProductTable: FC<ProductTableProps> = ({ rows, onEdit, onDelete }) => {
+export const ProductTable: FC<ProductTableProps> = ({ rows, onDelete }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+
+  const handleEdit = (id: string) => {
+    setSelectedProductId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProductId(null);
+  };
+
+
   return (
-    <CustomTable
-    rows={rows}
-    columns={columns}
-    onEdit={onEdit}
-    onDelete={onDelete}
-    />
+    <>
+      {/* Tabela de produtos com botão de edição */}
+      <CustomTable
+        rows={rows}
+        columns={columns}
+        onEdit={handleEdit} // Passa a função de edição
+        onDelete={onDelete}
+      />
+  
+      {/* Modal de edição */}
+      {selectedProductId && (
+        <EditProductModal
+          open={isModalOpen}
+          handleClose={handleCloseModal}
+          id={selectedProductId}
+        />
+      )}
+    </>
   );
 };

@@ -1,7 +1,8 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import CustomTable from "../CustomTable/CustomTable";
 import { IClient } from "../../../interfaces/iclient";
 import { GridColDef } from "@mui/x-data-grid";
+import EditClientModal from "../../Modal/Edit/EditClientModal/EditClientModal";
 
 interface ClientsTableProps {
   rows: IClient[];
@@ -46,7 +47,7 @@ const columns: GridColDef[] = [
       const phone = params.value;
       const formattedPhone = phone ? phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3") : "❌";
       return <span>{formattedPhone}</span>;
-    }
+    },
   },
   {
     field: "phone",
@@ -66,14 +67,41 @@ const columns: GridColDef[] = [
   },
 ];
 
+export const ClientsTable: FC<ClientsTableProps> = ({ rows, onDelete }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar a abertura do modal
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null); // Estado para armazenar o ID do cliente selecionado
 
-export const ClientsTable: FC<ClientsTableProps> = ({ rows, onEdit, onDelete }) => {
+  // Função para abrir o modal de edição
+  const handleEdit = (id: string) => {
+    setSelectedClientId(id); // Define o ID do cliente selecionado
+    setIsModalOpen(true); // Abre o modal
+  };
+
+  // Função para fechar o modal
+  const handleCloseModal = () => {
+    setIsModalOpen(false); // Fecha o modal
+    setSelectedClientId(null); // Limpa o ID do cliente selecionado
+  };
+
   return (
-    <CustomTable
-      rows={rows}
-      columns={columns}
-      onEdit={onEdit}
-      onDelete={onDelete}
-    />
+    <>
+      {/* Tabela de clientes */}
+      <CustomTable
+        rows={rows}
+        columns={columns}
+        onEdit={handleEdit} // Passa a função de edição
+        onDelete={onDelete}
+      />
+
+      {/* Modal de edição */}
+      {selectedClientId && (
+        <EditClientModal
+          open={isModalOpen}
+          handleClose={handleCloseModal}
+          id={selectedClientId}
+          
+        />
+      )}
+    </>
   );
 };

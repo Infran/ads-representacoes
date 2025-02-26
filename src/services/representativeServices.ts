@@ -61,21 +61,48 @@ export const getNextRepresentativeId = async (): Promise<number> => {
   }
 };
 
-export const addRepresentative = async (representative: IRepresentative): Promise<string> => {
+export const addRepresentative = async (representative: IRepresentative): Promise<void> => {
   try {
     const id = await getNextRepresentativeId();
     const createdAt = serverTimestamp();
     const updatedAt = serverTimestamp();
     
     const newRepresentative = { ...representative, id, createdAt, updatedAt };
-    const representativesCollection = collection(db, "representatives");
 
-    const docRef = await addDoc(representativesCollection, newRepresentative);
+    const docRef = doc(db, "representatives", id.toString());
+    await setDoc(docRef, newRepresentative);
+
     console.log("Representante adicionado com sucesso!");
-    
-    return docRef.id;
   } catch (error) {
     console.error("Erro ao adicionar representante: ", error);
+    throw error;
+  }
+};
+
+export const getRepresentativeById = async (id: string): Promise<IRepresentative | null> => {
+  try {
+    const representativeDoc = doc(db, "representatives", id);
+    const representativeSnap = await getDoc(representativeDoc);
+
+    if (!representativeSnap.exists()) {
+      console.log("Documento não encontrado");
+      return null;
+    }
+
+    return { id: representativeSnap.id, ...representativeSnap.data() } as IRepresentative;
+  } catch (error) {
+    console.error("Erro ao buscar representante: ", error);
+    throw error;
+  }
+};
+
+export const updateRepresentative = async (representative: IRepresentative): Promise<void> => {
+  try {
+    const docRef = doc(db, "representatives", representative.id.toString());
+    await setDoc(docRef, representative);
+    console.log("Representante atualizado com sucesso!");
+  } catch (error) {
+    console.error("Erro ao atualizar representante: ", error);
     throw error;
   }
 };

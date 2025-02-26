@@ -27,6 +27,7 @@ import useDebounce from "../../hooks/useDebounce";
 import { addBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
+import { useNavigate } from "react-router";
 
 export interface ISelectedProducts {
   product: IProduct;
@@ -34,6 +35,7 @@ export interface ISelectedProducts {
 }
 
 const CreateBudget: React.FC = () => {
+  const navigate = useNavigate();
   const [budget, setBudget] = useState<IBudget>({
     tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
     guarantee: "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
@@ -62,6 +64,7 @@ const CreateBudget: React.FC = () => {
     try {
       addBudget(budget);
       alert("Orçamento cadastrado com sucesso!");
+      navigate("/Orcamentos");
     } catch (error) {
       alert("Erro ao cadastrar orçamento.");
       console.error(error);

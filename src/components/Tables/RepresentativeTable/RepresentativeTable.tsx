@@ -1,7 +1,8 @@
-import {FC} from 'react';
+import {FC, useState} from 'react';
 import CustomTable from '../CustomTable/CustomTable';
 import { IRepresentative} from '../../../interfaces/irepresentative';
 import { GridColDef } from '@mui/x-data-grid';
+import EditRepresentativeModal from '../../Modal/Edit/EditRepresentativeModal/EditRepresentativeModal';
 
 interface RepresentativeTableProps {
   rows: IRepresentative[];
@@ -76,15 +77,35 @@ const columns: GridColDef[] = [
   },
 ];
 
-const RepresentativeTable: FC<RepresentativeTableProps> = ({ rows, onEdit, onDelete }) => {
-  return (
+const RepresentativeTable: FC<RepresentativeTableProps> = ({ rows, onDelete }) => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+const [selectedRepresentativeId, setSelectedRepresentativeId] = useState<string | null>(null);
+
+const handleEdit = (id: string) => {
+  setSelectedRepresentativeId(id);
+  setIsEditModalOpen(true);
+};
+
+return (
+  <>
+    {/* Tabela de representantes com botão de edição */}
     <CustomTable
-      columns={columns}
       rows={rows}
-      onEdit={onEdit}
+      columns={columns}
+      onEdit={handleEdit} // Passa a função de edição
       onDelete={onDelete}
     />
-  );
+
+    {/* Modal de edição */}
+    {selectedRepresentativeId && (
+      <EditRepresentativeModal
+        open={isEditModalOpen}
+        handleClose={() => setIsEditModalOpen(false)}
+        id={selectedRepresentativeId} 
+      />
+    )}
+  </>
+);
 };
 
 export default RepresentativeTable;

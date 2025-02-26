@@ -6,6 +6,7 @@ import {
   getDoc,
   limit,
   query,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { IClient } from "../interfaces/iclient";
@@ -33,7 +34,7 @@ export const searchClients = async (searchTerm: string) => {
   })) as IClient[];
 
   // Filtrando os clientes com base no termo de busca
-   const  filteredClients = clients.filter(
+  const filteredClients = clients.filter(
     (client) =>
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (client.email &&
@@ -78,7 +79,10 @@ export const getNextClientId = async (): Promise<number> => {
 export const addClient = async (client: IClient): Promise<void> => {
   try {
     const id = await getNextClientId();
-    const newClient = { ...client, id };
+    const createdAt = serverTimestamp();
+    const updatedAt = serverTimestamp();
+
+    const newClient = { ...client, id, createdAt, updatedAt };
 
     const docRef = doc(db, "clients", id.toString());
     await setDoc(docRef, newClient);
@@ -86,5 +90,17 @@ export const addClient = async (client: IClient): Promise<void> => {
     console.log("Cliente adicionado com sucesso!");
   } catch (error) {
     console.error("Erro ao adicionar cliente: ", error);
+  }
+};
+
+// Função para atualizar um cliente
+
+export const updateClient = async (client: IClient): Promise<void> => {
+  try {
+    const docRef = doc(db, "clients", client.id.toString());
+    await setDoc(docRef, client);
+    console.log("Cliente atualizado com sucesso!");
+  } catch (error) {
+    console.error("Erro ao atualizar cliente: ", error);
   }
 };

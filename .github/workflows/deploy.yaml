@@ -1,0 +1,41 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches:
+      - develop  # Corrigido de 'development' para 'develop'
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Development
+        if: github.ref == 'refs/heads/development'  # Corrigido para 'develop'
+        run: |
+          echo "Deploying to development..."
+          firebase deploy --project=ads-representacoes-dev --token ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy to Production
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Deploying to production..."
+          firebase deploy --project=meu-projeto-prod --token ${{ secrets.FIREBASE_TOKEN }}  # Atualize com seu ID de produção

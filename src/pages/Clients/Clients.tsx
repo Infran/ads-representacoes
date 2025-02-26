@@ -7,9 +7,11 @@ import { IClient } from '../../interfaces/iclient';
 import { ClientsTable } from '../../components/Tables/ClientsTable/ClientsTable';
 import CreateClientModal from '../../components/Modal/Create/CreateClientModal/CreateClientModal';
 import SearchBar from '../../components/SearchBar/SearchBar';
+import EditClientModal from '../../components/Modal/Edit/EditClientModal/EditClientModal';
 
 const Clients = () => {
   const [openModal, setOpenModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
   const [clientList, setClientList] = useState<IClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +30,7 @@ const Clients = () => {
   };
 
   const handleClose = () => setOpenModal(false);
+  const handleCloseEditModal = () => setOpenEditModal(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,7 +47,7 @@ const Clients = () => {
     fetchData();
   }, []);
 
-  const onEdit = (id: string) => {
+  const onEdit = (id: string) => { 
     console.log('Editar cliente:', id);
   };
 

@@ -91,6 +91,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose
       handleClose();
       setClient({} as IClient);
       setError(null);
+      window.location.reload();
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
       setError("Ocorreu um erro ao adicionar o cliente. Tente novamente.");

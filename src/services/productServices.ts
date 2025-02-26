@@ -51,14 +51,42 @@ export const addProduct = async (product) => {
     const updatedAt = serverTimestamp();
     
     const newProduct = { ...product, id, createdAt, updatedAt };
-    const productsCollection = collection(db, "products");
 
-    const docRef = await addDoc(productsCollection, newProduct);
-    console.log("Produto adicionado com sucesso!");
+    const docRef = doc(db, "products", id.toString());
+    await setDoc(docRef, newProduct);
     
-    return docRef.id;
   } catch (error) {
     console.error("Erro ao adicionar produto: ", error);
+    throw error;
+  }
+};
+
+export const getProductById = async (id: string): Promise<IProduct | null> => {
+  try {
+    const productDoc = doc(db, "products", id);
+    const productSnap = await getDoc(productDoc);
+
+    if (!productSnap.exists()) {
+      console.log("Documento não encontrado");
+      return null;
+    }
+
+    return { id: productSnap.id, ...productSnap.data() } as IProduct;
+  } catch (error) {
+    console.error("Erro ao buscar produto: ", error);
+    throw error;
+  }
+};
+
+export const updateProduct = async (product: IProduct) => {
+  try {
+    const updatedAt = serverTimestamp();
+    const updatedProduct = { ...product, updatedAt };
+    const productDoc = doc(db, "products", product.id.toString());
+    await setDoc(productDoc, updatedProduct);
+    console.log("Produto atualizado com sucesso!");
+  } catch (error) {
+    console.error("Erro ao atualizar produto: ", error);
     throw error;
   }
 };
