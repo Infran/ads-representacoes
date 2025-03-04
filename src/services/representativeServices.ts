@@ -3,11 +3,11 @@ import {
   doc,
   getDocs,
   setDoc,
-  addDoc,
   getDoc,
   limit,
   query,
   serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -103,6 +103,17 @@ export const updateRepresentative = async (representative: IRepresentative): Pro
     console.log("Representante atualizado com sucesso!");
   } catch (error) {
     console.error("Erro ao atualizar representante: ", error);
+    throw error;
+  }
+};
+
+export const deleteRepresentative = async (id: string): Promise<void> => {
+  try {
+    const docRef = doc(db, "representatives", id.toString());
+    await deleteDoc(docRef);
+    console.log("Representante excluído com sucesso!");
+  } catch (error) {
+    console.error("Erro ao excluir representante: ", error);
     throw error;
   }
 };

@@ -3,6 +3,7 @@ import CustomTable from "../CustomTable/CustomTable";
 import { GridColDef } from "@mui/x-data-grid";
 import { IProduct } from "../../../interfaces/iproduct";
 import EditProductModal from "../../Modal/Edit/EditProductModal/EditProductModal";
+import { brMoneyMask, moneyFormatter } from "../../../utils/Masks";
 
 interface ProductTableProps {
   rows: IProduct[];
@@ -14,61 +15,59 @@ const columns: GridColDef[] = [
   {
     field: "id",
     headerName: "ID",
-    width: 200,
     sortable: true,
     filterable: true,
-    flex: 1,
     editable: false,
   },
   {
     field: "name",
     headerName: "Produto",
-    width: 220,
     sortable: true,
     filterable: true,
     editable: false,
     headerClassName: "data-grid-header",
-    flex: 1,
+    flex: 2,
   },
   {
     field: "description",
     headerName: "Descrição",
-    width: 400,
     sortable: true,
     filterable: true,
     editable: false,
     headerClassName: "data-grid-header",
-    flex: 1,
+    flex: 2,
   },
   {
     field: "ncm",
     headerName: "NCM",
-    width: 200,
     sortable: true,
     filterable: true,
     editable: false,
     headerClassName: "data-grid-header",
     flex: 1,
   },
-  {
-    field: "quantity",
-    headerName: "Quantidade",
-    width: 200,
-    sortable: true,
-    filterable: true,
-    editable: false,
-    headerClassName: "data-grid-header",
-    flex: 1,
-  },
+  // {
+  //   field: "quantity",
+  //   headerName: "Quantidade",
+  //   width: 200,
+  //   sortable: true,
+  //   filterable: true,
+  //   editable: false,
+  //   headerClassName: "data-grid-header",
+  //   flex: 1,
+  // },
   {
     field: "unitValue",
     headerName: "Valor (Unit)",
-    width: 230,
     sortable: true,
     filterable: true,
     editable: false,
     headerClassName: "data-grid-header",
     flex: 1,
+    renderCell: (params) => {
+      const value = params.value;
+      return <span>{moneyFormatter(value)}</span>;
+    }
   },
 ];
 

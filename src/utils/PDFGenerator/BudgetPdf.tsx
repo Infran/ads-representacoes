@@ -15,6 +15,8 @@ Font.register({
   src: "./fonts/times_new_roman.ttf",
 });
 
+import { format } from "date-fns";
+
 const getClientFirstName = (clientName: string) => {
   return clientName.split(" ")[0];
 };
@@ -75,10 +77,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     textAlign: "center",
     width: "100%",
-    marginRight: "40px",
+    marginRight: "20px",
   },
   headerTitle: {
-    fontSize: "24px",
+    fontSize: "20px",
   },
   subHeader: {
     fontSize: "12px",
@@ -201,16 +203,19 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
               R. Kitaro Ywasa, 269 - Mauá - SP - CEP 09390-670 - Fone: (11) 93007-0518
               </Text>
               <Text style={styles.subHeader} fixed>
-                vaportotal@uol.com.br
+              alexandredias.representacoes@gmail.com
               </Text>
             </div>
           </div>
           <div style={styles.clientAddressInfoContainer}>
             <div style={styles.clientCompanyInfo}>
               <Text>{wrapText(budget.client.address, 50)}</Text>
+              <Text style={{marginTop:"12px"}}>{budget.client.cep} {budget.client.city.toLocaleUpperCase()} - {budget.client.state}</Text>
             </div>
             <div style={styles.dateTime}>
-              
+              {budget.createdAt && (
+                <Text>Data: {format(new Date(budget.createdAt.toDate()), "dd/MM/yyyy")}</Text>
+              )}
             </div>
           </div>
           <div style={styles.clientInfoContainer}>
@@ -292,7 +297,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
             <div style={styles.budgetFooterInfo}>
               <Text>{budget.shippingTerms}</Text>
               <Text>{budget.paymentTerms}</Text>
-              <Text>À COMBINAR</Text>
+              <Text>{budget.estimatedDate}</Text>
               <Text>{budget.maxDealDate}</Text>
               <Text>{budget.guarantee}</Text>
               <Text>{budget.tax}</Text>

@@ -11,6 +11,7 @@ import {
 import { styled } from "@mui/system";
 import { IClient } from "../../../../interfaces/iclient";
 import { addClient } from "../../../../services/clientServices";
+import { cepMask, cnpjMask, mobilePhoneMask, phoneMask } from "../../../../utils/Masks";
 
 const modalStyle = {
   position: "absolute",
@@ -158,9 +159,10 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose
             name="cnpj"
             label="CNPJ"
             variant="outlined"
-            value={client.cnpj || ""}
+            value={cnpjMask(client.cnpj || "")}
             onChange={handleChange}
             fullWidth
+            inputProps={{ maxLength: 18 }}
           />
 
           {/* Seção: Contato */}
@@ -177,7 +179,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose
                 name="phone"
                 label="Telefone"
                 variant="outlined"
-                value={client.phone || ""}
+                value={mobilePhoneMask(client.phone || "")}
                 onChange={handleChange}
                 fullWidth
               />
@@ -192,6 +194,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose
                 value={client.email || ""}
                 onChange={handleChange}
                 fullWidth
+                inputProps={{ maxLength: 50 }}
               />
             </Grid>
           </Grid>
@@ -210,7 +213,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose
                 name="cep"
                 label="CEP"
                 variant="outlined"
-                value={client.cep || ""}
+                value={cepMask(client.cep || "")}
                 onChange={handleChange}
                 fullWidth
               />

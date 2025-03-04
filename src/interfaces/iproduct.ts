@@ -6,7 +6,7 @@ export interface IProduct {
   description?: string;
   ncm?: string;
   icms?: string;
-  quantity?: number;
+  // quantity?: string;
   unitValue?: number 
   createdAt?: Timestamp;
   updatedAt?: Timestamp;

@@ -15,6 +15,7 @@ import { IClient } from "../../../../interfaces/iclient";
 import { addRepresentative } from "../../../../services/representativeServices";
 import { searchClients } from "../../../../services/clientServices";
 import useDebounce from "../../../../hooks/useDebounce";
+import { cepMask, mobilePhoneMask, phoneMask } from "../../../../utils/Masks";
 
 const modalStyle = {
   position: "absolute",
@@ -208,6 +209,8 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 value={representative.name || ""}
                 onChange={handleChange}
                 fullWidth
+                inputProps={{ maxLength: 80 }}
+                required
               />
             </Grid>
             <Grid item xs={6}>
@@ -219,6 +222,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 value={representative.role || ""}
                 onChange={handleChange}
                 fullWidth
+                inputProps={{ maxLength: 50 }}
               />
             </Grid>
           </Grid>
@@ -241,6 +245,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 value={representative.email || ""}
                 onChange={handleChange}
                 fullWidth
+                inputProps={{ maxLength: 80 }}
               />
             </Grid>
             <Grid item xs={6}>
@@ -249,7 +254,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 name="phone"
                 label="Telefone"
                 variant="outlined"
-                value={representative.phone || ""}
+                value={phoneMask(representative?.phone) || ""}
                 onChange={handleChange}
                 fullWidth
               />
@@ -260,7 +265,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 name="mobilePhone"
                 label="Celular"
                 variant="outlined"
-                value={representative.mobilePhone || ""}
+                value={mobilePhoneMask(representative.mobilePhone) || ""}
                 onChange={handleChange}
                 fullWidth
               />
@@ -281,7 +286,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 name="cep"
                 label="CEP"
                 variant="outlined"
-                value={representative.cep || ""}
+                value={cepMask(representative.cep) || ""}
                 onChange={handleChange}
                 fullWidth
               />
@@ -295,6 +300,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 value={representative.address || ""}
                 onChange={handleChange}
                 fullWidth
+                inputProps={{ maxLength: 80 }}
               />
             </Grid>
             <Grid item xs={6}>
@@ -306,6 +312,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 value={representative.state || ""}
                 onChange={handleChange}
                 fullWidth
+                inputProps={{ maxLength: 2 }}
               />
             </Grid>
             <Grid item xs={6}>
@@ -317,6 +324,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 value={representative.city || ""}
                 onChange={handleChange}
                 fullWidth
+                inputProps={{ maxLength: 50 }}
               />
             </Grid>
           </Grid>

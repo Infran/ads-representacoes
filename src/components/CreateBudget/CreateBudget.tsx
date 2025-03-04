@@ -9,12 +9,11 @@ import {
   Box,
   Grid,
 } from "@mui/material";
+import Swal from "sweetalert2";
 import {
   ArrowDropDown,
   ArrowDropUp,
   Delete,
-  PersonAdd,
-  Storefront,
 } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
 import { IBudget } from "../../interfaces/ibudget";
@@ -28,6 +27,9 @@ import { addBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import { useNavigate } from "react-router";
+import { moneyFormatter } from "../../utils/Masks";
+import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
+import ReactDOM from "react-dom";
 
 export interface ISelectedProducts {
   product: IProduct;
@@ -38,7 +40,8 @@ const CreateBudget: React.FC = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<IBudget>({
     tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
-    guarantee: "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
+    guarantee:
+      "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
   } as IBudget);
   const [openClientModal, setOpenClientModal] = useState(false);
   const [openProductModal, setOpenProductModal] = useState(false);
@@ -52,6 +55,22 @@ const CreateBudget: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>(
     []
   );
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editedQuantity, setEditedQuantity] = useState("");
+
+  const handleEditQuantity = (index, quantity) => {
+    setEditingIndex(index);
+    setEditedQuantity(quantity);
+  };
+
+  const handleSaveQuantity = (index) => {
+    updateProductQuantity(
+      index,
+      parseInt(editedQuantity, 10) - selectedProducts[index].quantity
+    );
+    setEditingIndex(null);
+    setEditedQuantity("");
+  };
 
   const debouncedRepresentativeSearchTerm = useDebounce(
     representativeSearchInput,
@@ -63,19 +82,29 @@ const CreateBudget: React.FC = () => {
   const handleAddBudget = (budget: IBudget) => {
     try {
       addBudget(budget);
-      alert("Orçamento cadastrado com sucesso!");
-      navigate("/Orcamentos");
+      Swal.fire({
+        icon: 'success',
+        title: 'Sucesso!',
+        text: 'Orçamento cadastrado com sucesso!',
+        showCancelButton: true, // Mostra o botão de cancelar
+        confirmButtonText: 'Ir para Orçamentos', // Texto do botão de confirmação
+        cancelButtonText: 'Adicionar Outro Orçamento', // Texto do botão de cancelar
+        reverseButtons: true, // Inverte a ordem dos botões (opcional)
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/Orcamentos"); // Redireciona para a página de orçamentos
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          window.location.reload(); // Recarrega a página para adicionar outro orçamento
+        }
+      });
     } catch (error) {
-      alert("Erro ao cadastrar orçamento.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro',
+        text: 'Erro ao cadastrar orçamento.',
+      });
       console.error(error);
     }
-  };
-
-  const moneyFormatter = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
   };
 
   // Atualizar lista de clientes ao pesquisar
@@ -99,7 +128,6 @@ const CreateBudget: React.FC = () => {
           description: product.description,
           ncm: product.ncm,
           icms: product.icms,
-          quantity: product.quantity,
           unitValue: product.unitValue,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt,
@@ -132,9 +160,19 @@ const CreateBudget: React.FC = () => {
   };
 
   const handleRemoveProduct = (index: number) => {
-    if (window.confirm("Tem certeza que deseja remover este produto?")) {
-      setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
-    }
+    Swal.fire({
+      title: 'Tem certeza?',
+      text: 'Tem certeza que deseja remover este produto?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, remover!',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+      }
+    });
   };
 
   const updateProductQuantity = (index: number, delta: number) => {
@@ -153,7 +191,8 @@ const CreateBudget: React.FC = () => {
       budget.estimatedDate &&
       budget.maxDealDate &&
       budget.guarantee &&
-      budget.shippingTerms
+      budget.shippingTerms &&
+      budget.reference
   );
 
   useEffect(() => {
@@ -175,7 +214,7 @@ const CreateBudget: React.FC = () => {
           <Autocomplete
             options={representativeList}
             getOptionLabel={(option) => option.name}
-            noOptionsText="Pesquise um cliente cadastrado."
+            noOptionsText="Pesquise um representante cadastrado."
             inputValue={representativeSearchInput}
             onInputChange={(_e, value) => setRepresentativeSearchInput(value)}
             renderInput={(params) => (
@@ -195,17 +234,20 @@ const CreateBudget: React.FC = () => {
             }
             sx={{ flexGrow: 1 }}
           />
-          <Button
+          {/* <Button
             variant="contained"
             onClick={() => setOpenClientModal(true)}
             startIcon={<PersonAdd />}
           >
             Adicionar
-          </Button>
+          </Button> */}
         </Box>
 
         {budget.representative?.name && (
           <Box mt={2} p={2} borderRadius={4} bgcolor="#f5f5f5">
+            <Typography variant="subtitle1" marginBottom={2}>
+              Cliente: {budget.client.name}
+            </Typography>
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <Typography variant="subtitle1">
@@ -255,13 +297,13 @@ const CreateBudget: React.FC = () => {
             onChange={(_event, value) => value && handleAddProduct(value)}
             sx={{ flexGrow: 1 }}
           />
-          <Button
+          {/* <Button
             variant="contained"
             onClick={() => setOpenProductModal(true)}
             startIcon={<Storefront />}
           >
             Adicionar
-          </Button>
+          </Button> */}
         </Box>
 
         {selectedProducts.length > 0 && (
@@ -291,7 +333,30 @@ const CreateBudget: React.FC = () => {
                   >
                     <ArrowDropUp />
                   </Button>
-                  <Typography>{product.quantity}</Typography>
+                  {editingIndex === index ? (
+                    <TextField
+                      value={editedQuantity}
+                      onChange={(e) => setEditedQuantity(e.target.value)}
+                      onBlur={() => handleSaveQuantity(index)}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") {
+                          handleSaveQuantity(index);
+                        }
+                      }}
+                      autoFocus
+                      variant="outlined"
+                      size="small"
+                      sx={{ width: "60px", marginX: 1 }}
+                    />
+                  ) : (
+                    <Typography
+                      onClick={() =>
+                        handleEditQuantity(index, product.quantity)
+                      }
+                    >
+                      {product.quantity}
+                    </Typography>
+                  )}
                   <Button
                     size="small"
                     onClick={() => updateProductQuantity(index, -1)}
@@ -343,7 +408,7 @@ const CreateBudget: React.FC = () => {
               type="text"
               fullWidth
               required
-              placeholder="Ex.: 28 DDL"
+              placeholder="Ex.: 15 DIAS ÚTEIS "
               value={budget.maxDealDate || ""}
               onChange={(e) =>
                 setBudget({ ...budget, maxDealDate: e.target.value })
@@ -394,7 +459,7 @@ const CreateBudget: React.FC = () => {
           onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
         />
 
-<TextField
+        <TextField
           label="Referência"
           fullWidth
           margin="normal"
@@ -414,6 +479,51 @@ const CreateBudget: React.FC = () => {
       >
         Salvar
       </Button>
+
+      {/* Botão Preview */}
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{ mt: 2, marginLeft: 2 }}
+        disabled={!budget || !isBudgetValid}
+        onClick={() => {
+          const newTab = window.open("", "_blank");
+          if (newTab) {
+            newTab.document.write(`
+                                <html>
+                                  <head>
+                                    <style>
+                                      body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
+                                      #react-root { margin: 0; padding: 0; width: 100%; height: 100%; }
+                                    </style>
+                                  </head>
+                                  <body>
+                                    <div id="react-root"></div>
+                                  </body>
+                                </html>
+                              `);
+            newTab.document.close();
+            ReactDOM.render(
+              <BudgetPdfPage budget={budget} />,
+              newTab.document.getElementById("react-root")
+            );
+          }
+        }}
+      >
+        {" "}
+        Preview
+      </Button>
+
+      {/* Botão Cancelar */}
+      <Button
+      variant="contained"
+      color="error"
+      sx={{ mt: 2, ml: 97 }}
+      onClick={
+        () => navigate("/Orcamentos")
+      }>
+        Cancelar
+        </Button>
 
       <CreateClientModal
         open={openClientModal}

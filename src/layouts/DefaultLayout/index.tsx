@@ -17,7 +17,6 @@ export default function DefaultLayout() {
         sx={{
           width: "100%", // Ocupa toda a largura disponível
           display: "flex",
-          overflow: "auto", // Adiciona barra de rolagem quando necessário
           flexDirection: "column", // Componentes internos em coluna
           alignItems: "stretch", // Garante que ocupem largura total
           backgroundColor: "#f9f9f9", // Fundo para destacar o conteúdo

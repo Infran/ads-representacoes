@@ -27,7 +27,9 @@ import { getBudgetById, updateBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import RepresentativeModal from "../Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { moneyFormatter } from "../../utils/Masks";
+import Swal from "sweetalert2";
 
 export interface ISelectedProducts {
   product: IProduct;
@@ -53,6 +55,7 @@ const EditBudget: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>(
     []
   );
+  const navigate = useNavigate();
 
   const debouncedRepresentativeSearchTerm = useDebounce(
     representativeSearchInput,
@@ -63,19 +66,22 @@ const EditBudget: React.FC = () => {
   // Adicionar orçamento
   const handleUpdateBudget = async () => {
     try {
-      updateBudget(budgetId, budget);
-      alert("Orçamento Atualizado com sucesso!");
+      await updateBudget(budgetId, budget); // Certifique-se de que a função é assíncrona
+      Swal.fire({
+        icon: 'success',
+        title: 'Sucesso!',
+        text: 'Orçamento atualizado com sucesso!',
+      }).then(() => {
+        navigate("/Orcamentos"); // Redireciona após o usuário clicar em "OK"
+      });
     } catch (error) {
-      alert("Erro ao cadastrar orçamento.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro',
+        text: 'Erro ao atualizar o orçamento.',
+      });
       console.error(error);
     }
-  };
-
-  const moneyFormatter = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
   };
 
   // Atualizar lista de clientes ao pesquisar
@@ -98,8 +104,7 @@ const EditBudget: React.FC = () => {
           name: product.name,
           description: product.description,
           ncm: product.ncm,
-          icms: product.icms,
-          quantity: product.quantity,
+          icms: product.icms,          
           unitValue: product.unitValue,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt,
@@ -132,10 +137,20 @@ const EditBudget: React.FC = () => {
   };
 
   const handleRemoveProduct = (index: number) => {
-    if (window.confirm("Tem certeza que deseja remover este produto?")) {
-      setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
-    }
-  };
+      Swal.fire({
+        title: 'Tem certeza?',
+        text: 'Tem certeza que deseja remover este produto?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, remover!',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+        }
+      });
+    };
 
   const updateProductQuantity = (index: number, delta: number) => {
     setSelectedProducts((prev) =>
@@ -398,13 +413,24 @@ const EditBudget: React.FC = () => {
           value={budget.tax}
           onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
         />
+        <TextField
+          label="Referência"
+          fullWidth
+          margin="normal"
+          required
+          value={budget.reference}
+          onChange={(e) => setBudget({ ...budget, reference: e.target.value })}
+          placeholder="Orçamento / Proposta de fornecimento"
+        />
       </Paper>
 
       {/* Botão Salvar */}
       <Button
         variant="contained"
         sx={{ mt: 2 }}
-        onClick={() => handleUpdateBudget()}
+        onClick={() => {
+          handleUpdateBudget()
+        }}
         disabled={!budget || !isBudgetValid}
       >
         Salvar Edição

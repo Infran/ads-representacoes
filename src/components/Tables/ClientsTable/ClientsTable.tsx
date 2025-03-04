@@ -25,7 +25,7 @@ const columns: GridColDef[] = [
     filterable: true,
     editable: false,
     headerClassName: "data-grid-header",
-    flex: 2,
+    flex: 1,
   },
   {
     field: "email",
@@ -52,7 +52,25 @@ const columns: GridColDef[] = [
     filterable: true,
     editable: false,
     headerClassName: "data-grid-header",
-    flex: 2,
+    flex: 1,
+  },
+  {
+    field: "cep",
+    headerName: "CEP",
+    sortable: true,
+    filterable: true,
+    editable: false,
+    headerClassName: "data-grid-header",
+    flex: 1,
+  },
+  {
+    field: "cnpj",
+    headerName: "CNPJ",
+    sortable: true,
+    filterable: true,
+    editable: false,
+    headerClassName: "data-grid-header",
+    flex: 1,
   },
 ];
 

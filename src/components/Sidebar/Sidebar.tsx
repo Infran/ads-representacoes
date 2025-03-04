@@ -23,6 +23,7 @@ import { Apartment, Groups, Home as HomeIcon, NoteAdd, Widgets } from "@mui/icon
 import { useAuth } from "../../context/ContextAuth";
 import { Avatar } from "@mui/material";
 import { deepOrange } from "@mui/material/colors";
+import Swal from "sweetalert2";
 
 const drawerWidth = 240;
 
@@ -311,7 +312,25 @@ export default function Sidebar() {
           <ListItem
             disablePadding
             sx={{ display: "block", paddingTop: "auto"}}
-            onClick={logout}
+            onClick={() => {
+              Swal.fire({
+                title: "Deseja sair?",
+                text: "Você precisará fazer login novamente depois.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Sim, sair",
+                cancelButtonText: "Não, ficar",
+                background: "#f8f9fa",
+                color: "#333",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  logout();
+                }
+              });
+            }}
+            
           >
             <ListItemButton
               sx={{

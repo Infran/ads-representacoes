@@ -7,7 +7,7 @@ import EditRepresentativeModal from '../../Modal/Edit/EditRepresentativeModal/Ed
 interface RepresentativeTableProps {
   rows: IRepresentative[];
   onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (representative: IRepresentative) => void
 }
 
 const columns: GridColDef[] = [
@@ -90,6 +90,11 @@ const handleEdit = (id: string) => {
   setIsEditModalOpen(true);
 };
 
+const handleCloseEditModal = () => {
+  setIsEditModalOpen(false);
+  setSelectedRepresentativeId(null);
+};
+
 return (
   <>
     {/* Tabela de representantes com botão de edição */}
@@ -104,7 +109,7 @@ return (
     {selectedRepresentativeId && (
       <EditRepresentativeModal
         open={isEditModalOpen}
-        handleClose={() => setIsEditModalOpen(false)}
+        handleClose={handleCloseEditModal}
         id={selectedRepresentativeId} 
       />
     )}

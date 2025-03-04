@@ -101,7 +101,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
   }, [id]);
 
   const handleEditClient = async () => {
-    if (!client.name || !client.cep || !client.email || !client.phone) {
+    if (!client.name || !client.cep) {
       setError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
@@ -120,7 +120,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
     }
   };
 
-  const isFormValid = client.name && client.cep && client.email && client.phone;
+  const isFormValid = client.name && client.cep
 
   return (
     <Modal

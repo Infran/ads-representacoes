@@ -13,9 +13,17 @@ export const brMoneyMask = (value: string) => {
     .replace(/\D/g, "")
     .replace(/(\d{1,})(\d{2})$/, "$1,$2")
     .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-}
+};
 
-export const phoneMask = (value: string) => {
+export const moneyFormatter = (value: number) => {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+};
+
+export const phoneMask = (value: string | undefined) => {
+  if (!value) return "";
   return value
     .replace(/\D/g, "")
     .replace(/(\d{2})(\d)/, "($1) $2")
@@ -24,6 +32,7 @@ export const phoneMask = (value: string) => {
 };
 
 export const cepMask = (value: string) => {
+  if (!value) return "";
   return value
     .replace(/\D/g, "")
     .replace(/(\d{5})(\d)/, "$1-$2")
@@ -31,6 +40,7 @@ export const cepMask = (value: string) => {
 };
 
 export const mobilePhoneMask = (value: string) => {
+  if (!value) return "";
   return value
     .replace(/\D/g, "")
     .replace(/(\d{2})(\d)/, "($1) $2")
@@ -39,10 +49,10 @@ export const mobilePhoneMask = (value: string) => {
 };
 
 export const cpfMask = (value: string) => {
+  if (!value) return "";
   return value
     .replace(/\D/g, "")
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 };
-

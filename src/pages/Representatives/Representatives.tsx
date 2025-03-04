@@ -1,41 +1,67 @@
-import { Box, Button, Paper, TextField, useMediaQuery, useTheme } from '@mui/material';
-import { styled } from '@mui/system';
-import PageHeader from '../../components/PageHeader/PageHeader';
-import { Search, PersonAdd } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
-import { getRepresentatives } from '../../services/representativeServices';
-import { IRepresentative } from '../../interfaces/irepresentative';
-import RepresentativeTable from '../../components/Tables/RepresentativeTable/RepresentativeTable';
+import { Box, CircularProgress } from '@mui/material';
+import PageHeader from './../../components/PageHeader/PageHeader';
 import CreateRepresentativeModal from '../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal';
-
-const StyledPaper = styled(Paper)({
-  padding: 16,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 16,
-});
-
-const ButtonGroup = styled(Box)({
-  display: 'flex',
-  gap: 16,
-});
+import { PersonAdd } from '@mui/icons-material';
+import { IRepresentative } from '../../interfaces/irepresentative';
+import { getRepresentatives, deleteRepresentative } from '../../services/representativeServices';
+import SearchBar from '../../components/SearchBar/SearchBar';
+import DeleteRepresentativeModal from '../../components/Modal/Delete/DeleteRepresentativeModal';
+import RepresentativeTable from '../../components/Tables/RepresentativeTable/RepresentativeTable';
 
 const Representatives = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [representatives, setRepresentatives] = useState<IRepresentative[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [representativesList, setRepresentativesList] = useState<IRepresentative[]>([]);
+  const [filteredRepresentativesList, setFilteredRepresentativesList] = useState<IRepresentative[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const isSmallScreen = useMediaQuery(useTheme().breakpoints.down('sm'));
+  const [loading, setLoading] = useState(true);
+  const [selectedRepresentative, setSelectedRepresentative] = useState<IRepresentative | null>(null);
 
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
+  const handleCloseDeleteModal = () => setOpenDeleteModal(false);
+
+  const handleEdit = (id: string) => {
+    console.log('Editando representante com ID:', id);
+  };
+
+  const handleDelete = (representative: IRepresentative) => {
+    setSelectedRepresentative(representative); // Define o representante selecionado
+    setOpenDeleteModal(true); // Abre o modal de exclusão
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedRepresentative) {
+      try {
+        await deleteRepresentative(selectedRepresentative.id); // Exclui o representante
+        setRepresentativesList((prev) => prev.filter((r) => r.id !== selectedRepresentative.id)); // Atualiza a lista de representantes
+        setFilteredRepresentativesList((prev) => prev.filter((r) => r.id !== selectedRepresentative.id)); // Atualiza a lista filtrada
+        setOpenDeleteModal(false); // Fecha o modal
+      } catch (error) {
+        console.error('Erro ao excluir representante:', error);
+      }
+    }
+  };
+
+  const handleSearch = () => {
+    const filtered = representativesList.filter((representative) => {
+      return (
+        representative.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        representative.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        representative.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        representative.address?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+    setFilteredRepresentativesList(filtered);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const representativeList = await getRepresentatives();
-        setRepresentatives(representativeList);
+        const representatives = await getRepresentatives();
+        setRepresentativesList(representatives);
+        setFilteredRepresentativesList(representatives);
       } catch (error) {
         console.error('Erro ao buscar representantes:', error);
       } finally {
@@ -45,19 +71,6 @@ const Representatives = () => {
     fetchData();
   }, []);
 
-  const onEdit = (id: string) => {
-    console.log('Editar representante:', id);
-  };
-
-  const onDelete = (id: string) => {
-    console.log('Deletar representante:', id);
-  };
-
-  // Filtra os representantes com base no termo de busca
-  const filteredRepresentatives = representatives.filter((representative) =>
-    representative.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
@@ -66,50 +79,32 @@ const Representatives = () => {
           description="Utilize esta seção para Adicionar, Editar ou Excluir um Representante."
           icon={PersonAdd}
         />
-        <StyledPaper>
-          <Box
-            display="flex"
-            flexDirection={isSmallScreen ? 'column' : 'row'}
-            gap={2}
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <ButtonGroup>
-              <Button variant="contained" type="submit">
-                <Box display="flex" gap={0.5}>
-                  Pesquisar
-                  <Search />
-                </Box>
-              </Button>
-              <Button variant="contained" onClick={handleOpen}>
-                <Box display="flex" gap={0.5}>
-                  Adicionar
-                  <PersonAdd />
-                </Box>
-              </Button>
-            </ButtonGroup>
-            <Box flex={1}>
-              <TextField
-                label="Digite o nome do representante"
-                variant="outlined"
-                size="small"
-                fullWidth
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </Box>
-          </Box>
-        </StyledPaper>
+        <SearchBar
+          search={searchTerm}
+          onSearchChange={(e) => setSearchTerm(e.target.value)}
+          onSearch={handleSearch}
+          onAdd={handleOpen}
+          inputLabel="Digite o nome do representante"
+        />
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" height={200}>
-            Carregando...
+            Carregando... <CircularProgress />
           </Box>
         ) : (
-          <RepresentativeTable rows={filteredRepresentatives} onEdit={onEdit} onDelete={onDelete}  />
+          <RepresentativeTable rows={filteredRepresentativesList} onEdit={handleEdit} onDelete={handleDelete} />
         )}
       </Box>
 
+      {/* Modal de criação de representante */}
       <CreateRepresentativeModal open={openModal} handleClose={handleClose} />
+
+      {/* Modal de exclusão de representante */}
+      <DeleteRepresentativeModal
+        open={openDeleteModal}
+        onClose={handleCloseDeleteModal}
+        representative={selectedRepresentative}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 };

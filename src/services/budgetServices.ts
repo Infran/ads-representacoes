@@ -36,11 +36,24 @@ export const getBudgets = async () => {
   return budgetsSnapshot.docs.map((doc) => doc.data() as IBudget);
 };
 
-export const addBudget = async (budget: IBudget) => {
+const removeUndefinedFields = (obj) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => value !== undefined)
+  );
+};
+
+export const addBudget = async (budget) => {
   const id = await getNextBudgetId();
   const createdAt = Timestamp.now();
   const updatedAt = Timestamp.now();
-  const newBudget = { ...budget, id, createdAt, updatedAt };
+
+  // Cria o novo orçamento e remove campos undefined
+  const newBudget = removeUndefinedFields({
+    ...budget,
+    id,
+    createdAt,
+    updatedAt,
+  });
 
   const docRef = doc(db, "budgets", id.toString());
   await setDoc(docRef, newBudget);
@@ -97,9 +110,8 @@ export const updateBudget = async (budgetId, budget) => {
 };
 
 export const deleteBudget = async (id: string) => {
-  console.log("ID recebido:", id, typeof id); // Debugging
   try {
-    const docRef = doc(db, "budgets", String(id));
+    const docRef = doc(db, "budgets", id.toString());
     await deleteDoc(docRef);
     return true;
   } catch (error) {

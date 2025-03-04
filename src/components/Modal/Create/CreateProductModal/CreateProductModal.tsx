@@ -49,7 +49,6 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    if (name === "quantity" && isNaN(Number(value))) return;
 
     if (name === "unitValue") {
       handleUnitValueChange(value);
@@ -91,7 +90,6 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
     if (
       !product.name ||
       !product.ncm ||
-      !product.quantity ||
       !product.unitValue
     ) {
       setError("Por favor, preencha todos os campos obrigatórios.");
@@ -174,8 +172,9 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
                 label="Quantidade em Estoque"
                 variant="outlined"
                 fullWidth
-                value={product.quantity || ""}
+                value={"0"}
                 onChange={handleChange}
+                disabled
               />
             </Grid>
             <Grid item xs={6}>
@@ -210,7 +209,6 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
             disabled={
               !product.name ||
               !product.ncm ||
-              !product.quantity ||
               !maskedUnitValue
             }
           >
