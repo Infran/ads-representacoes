@@ -27,7 +27,7 @@ import { addBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import { useNavigate } from "react-router";
-import { moneyFormatter } from "../../utils/Masks";
+import { brMoneyMask, moneyFormatter } from "../../utils/Masks";
 import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
 import ReactDOM from "react-dom";
 
@@ -323,7 +323,7 @@ const CreateBudget: React.FC = () => {
                     {product.product.name}
                   </Typography>
                   <Typography variant="body2">
-                    Valor Unitário: {moneyFormatter(product.product.unitValue)}
+                    Valor Unitário: R$ {brMoneyMask(product.product.unitValue.toString())}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">
@@ -375,7 +375,7 @@ const CreateBudget: React.FC = () => {
             ))}
             <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
               <Typography variant="h6">
-                Valor Total: {moneyFormatter(budget.totalValue)}
+                Valor Total: R$ {(brMoneyMask(budget.totalValue.toFixed(0)))}
               </Typography>
             </Box>
           </>
@@ -471,59 +471,36 @@ const CreateBudget: React.FC = () => {
       </Paper>
 
       {/* Botão Salvar */}
-      <Button
-        variant="contained"
-        sx={{ mt: 2 }}
-        onClick={() => handleAddBudget(budget)}
-        disabled={!budget || !isBudgetValid}
-      >
-        Salvar
-      </Button>
-
-      {/* Botão Preview */}
-      <Button
-        variant="contained"
-        color="primary"
-        sx={{ mt: 2, marginLeft: 2 }}
-        disabled={!budget || !isBudgetValid}
-        onClick={() => {
-          const newTab = window.open("", "_blank");
-          if (newTab) {
-            newTab.document.write(`
-                                <html>
-                                  <head>
-                                    <style>
-                                      body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
-                                      #react-root { margin: 0; padding: 0; width: 100%; height: 100%; }
-                                    </style>
-                                  </head>
-                                  <body>
-                                    <div id="react-root"></div>
-                                  </body>
-                                </html>
-                              `);
-            newTab.document.close();
-            ReactDOM.render(
-              <BudgetPdfPage budget={budget} />,
-              newTab.document.getElementById("react-root")
-            );
-          }
-        }}
-      >
-        {" "}
-        Preview
-      </Button>
-
-      {/* Botão Cancelar */}
-      <Button
-      variant="contained"
-      color="error"
-      sx={{ mt: 2, ml: 97 }}
-      onClick={
-        () => navigate("/Orcamentos")
-      }>
-        Cancelar
+      <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+        <Button
+          variant="contained"
+          onClick={() => handleAddBudget(budget)}
+          disabled={!budget || !isBudgetValid}
+        >
+          Salvar
         </Button>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={() => {
+            Swal.fire({
+              title: "Deseja mesmo descartar o orçamento atual?",
+              icon: "warning",
+              showCancelButton: true,
+              cancelButtonText: "Cancelar",
+              confirmButtonColor: "#3085d6",
+              cancelButtonColor: "#d33",
+              confirmButtonText: "Sim, descartar!",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                navigate("/orcamentos");
+              }
+            })
+          }}
+        >
+          Cancelar
+        </Button>
+      </Box>
 
       <CreateClientModal
         open={openClientModal}

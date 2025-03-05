@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, Box, Paper, Typography, Button } from "@mui/material";
 import { deleteBudget } from "../../../services/budgetServices";
 import { IBudget } from "../../../interfaces/ibudget";
+import { brMoneyMask } from "../../../utils/Masks";
 
 interface DeleteBudgetModalProps {
   open: boolean;
@@ -84,7 +85,7 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, bu
                     {item.product.name}
                   </Typography>
                   <Typography variant="body2" noWrap>
-                    {item.quantity} x R$ {item.product.unitValue.toFixed(2)}
+                    {item.quantity} x R$ {brMoneyMask(item.product.unitValue.toFixed(0))}
                   </Typography>
                 </Box>
               ))}

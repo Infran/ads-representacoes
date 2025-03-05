@@ -15,11 +15,8 @@ export const brMoneyMask = (value: string) => {
     .replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
 };
 
-export const moneyFormatter = (value: number) => {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
+export const formatCurrencyToNumber = (value: string) => {
+  return parseFloat(value.replace(/\./g, "").replace(",", "."));
 };
 
 export const phoneMask = (value: string | undefined) => {

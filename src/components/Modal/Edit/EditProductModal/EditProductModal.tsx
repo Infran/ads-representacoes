@@ -13,7 +13,7 @@ import { styled } from "@mui/system";
 import { IProduct } from "../../../../interfaces/iproduct";
 import { getProductById, updateProduct } from "../../../../services/productServices";
 import ncmData from "../../../../tabela_ncm.json";
-import { brMoneyMask } from "../../../../utils/Masks";
+import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
 
 const modalStyle = {
   position: "absolute",
@@ -53,8 +53,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       try {
         const productData = await getProductById(id);
         setProduct(productData);
+
+        // Converte o valor de centavos para reais e aplica a máscara
         if (productData.unitValue) {
-          setMaskedUnitValue(brMoneyMask(productData.unitValue.toString()));
+          const valueInReais = (productData.unitValue / 100).toFixed(2); // Converte para reais
+          setMaskedUnitValue(brMoneyMask(valueInReais));
         }
       } catch (error) {
         console.error("Erro ao buscar produto:", error);
@@ -81,14 +84,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const handleUnitValueChange = (value: string) => {
-    setMaskedUnitValue(brMoneyMask(value));
-    setProduct((prevProduct) => {
-      const cleanedValue = value.replace(/\./g, "").replace(",", ".");
-      return {
-        ...prevProduct,
-        unitValue: parseFloat(cleanedValue),
-      };
-    });
+    const maskedValue = brMoneyMask(value);
+    setMaskedUnitValue(maskedValue);
+
+    // Converte o valor formatado para número de ponto flutuante
+    const numericValue = formatCurrencyToNumber(maskedValue);
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      unitValue: numericValue * 100, // Converte para centavos
+    }));
   };
 
   const handleNcmChange = (event: React.ChangeEvent<HTMLInputElement>) => {

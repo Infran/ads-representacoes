@@ -22,7 +22,7 @@ import { IBudget } from "../../interfaces/ibudget";
 import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
 import ReactDOM from "react-dom";
 import SearchBar from "../../components/SearchBar/SearchBar";
-import { moneyFormatter } from "../../utils/Masks";
+import { brMoneyMask, moneyFormatter } from "../../utils/Masks";
 import DeleteBudgetModal from "../../components/Modal/Delete/DeleteBudgetModal";
 import Swal from "sweetalert2";
 
@@ -140,7 +140,7 @@ const Budgets = () => {
                         sx={{ maxWidth: "80vw" }}
                         noWrap
                       >
-                        {moneyFormatter(budget.totalValue)} |{" "}
+                        R$ {brMoneyMask(budget.totalValue.toFixed(0))} |{" "}
                         {budget.estimatedDate}
                       </Typography>
                     </Box>
@@ -224,7 +224,7 @@ const Budgets = () => {
                                 noWrap
                               >
                                 {item.quantity} x R${" "}
-                                {item.product.unitValue.toFixed(2)}
+                                {brMoneyMask(item.product.unitValue.toFixed(0))}
                               </Typography>
                             </Box>
                           ))}

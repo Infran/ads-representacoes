@@ -13,7 +13,7 @@ import { styled } from "@mui/system";
 import { IProduct } from "../../../../interfaces/iproduct";
 import { addProduct } from "../../../../services/productServices";
 import ncmData from "../../../../tabela_ncm.json";
-import { brMoneyMask } from "../../../../utils/Masks";
+import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
 
 const modalStyle = {
   position: "absolute",
@@ -58,17 +58,15 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
   };
 
   const handleUnitValueChange = (value: string) => {
-    setMaskedUnitValue(brMoneyMask(value)); // Formata a máscara no valor exibido
-    setProduct((prevProduct) => {
-      const cleanedValue = value
-        .replace(/\./g, "") // Remove os pontos (separadores de milhar)
-        .replace(",", "."); // Substitui a vírgula decimal por ponto
+    const maskedValue = brMoneyMask(value);
+    setMaskedUnitValue(maskedValue);
 
-      return {
-        ...prevProduct,
-        unitValue: parseFloat(cleanedValue), // Converte corretamente para float
-      };
-    });
+    // Converte o valor formatado para número de ponto flutuante e depois para centavos
+    const numericValue = formatCurrencyToNumber(maskedValue);
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      unitValue: numericValue * 100, // Converte para centavos
+    }));
   };
 
   const handleNcmChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,6 +105,8 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
       setError("Ocorreu um erro ao adicionar o produto. Tente novamente.");
     }
   };
+
+  const isFormValid = product.name && product.ncm && maskedUnitValue;
 
   return (
     <Modal
@@ -163,7 +163,6 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
             value={product.name || ""}
             onChange={handleChange}
           />
-
           <Grid container spacing={1}>
             <Grid item xs={6}>
               <TextField
@@ -183,13 +182,13 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
                 name="unitValue"
                 label="Valor (Unitário)"
                 variant="outlined"
+                fullWidth
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">R$</InputAdornment>
                   ),
                 }}
                 value={maskedUnitValue || ""}
-                fullWidth
                 onChange={handleChange}
               />
             </Grid>
@@ -203,24 +202,26 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
             onChange={handleChange}
           />
 
-          <Button
-            variant="contained"
-            onClick={handleAddProduct}
-            disabled={
-              !product.name ||
-              !product.ncm ||
-              !maskedUnitValue
-            }
-          >
-            Adicionar
-          </Button>
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: "grey" }}
-            onClick={handleClose}
-          >
-            Cancelar
-          </Button>
+          <Grid container justifyContent="flex-end" spacing={2} sx={{ mt: 2 }}>
+            <Grid item>
+              <Button
+                variant="contained"
+                sx={{ backgroundColor: "grey" }}
+                onClick={handleClose}
+              >
+                Cancelar
+              </Button>
+            </Grid>
+            <Grid item>
+              <Button
+                variant="contained"
+                onClick={handleAddProduct}
+                disabled={!isFormValid}
+              >
+                Adicionar
+              </Button>
+            </Grid>
+          </Grid>
         </FormControlStyled>
       </Box>
     </Modal>

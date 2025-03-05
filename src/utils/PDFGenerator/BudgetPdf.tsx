@@ -16,16 +16,10 @@ Font.register({
 });
 
 import { format } from "date-fns";
+import { brMoneyMask } from "../Masks";
 
 const getClientFirstName = (clientName: string) => {
   return clientName.split(" ")[0];
-};
-
-const getFormattedMoney = (value: number) => {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 };
 
 const wrapText = (text: string, limit: number = 40): string => {
@@ -214,7 +208,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
             </div>
             <div style={styles.dateTime}>
               {budget.createdAt && (
-                <Text>Data: {format(new Date(budget.createdAt.toDate()), "dd/MM/yyyy")}</Text>
+                <Text>Data: {budget.createdAt ? format(new Date(budget.createdAt.toDate()), "dd/MM/yyyy") : ""}</Text>
               )}
             </div>
           </div>
@@ -238,7 +232,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
             )}
           </div>
           <div style={styles.budgetId}>
-            <Text>Orçamento num.: {budget.id}</Text>
+            <Text>Orçamento num.: {budget.id || "0"}</Text>
           </div>
           <div style={styles.budgetInfoContainer}>
             <Text>Prezado(a) {getClientFirstName(budget.representative.name)},</Text>
@@ -265,10 +259,10 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
                     NCM: {product.product.ncm}
                   </Text>
                   <Text style={styles.tableContentSmallSpacing}>{product.quantity}</Text>
-                  <Text style={styles.tableContentSmallSpacing}>{getFormattedMoney(product.product.unitValue)}</Text>
+                  <Text style={styles.tableContentSmallSpacing}>{brMoneyMask(product.product.unitValue.toFixed(0))}</Text>
                   <Text style={styles.tableContentSmallSpacing}>
-                    {getFormattedMoney(
-                      product.quantity * product.product.unitValue
+                    {brMoneyMask(
+                      (product.quantity * product.product.unitValue).toFixed(0)
                     )}
                   </Text>
                 </div>
@@ -283,7 +277,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
             </div>
           </div>
           <div style={styles.budgetTotalValue}>
-            <Text>Valor Total: {getFormattedMoney(budget.totalValue)}</Text>
+            <Text>Valor Total: {brMoneyMask(budget.totalValue.toFixed(0))}</Text>
           </div>
           <div style={styles.budgetFooterInfoContainer}>
             <div style={styles.budgetFooterInfoLabels}>

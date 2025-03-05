@@ -66,7 +66,7 @@ const columns: GridColDef[] = [
     flex: 1,
     renderCell: (params) => {
       const value = params.value;
-      return <span>{moneyFormatter(value)}</span>;
+      return <span>R$ {brMoneyMask(value.toString())}</span>;
     }
   },
 ];

@@ -28,7 +28,7 @@ import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import RepresentativeModal from "../Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
 import { useLocation, useNavigate } from "react-router-dom";
-import { moneyFormatter } from "../../utils/Masks";
+import { brMoneyMask, moneyFormatter } from "../../utils/Masks";
 import Swal from "sweetalert2";
 
 export interface ISelectedProducts {
@@ -301,7 +301,7 @@ const EditBudget: React.FC = () => {
                     {product.product.name}
                   </Typography>
                   <Typography variant="body2">
-                    Valor Unitário: {moneyFormatter(product.product.unitValue)}
+                    Valor Unitário: R$ {brMoneyMask(product.product.unitValue.toString())}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">
@@ -330,7 +330,7 @@ const EditBudget: React.FC = () => {
             ))}
             <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
               <Typography variant="h6">
-                Valor Total: {moneyFormatter(budget.totalValue)}
+                Valor Total: R$ {brMoneyMask(budget.totalValue.toFixed(0))}
               </Typography>
             </Box>
           </>

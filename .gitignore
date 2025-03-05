@@ -39,3 +39,4 @@ firebase-debug.log*
 *.pub
 .vs
 .cache
+.firebase/hosting.ZGlzdA.cache
