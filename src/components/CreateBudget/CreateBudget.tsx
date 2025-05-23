@@ -10,11 +10,7 @@ import {
   Grid,
 } from "@mui/material";
 import Swal from "sweetalert2";
-import {
-  ArrowDropDown,
-  ArrowDropUp,
-  Delete,
-} from "@mui/icons-material";
+import { ArrowDropDown, ArrowDropUp, Delete } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
 import { IBudget } from "../../interfaces/ibudget";
 import { IClient } from "../../interfaces/iclient";
@@ -27,9 +23,8 @@ import { addBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import { useNavigate } from "react-router";
-import { brMoneyMask, moneyFormatter } from "../../utils/Masks";
-import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
-import ReactDOM from "react-dom";
+import { brMoneyMask} from "../../utils/Masks";
+
 
 export interface ISelectedProducts {
   product: IProduct;
@@ -40,21 +35,15 @@ const CreateBudget: React.FC = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<IBudget>({
     tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
-    guarantee:
-      "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
+    guarantee: "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO "
   } as IBudget);
   const [openClientModal, setOpenClientModal] = useState(false);
   const [openProductModal, setOpenProductModal] = useState(false);
-  const [representativeList, setRepresentativeList] = useState<
-    IRepresentative[]
-  >([]);
+  const [representativeList, setRepresentativeList] = useState<IRepresentative[]>([]);
   const [productList, setProductList] = useState<IProduct[]>([]);
-  const [representativeSearchInput, setRepresentativeSearchInput] =
-    useState("");
+  const [representativeSearchInput, setRepresentativeSearchInput] = useState("");
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>(
-    []
-  );
+  const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuantity, setEditedQuantity] = useState("");
 
@@ -83,12 +72,12 @@ const CreateBudget: React.FC = () => {
     try {
       addBudget(budget);
       Swal.fire({
-        icon: 'success',
-        title: 'Sucesso!',
-        text: 'Orçamento cadastrado com sucesso!',
+        icon: "success",
+        title: "Sucesso!",
+        text: "Orçamento cadastrado com sucesso!",
         showCancelButton: true, // Mostra o botão de cancelar
-        confirmButtonText: 'Ir para Orçamentos', // Texto do botão de confirmação
-        cancelButtonText: 'Adicionar Outro Orçamento', // Texto do botão de cancelar
+        confirmButtonText: "Ir para Orçamentos", // Texto do botão de confirmação
+        cancelButtonText: "Adicionar Outro Orçamento", // Texto do botão de cancelar
         reverseButtons: true, // Inverte a ordem dos botões (opcional)
       }).then((result) => {
         if (result.isConfirmed) {
@@ -99,9 +88,9 @@ const CreateBudget: React.FC = () => {
       });
     } catch (error) {
       Swal.fire({
-        icon: 'error',
-        title: 'Erro',
-        text: 'Erro ao cadastrar orçamento.',
+        icon: "error",
+        title: "Erro",
+        text: "Erro ao cadastrar orçamento.",
       });
       console.error(error);
     }
@@ -161,12 +150,12 @@ const CreateBudget: React.FC = () => {
 
   const handleRemoveProduct = (index: number) => {
     Swal.fire({
-      title: 'Tem certeza?',
-      text: 'Tem certeza que deseja remover este produto?',
-      icon: 'warning',
+      title: "Tem certeza?",
+      text: "Tem certeza que deseja remover este produto?",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Sim, remover!',
-      cancelButtonText: 'Cancelar',
+      confirmButtonText: "Sim, remover!",
+      cancelButtonText: "Cancelar",
       reverseButtons: true,
     }).then((result) => {
       if (result.isConfirmed) {
@@ -234,13 +223,6 @@ const CreateBudget: React.FC = () => {
             }
             sx={{ flexGrow: 1 }}
           />
-          {/* <Button
-            variant="contained"
-            onClick={() => setOpenClientModal(true)}
-            startIcon={<PersonAdd />}
-          >
-            Adicionar
-          </Button> */}
         </Box>
 
         {budget.representative?.name && (
@@ -323,7 +305,8 @@ const CreateBudget: React.FC = () => {
                     {product.product.name}
                   </Typography>
                   <Typography variant="body2">
-                    Valor Unitário: R$ {brMoneyMask(product.product.unitValue.toString())}
+                    Valor Unitário: R${" "}
+                    {brMoneyMask(product.product.unitValue.toString())}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">
@@ -375,7 +358,7 @@ const CreateBudget: React.FC = () => {
             ))}
             <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
               <Typography variant="h6">
-                Valor Total: R$ {(brMoneyMask(budget.totalValue.toFixed(0)))}
+                Valor Total: R$ {brMoneyMask(budget.totalValue.toFixed(0))}
               </Typography>
             </Box>
           </>
@@ -495,7 +478,7 @@ const CreateBudget: React.FC = () => {
               if (result.isConfirmed) {
                 navigate("/orcamentos");
               }
-            })
+            });
           }}
         >
           Cancelar
