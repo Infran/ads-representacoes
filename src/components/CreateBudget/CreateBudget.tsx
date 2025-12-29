@@ -12,7 +12,7 @@ import {
 import Swal from "sweetalert2";
 import { ArrowDropDown, ArrowDropUp, Delete } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
-import { IBudget } from "../../interfaces/ibudget";
+import { IBudget, ISelectedProducts } from "../../interfaces/ibudget";
 import { IClient } from "../../interfaces/iclient";
 import { searchProducts } from "../../services/productServices";
 import CreateClientModal from "../Modal/Create/CreateClientModal/CreateClientModal";
@@ -23,27 +23,28 @@ import { addBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import { useNavigate } from "react-router";
-import { brMoneyMask} from "../../utils/Masks";
-
-
-export interface ISelectedProducts {
-  product: IProduct;
-  quantity: number;
-}
+import { brMoneyMask } from "../../utils/Masks";
 
 const CreateBudget: React.FC = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<IBudget>({
     tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
-    guarantee: "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO "
+    guarantee:
+      "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
   } as IBudget);
   const [openClientModal, setOpenClientModal] = useState(false);
+  const [openRepresentativeModal, setOpenRepresentativeModal] = useState(false);
   const [openProductModal, setOpenProductModal] = useState(false);
-  const [representativeList, setRepresentativeList] = useState<IRepresentative[]>([]);
+  const [representativeList, setRepresentativeList] = useState<
+    IRepresentative[]
+  >([]);
   const [productList, setProductList] = useState<IProduct[]>([]);
-  const [representativeSearchInput, setRepresentativeSearchInput] = useState("");
+  const [representativeSearchInput, setRepresentativeSearchInput] =
+    useState("");
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>(
+    []
+  );
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedQuantity, setEditedQuantity] = useState("");
 
@@ -209,7 +210,7 @@ const CreateBudget: React.FC = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Busque um cliente"
+                label="Busque um representante"
                 required
                 onChange={(e) => setRepresentativeSearchInput(e.target.value)}
               />
@@ -491,8 +492,8 @@ const CreateBudget: React.FC = () => {
       />
 
       <CreateRepresentativeModal
-        open={openClientModal}
-        handleClose={() => setOpenClientModal(false)}
+        open={openRepresentativeModal}
+        handleClose={() => setOpenRepresentativeModal(false)}
       />
 
       <CreateProductModal

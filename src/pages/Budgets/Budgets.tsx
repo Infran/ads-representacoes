@@ -16,15 +16,14 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getBudgets } from "../../services/budgetServices";
 import { IBudget } from "../../interfaces/ibudget";
 import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
 import ReactDOM from "react-dom";
 import SearchBar from "../../components/SearchBar/SearchBar";
-import { brMoneyMask, moneyFormatter } from "../../utils/Masks";
+import { brMoneyMask } from "../../utils/Masks";
 import DeleteBudgetModal from "../../components/Modal/Delete/DeleteBudgetModal";
-import Swal from "sweetalert2";
 
 const Budgets = () => {
   const navigate = useNavigate();
@@ -35,8 +34,6 @@ const Budgets = () => {
   const [search, setSearch] = useState<string>("");
   const [filteredBudgets, setFilteredBudgets] = useState<IBudget[]>([]);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
-  const location = useLocation();
-  const isBudgetPath = location.pathname === "/Orcamentos";
 
   const handleSearch = () => {
     const filtered = budgetlist.filter((budget) => {
@@ -129,6 +126,7 @@ const Budgets = () => {
                             .join(", ")
                         }
                       >
+                        {budget.id} -{" "}
                         {budget.client.name} -{" "}
                         {budget.selectedProducts
                           .map((item) => item.product.name)

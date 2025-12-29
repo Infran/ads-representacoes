@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Timestamp } from "firebase/firestore";
 import {
   Container,
   Typography,
@@ -10,18 +9,12 @@ import {
 } from "@mui/material";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router";
-import { IBudget } from "../../interfaces/ibudget";
-import { IProduct } from "../../interfaces/iproduct";
+import { IBudget, ISelectedProducts } from "../../interfaces/ibudget";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { addBudget } from "../../services/budgetServices";
 import FormProductSection from "../FormProductSection/FormProductSection";
 import FormRepresentativeSection from "../FormRepresentativeSection/FormRepresentativeSection";
 import FormDeliveryTermsSection from "../FormDeliveryTermsSection/FormDeliveryTermsSection";
-
-export interface ISelectedProducts {
-  product: IProduct;
-  quantity: number;
-}
 
 interface BudgetFormProps {
   title: string;
@@ -39,60 +32,9 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ title }) => {
 
   const [selectedRepresentative, setSelectedRepresentative] =
     useState<IRepresentative | null>(null);
-const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>([
-  {
-    product: {
-      id: "1",
-      name: "Válvula Termostática 1\" (Controle de Temperatura Automático)",
-      description: "Válvulas para escoamento",
-      unitValue: 20000,
-      ncm: "84818011",
-      icms: "28",
-      createdAt: new Timestamp(1741134514, 85000000),
-      updatedAt: new Timestamp(1741134823, 726000000),
-    },
-    quantity: 1,
-  },
-  {
-    product: {
-      id: "2",
-      name: "Válvula Termostática 1\" (Controle de Temperatura Automático)",
-      description: "Válvulas para escoamento",
-      unitValue: 20000,
-      ncm: "84818011",
-      icms: "28",
-      createdAt: new Timestamp(1741134514, 85000000),
-      updatedAt: new Timestamp(1741134823, 726000000),
-    },
-    quantity: 1,
-  },
-  {
-    product: {
-      id: "3",
-      name: "Válvula Termostática 1\" (Controle de Temperatura Automático)",
-      description: "Válvulas para escoamento",
-      unitValue: 20000,
-      ncm: "84818011",
-      icms: "28",
-      createdAt: new Timestamp(1741134514, 85000000),
-      updatedAt: new Timestamp(1741134823, 726000000),
-    },
-    quantity: 1,
-  },
-  {
-    product: {
-      id: "4",
-      name: "Válvula Termostática 1\" (Controle de Temperatura Automático)",
-      description: "Válvulas para escoamento",
-      unitValue: 20000,
-      ncm: "84818011",
-      icms: "28",
-      createdAt: new Timestamp(1741134514, 85000000),
-      updatedAt: new Timestamp(1741134823, 726000000),
-    },
-    quantity: 1,
-  },
-]);
+  const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>(
+    []
+  );
 
   const handleBudgetChange = <K extends keyof IBudget>(
     field: K,
@@ -132,6 +74,7 @@ const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>([
     }
   };
 
+  // Atualiza o valor total do orçamento sempre que os produtos selecionados mudam
   useEffect(() => {
     const totalValue = selectedProducts.reduce(
       (acc, { product, quantity }) => acc + product.unitValue * quantity,

@@ -111,6 +111,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
       handleClose();
       setClient({} as IClient);
       setError(null);
+      window.location.reload();
     } catch (error) {
       console.error("Erro ao editar cliente:", error);
       setError(

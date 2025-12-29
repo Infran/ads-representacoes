@@ -1,7 +1,12 @@
-import { ISelectedProducts } from '../components/CreateBudget/CreateBudget';
-import { Timestamp } from 'firebase/firestore';
-import { IClient } from './iclient';
-import { IRepresentative } from './irepresentative';
+import { Timestamp } from "firebase/firestore";
+import { IClient } from "./iclient";
+import { IRepresentative } from "./irepresentative";
+import { IProduct } from "./iproduct";
+
+export interface ISelectedProducts {
+  product: IProduct;
+  quantity: number;
+}
 
 export interface IBudget {
   id: string;

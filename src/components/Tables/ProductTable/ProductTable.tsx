@@ -3,7 +3,7 @@ import CustomTable from "../CustomTable/CustomTable";
 import { GridColDef } from "@mui/x-data-grid";
 import { IProduct } from "../../../interfaces/iproduct";
 import EditProductModal from "../../Modal/Edit/EditProductModal/EditProductModal";
-import { brMoneyMask, moneyFormatter } from "../../../utils/Masks";
+import { brMoneyMask } from "../../../utils/Masks";
 
 interface ProductTableProps {
   rows: IProduct[];

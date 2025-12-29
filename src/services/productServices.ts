@@ -25,13 +25,16 @@ export const getNextProductId = async () => {
   }
 };
 
-export const searchProducts = async (searchTerm) => {
+export const searchProducts = async (searchTerm): Promise<IProduct[]> => {
   const productsCollection = collection(db, "products");
   const productsSnapshot = await getDocs(productsCollection);
-  const products = productsSnapshot.docs.map((doc) => doc.data());
+  const products = productsSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as IProduct[];
   return products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.ncm.toLowerCase().includes(searchTerm.toLowerCase())
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.ncm?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 };
 

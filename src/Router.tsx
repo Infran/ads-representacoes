@@ -11,8 +11,9 @@ import ProtectedRoutes from "./utils/ProtectedRoutes";
 import { useContext } from "react";
 import CreateBudget from "./components/CreateBudget/CreateBudget";
 // import EditBudget from "./components/EditBudget/EditBudget";
-import BudgetForm from "./components/BudgetForm/BudgetForm";
+// import BudgetForm from "./components/BudgetForm/BudgetForm";
 import NewCreateBudget from "./pages/CreateBudget.tsx/CreateBudget";
+import EditBudget from "./pages/EditBudget/EditBudget";
 
 const AppRouter = () => {
   const { currentUser: user } = useContext(AuthContext)
@@ -41,7 +42,7 @@ const AppRouter = () => {
             <Route path="Orcamentos" element={<Budgets />} />
             <Route path="Orcamentos/Adicionar" element={<CreateBudget />} />
             <Route path="newForm" element={<NewCreateBudget />} />
-            {/* <Route path="Orcamentos/Editar/:id" element={<EditBudget />} /> */}
+            <Route path="Orcamentos/Editar/:id" element={<EditBudget />} />
           </Route>
           </Route>
         </Routes>

@@ -17,31 +17,28 @@ import {
   Storefront,
 } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
-import { IBudget } from "../../interfaces/ibudget";
+import { IBudget, ISelectedProducts } from "../../interfaces/ibudget";
 import { IClient } from "../../interfaces/iclient";
 import { searchProducts } from "../../services/productServices";
-import ClientModal from "../Modal/Create/CreateClientModal/CreateClientModal";
-import ProductModal from "../Modal/Create/CreateProductModal/CreateProductModal";
+import ClientModal from "../../components/Modal/Create/CreateClientModal/CreateClientModal";
+import ProductModal from "../../components/Modal/Create/CreateProductModal/CreateProductModal";
 import useDebounce from "../../hooks/useDebounce";
 import { getBudgetById, updateBudget } from "../../services/budgetServices";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
-import RepresentativeModal from "../Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
+import RepresentativeModal from "../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
 import { useLocation, useNavigate } from "react-router-dom";
-import { brMoneyMask, moneyFormatter } from "../../utils/Masks";
+import { brMoneyMask } from "../../utils/Masks";
 import Swal from "sweetalert2";
-
-export interface ISelectedProducts {
-  product: IProduct;
-  quantity: number;
-}
 
 const EditBudget: React.FC = () => {
   const [budget, setBudget] = useState<IBudget>({
     tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
-    guarantee: "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
+    guarantee:
+      "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
   } as IBudget);
   const [openClientModal, setOpenClientModal] = useState(false);
+  const [openRepresentativeModal, setOpenRepresentativeModal] = useState(false);
   const [openProductModal, setOpenProductModal] = useState(false);
   const location = useLocation();
   const budgetId = location.pathname.split("/")[3];
@@ -68,17 +65,17 @@ const EditBudget: React.FC = () => {
     try {
       await updateBudget(budgetId, budget); // Certifique-se de que a função é assíncrona
       Swal.fire({
-        icon: 'success',
-        title: 'Sucesso!',
-        text: 'Orçamento atualizado com sucesso!',
+        icon: "success",
+        title: "Sucesso!",
+        text: "Orçamento atualizado com sucesso!",
       }).then(() => {
         navigate("/Orcamentos"); // Redireciona após o usuário clicar em "OK"
       });
     } catch (error) {
       Swal.fire({
-        icon: 'error',
-        title: 'Erro',
-        text: 'Erro ao atualizar o orçamento.',
+        icon: "error",
+        title: "Erro",
+        text: "Erro ao atualizar o orçamento.",
       });
       console.error(error);
     }
@@ -104,7 +101,7 @@ const EditBudget: React.FC = () => {
           name: product.name,
           description: product.description,
           ncm: product.ncm,
-          icms: product.icms,          
+          icms: product.icms,
           unitValue: product.unitValue,
           createdAt: product.createdAt,
           updatedAt: product.updatedAt,
@@ -137,20 +134,20 @@ const EditBudget: React.FC = () => {
   };
 
   const handleRemoveProduct = (index: number) => {
-      Swal.fire({
-        title: 'Tem certeza?',
-        text: 'Tem certeza que deseja remover este produto?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sim, remover!',
-        cancelButtonText: 'Cancelar',
-        reverseButtons: true,
-      }).then((result) => {
-        if (result.isConfirmed) {
-          setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
-        }
-      });
-    };
+    Swal.fire({
+      title: "Tem certeza?",
+      text: "Tem certeza que deseja remover este produto?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sim, remover!",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+      }
+    });
+  };
 
   const updateProductQuantity = (index: number, delta: number) => {
     setSelectedProducts((prev) =>
@@ -168,7 +165,8 @@ const EditBudget: React.FC = () => {
       budget.estimatedDate &&
       budget.maxDealDate &&
       budget.guarantee &&
-      budget.shippingTerms
+      budget.shippingTerms &&
+      budget.reference
   );
 
   useEffect(() => {
@@ -201,7 +199,7 @@ const EditBudget: React.FC = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Busque um cliente"
+                label="Busque um representante"
                 required
                 onChange={(e) => setRepresentativeSearchInput(e.target.value)}
               />
@@ -301,7 +299,8 @@ const EditBudget: React.FC = () => {
                     {product.product.name}
                   </Typography>
                   <Typography variant="body2">
-                    Valor Unitário: R$ {brMoneyMask(product.product.unitValue.toString())}
+                    Valor Unitário: R${" "}
+                    {brMoneyMask(product.product.unitValue.toString())}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">
@@ -429,7 +428,7 @@ const EditBudget: React.FC = () => {
         variant="contained"
         sx={{ mt: 2 }}
         onClick={() => {
-          handleUpdateBudget()
+          handleUpdateBudget();
         }}
         disabled={!budget || !isBudgetValid}
       >
@@ -442,8 +441,8 @@ const EditBudget: React.FC = () => {
       />
 
       <RepresentativeModal
-        open={openClientModal}
-        handleClose={() => setOpenClientModal(false)}
+        open={openRepresentativeModal}
+        handleClose={() => setOpenRepresentativeModal(false)}
       />
 
       <ProductModal

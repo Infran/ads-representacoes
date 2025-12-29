@@ -2,18 +2,13 @@ import {
   Autocomplete,
   Box,
   Button,
-  Divider,
   Paper,
   TextField,
   Typography,
 } from "@mui/material";
-import {
-  ArrowDropDown,
-  ArrowDropUp,
-  Delete,
-} from "@mui/icons-material";
+import { ArrowDropDown, ArrowDropUp, Delete } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
-import { ISelectedProducts } from "../CreateBudget/CreateBudget";
+import { ISelectedProducts } from "../../interfaces/ibudget";
 import { brMoneyMask } from "../../utils/Masks";
 import { useEffect, useState } from "react";
 import useDebounce from "../../hooks/useDebounce";
@@ -21,7 +16,7 @@ import { searchProducts } from "../../services/productServices";
 import Swal from "sweetalert2";
 
 interface ProductSectionProps {
-selectedProducts: ISelectedProducts[];
+  selectedProducts: ISelectedProducts[];
   onProductsChange: (products: ISelectedProducts[]) => void;
 }
 
@@ -31,7 +26,7 @@ const FormProductSection: React.FC<ProductSectionProps> = ({
 }) => {
   const [searchInput, setSearchInput] = useState("");
   const [productList, setProductList] = useState<IProduct[]>([]);
-  let debouncedSearch = useDebounce(searchInput, 800);
+  const debouncedSearch = useDebounce(searchInput, 800);
 
   useEffect(() => {
     if (debouncedSearch) {
@@ -94,70 +89,77 @@ const FormProductSection: React.FC<ProductSectionProps> = ({
         options={productList}
         getOptionLabel={(option) => option.name}
         inputValue={searchInput}
-        getOptionDisabled={(option) => selectedProducts.some((p) => p.product.id === option.id)}
+        getOptionDisabled={(option) =>
+          selectedProducts.some((p) => p.product.id === option.id)
+        }
         onInputChange={(_, value) => setSearchInput(value)}
         onChange={(_, value) => value && handleAddProduct(value)}
         isOptionEqualToValue={(option, value) => option.id === value.id}
         noOptionsText="Nenhum produto encontrado"
-
         renderInput={(params) => (
           <TextField {...params} label="Buscar produto" fullWidth />
         )}
         sx={{ mb: 3 }}
       />
 
-<Box sx={{ p: 1,}}>
-  {selectedProducts.map((item, index) => (
-    <>
-      <Paper
-        key={item.product.id}
-        elevation={1}
-        sx={{
-          p: 3,
-          mb: 2,
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderRadius: 2,
-        }}
-      >
-        <Box>
-          <Typography variant="subtitle1" fontWeight={600}>
-            {item.product.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Valor unitário: R$ {brMoneyMask(item.product.unitValue.toString())}
-          </Typography>
-        </Box>
+      <Box sx={{ p: 1 }}>
+        {selectedProducts.map((item, index) => (
+          <>
+            <Paper
+              key={item.product.id}
+              elevation={1}
+              sx={{
+                p: 3,
+                mb: 2,
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderRadius: 2,
+              }}
+            >
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {item.product.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Valor unitário: R${" "}
+                  {brMoneyMask(item.product.unitValue.toString())}
+                </Typography>
+              </Box>
 
-        <Box display="flex" alignItems="center" gap={1}>
-          <Button size="small" onClick={() => handleUpdateQuantity(index, 1)}>
-            <ArrowDropUp />
-          </Button>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Button
+                  size="small"
+                  onClick={() => handleUpdateQuantity(index, 1)}
+                >
+                  <ArrowDropUp />
+                </Button>
 
-          <Typography>{item.quantity}</Typography>
+                <Typography>{item.quantity}</Typography>
 
-          <Button size="small" onClick={() => handleUpdateQuantity(index, -1)}>
-            <ArrowDropDown />
-          </Button>
+                <Button
+                  size="small"
+                  onClick={() => handleUpdateQuantity(index, -1)}
+                >
+                  <ArrowDropDown />
+                </Button>
 
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            onClick={() => handleRemoveProduct(index)}
-            startIcon={<Delete />}
-            sx={{ ml: 2 }}
-          >
-            Remover
-          </Button>
-        </Box>
-      </Paper>
-    </>
-  ))}
-</Box>
-
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => handleRemoveProduct(index)}
+                  startIcon={<Delete />}
+                  sx={{ ml: 2 }}
+                >
+                  Remover
+                </Button>
+              </Box>
+            </Paper>
+          </>
+        ))}
+      </Box>
 
       {selectedProducts.length > 0 && (
         <Paper
