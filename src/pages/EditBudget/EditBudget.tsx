@@ -15,6 +15,7 @@ import {
   Delete,
   PersonAdd,
   Storefront,
+  Edit,
 } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
 import { IBudget, ISelectedProducts } from "../../interfaces/ibudget";
@@ -28,7 +29,7 @@ import { IRepresentative } from "../../interfaces/irepresentative";
 import { searchRepresentatives } from "../../services/representativeServices";
 import RepresentativeModal from "../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
 import { useLocation, useNavigate } from "react-router-dom";
-import { brMoneyMask } from "../../utils/Masks";
+import { brMoneyMask, formatCurrencyToNumber } from "../../utils/Masks";
 import Swal from "sweetalert2";
 
 const EditBudget: React.FC = () => {
@@ -116,7 +117,10 @@ const EditBudget: React.FC = () => {
   // Calcular valor total do orçamento ao alterar produtos
   useEffect(() => {
     const totalValue = selectedProducts.reduce(
-      (acc, { product, quantity }) => acc + product.unitValue * quantity,
+      (acc, { product, quantity, customUnitValue }) => {
+        const unitPrice = customUnitValue ?? product.unitValue;
+        return acc + unitPrice * quantity;
+      },
       0
     );
     setBudget((prev) => ({
@@ -159,21 +163,42 @@ const EditBudget: React.FC = () => {
     );
   };
 
+  // Atualizar valor unitário customizado do produto (apenas local para este orçamento)
+  // Valor é armazenado em centavos (90000 = R$ 900,00)
+  const updateProductValue = (index: number, newValue: string) => {
+    // Remove formatação e converte para número em centavos
+    const cleanValue = newValue.replace(/\D/g, "");
+    const valueInCents = parseInt(cleanValue, 10);
+
+    setSelectedProducts((prev) =>
+      prev.map((p, i) =>
+        i === index
+          ? {
+              ...p,
+              customUnitValue: isNaN(valueInCents) ? undefined : valueInCents,
+            }
+          : p
+      )
+    );
+  };
+
   const isBudgetValid = Boolean(
-    budget.representative &&
+    budget?.representative &&
       selectedProducts.length > 0 &&
-      budget.estimatedDate &&
-      budget.maxDealDate &&
-      budget.guarantee &&
-      budget.shippingTerms &&
-      budget.reference
+      budget?.estimatedDate &&
+      budget?.maxDealDate &&
+      budget?.guarantee &&
+      budget?.shippingTerms &&
+      budget?.reference
   );
 
   useEffect(() => {
     if (budgetId) {
-      getBudgetById(budgetId).then((budget) => {
-        setBudget(budget);
-        setSelectedProducts(budget.selectedProducts);
+      getBudgetById(budgetId).then((budgetData) => {
+        if (budgetData) {
+          setBudget(budgetData);
+          setSelectedProducts(budgetData.selectedProducts || []);
+        }
       });
     }
   }, [budgetId]);
@@ -284,52 +309,117 @@ const EditBudget: React.FC = () => {
 
         {selectedProducts.length > 0 && (
           <>
-            {selectedProducts.map((product, index) => (
-              <Paper
-                key={index}
-                sx={{
-                  padding: 2,
-                  marginY: 2,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <Box flexGrow={1}>
-                  <Typography variant="subtitle1">
-                    {product.product.name}
-                  </Typography>
-                  <Typography variant="body2">
-                    Valor Unitário: R${" "}
-                    {brMoneyMask(product.product.unitValue.toString())}
-                  </Typography>
-                </Box>
-                <Box display="flex" alignItems="center">
-                  <Button
-                    size="small"
-                    onClick={() => updateProductQuantity(index, 1)}
+            {selectedProducts.map((item, index) => {
+              const currentUnitValue =
+                item.customUnitValue ?? item.product.unitValue;
+              const itemTotal = currentUnitValue * item.quantity;
+
+              return (
+                <Paper
+                  key={index}
+                  sx={{
+                    padding: 2,
+                    marginY: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
                   >
-                    <ArrowDropUp />
-                  </Button>
-                  <Typography>{product.quantity}</Typography>
-                  <Button
-                    size="small"
-                    onClick={() => updateProductQuantity(index, -1)}
-                  >
-                    <ArrowDropDown />
-                  </Button>
-                  <Button
-                    color="secondary"
-                    onClick={() => handleRemoveProduct(index)}
-                    startIcon={<Delete />}
-                  >
-                    Remover
-                  </Button>
-                </Box>
-              </Paper>
-            ))}
+                    <Box flexGrow={1}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {item.product.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Valor original: R${" "}
+                        {brMoneyMask(item.product.unitValue.toString())}
+                      </Typography>
+                    </Box>
+                    <Button
+                      color="error"
+                      onClick={() => handleRemoveProduct(index)}
+                      startIcon={<Delete />}
+                      size="small"
+                    >
+                      Remover
+                    </Button>
+                  </Box>
+
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="Valor Unitário (R$)"
+                        size="small"
+                        fullWidth
+                        value={brMoneyMask(currentUnitValue.toString())}
+                        onChange={(e) =>
+                          updateProductValue(index, e.target.value)
+                        }
+                        InputProps={{
+                          startAdornment: (
+                            <Edit
+                              sx={{
+                                mr: 1,
+                                color: "text.secondary",
+                                fontSize: 18,
+                              }}
+                            />
+                          ),
+                        }}
+                        helperText={
+                          item.customUnitValue !== undefined
+                            ? "Valor customizado"
+                            : ""
+                        }
+                      />
+                    </Grid>
+                    <Grid item xs={6} sm={3}>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => updateProductQuantity(index, -1)}
+                        >
+                          <ArrowDropDown />
+                        </Button>
+                        <Typography sx={{ minWidth: 30, textAlign: "center" }}>
+                          {item.quantity}
+                        </Typography>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => updateProductQuantity(index, 1)}
+                        >
+                          <ArrowDropUp />
+                        </Button>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6} sm={5}>
+                      <Box textAlign="right">
+                        <Typography variant="body2" color="text.secondary">
+                          Subtotal:
+                        </Typography>
+                        <Typography
+                          variant="h6"
+                          color="primary"
+                          fontWeight="bold"
+                        >
+                          R$ {brMoneyMask(itemTotal.toFixed(0))}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              );
+            })}
             <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
               <Typography variant="h6">
-                Valor Total: R$ {brMoneyMask(budget.totalValue.toFixed(0))}
+                Valor Total: R${" "}
+                {brMoneyMask((budget?.totalValue || 0).toFixed(0))}
               </Typography>
             </Box>
           </>

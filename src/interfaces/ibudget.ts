@@ -6,6 +6,7 @@ import { IProduct } from "./iproduct";
 export interface ISelectedProducts {
   product: IProduct;
   quantity: number;
+  customUnitValue?: number; // Valor customizado local para este orçamento (não altera o produto base)
 }
 
 export interface IBudget {
