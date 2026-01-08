@@ -1,90 +1,40 @@
-import { useEffect, useState } from "react";
-import {
-  Autocomplete,
-  Container,
-  Paper,
-  TextField,
-  Typography,
-  Button,
-  Box,
-  Grid,
-} from "@mui/material";
+import React from "react";
+import { Container, Typography, Button, Box, Paper } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { ArrowDropDown, ArrowDropUp, Delete } from "@mui/icons-material";
-import { IProduct } from "../../interfaces/iproduct";
-import { IBudget, ISelectedProducts } from "../../interfaces/ibudget";
-import { IClient } from "../../interfaces/iclient";
-import { searchProducts } from "../../services/productServices";
-import CreateClientModal from "../Modal/Create/CreateClientModal/CreateClientModal";
-import CreateProductModal from "../Modal/Create/CreateProductModal/CreateProductModal";
-import CreateRepresentativeModal from "../Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
-import useDebounce from "../../hooks/useDebounce";
 import { addBudget } from "../../services/budgetServices";
-import { IRepresentative } from "../../interfaces/irepresentative";
-import { searchRepresentatives } from "../../services/representativeServices";
-import { useNavigate } from "react-router";
-import { brMoneyMask } from "../../utils/Masks";
+import { useBudgetForm } from "../../hooks/useBudgetForm";
+import {
+  RepresentativeSelector,
+  ProductSelector,
+  ProductList,
+  BudgetTermsForm,
+  BudgetSummary,
+} from "../../components/Budget";
 
 const CreateBudget: React.FC = () => {
   const navigate = useNavigate();
-  const [budget, setBudget] = useState<IBudget>({
-    tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
-    guarantee:
-      "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
-  } as IBudget);
-  const [openClientModal, setOpenClientModal] = useState(false);
-  const [openRepresentativeModal, setOpenRepresentativeModal] = useState(false);
-  const [openProductModal, setOpenProductModal] = useState(false);
-  const [representativeList, setRepresentativeList] = useState<
-    IRepresentative[]
-  >([]);
-  const [productList, setProductList] = useState<IProduct[]>([]);
-  const [representativeSearchInput, setRepresentativeSearchInput] =
-    useState("");
-  const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>(
-    []
-  );
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [editedQuantity, setEditedQuantity] = useState("");
 
-  const handleEditQuantity = (index, quantity) => {
-    setEditingIndex(index);
-    setEditedQuantity(quantity);
-  };
+  const form = useBudgetForm({
+    allowCustomProductValue: false, // Criação não permite editar valor dos produtos
+  });
 
-  const handleSaveQuantity = (index) => {
-    updateProductQuantity(
-      index,
-      parseInt(editedQuantity, 10) - selectedProducts[index].quantity
-    );
-    setEditingIndex(null);
-    setEditedQuantity("");
-  };
-
-  const debouncedRepresentativeSearchTerm = useDebounce(
-    representativeSearchInput,
-    1000
-  );
-  const debouncedProductSearchTerm = useDebounce(productSearchTerm, 1000);
-
-  // Adicionar orçamento
-  const handleAddBudget = (budget: IBudget) => {
+  const handleSubmit = async () => {
     try {
-      addBudget(budget);
+      await addBudget(form.budget);
       Swal.fire({
         icon: "success",
         title: "Sucesso!",
         text: "Orçamento cadastrado com sucesso!",
-        showCancelButton: true, // Mostra o botão de cancelar
-        confirmButtonText: "Ir para Orçamentos", // Texto do botão de confirmação
-        cancelButtonText: "Adicionar Outro Orçamento", // Texto do botão de cancelar
-        reverseButtons: true, // Inverte a ordem dos botões (opcional)
+        showCancelButton: true,
+        confirmButtonText: "Ir para Orçamentos",
+        cancelButtonText: "Adicionar Outro Orçamento",
+        reverseButtons: true,
       }).then((result) => {
         if (result.isConfirmed) {
-          navigate("/Orcamentos"); // Redireciona para a página de orçamentos
+          navigate("/Orcamentos");
         } else if (result.dismiss === Swal.DismissReason.cancel) {
-          window.location.reload(); // Recarrega a página para adicionar outro orçamento
+          window.location.reload();
         }
       });
     } catch (error) {
@@ -97,97 +47,21 @@ const CreateBudget: React.FC = () => {
     }
   };
 
-  // Atualizar lista de clientes ao pesquisar
-  useEffect(() => {
-    if (debouncedRepresentativeSearchTerm) {
-      searchRepresentatives(debouncedRepresentativeSearchTerm).then(
-        setRepresentativeList
-      );
-    } else {
-      setRepresentativeList([]);
-    }
-  }, [debouncedRepresentativeSearchTerm]);
-
-  // Atualizar lista de produtos ao pesquisar
-  useEffect(() => {
-    if (debouncedProductSearchTerm) {
-      searchProducts(debouncedProductSearchTerm).then((products) => {
-        const mappedProducts: IProduct[] = products.map((product) => ({
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          ncm: product.ncm,
-          icms: product.icms,
-          unitValue: product.unitValue,
-          createdAt: product.createdAt,
-          updatedAt: product.updatedAt,
-        }));
-        setProductList(mappedProducts);
-      });
-    } else {
-      setProductList([]);
-    }
-  }, [debouncedProductSearchTerm]);
-
-  // Calcular valor total do orçamento ao alterar produtos
-  useEffect(() => {
-    const totalValue = selectedProducts.reduce(
-      (acc, { product, quantity }) => acc + product.unitValue * quantity,
-      0
-    );
-    setBudget((prev) => ({
-      ...prev,
-      totalValue,
-      selectedProducts: selectedProducts,
-    }));
-  }, [selectedProducts]);
-
-  const handleAddProduct = (product: IProduct) => {
-    setSelectedProducts((prev) => [
-      ...prev,
-      { product, quantity: 1 } as ISelectedProducts,
-    ]);
-  };
-
-  const handleRemoveProduct = (index: number) => {
+  const handleCancel = () => {
     Swal.fire({
-      title: "Tem certeza?",
-      text: "Tem certeza que deseja remover este produto?",
+      title: "Deseja mesmo descartar o orçamento atual?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sim, remover!",
       cancelButtonText: "Cancelar",
-      reverseButtons: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sim, descartar!",
     }).then((result) => {
       if (result.isConfirmed) {
-        setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+        navigate("/Orcamentos");
       }
     });
   };
-
-  const updateProductQuantity = (index: number, delta: number) => {
-    setSelectedProducts((prev) =>
-      prev
-        .map((p, i) =>
-          i === index ? { ...p, quantity: p.quantity + delta } : p
-        )
-        .filter((p) => p.quantity > 0)
-    );
-  };
-
-  const isBudgetValid = Boolean(
-    budget.representative &&
-      selectedProducts.length > 0 &&
-      budget.estimatedDate &&
-      budget.maxDealDate &&
-      budget.guarantee &&
-      budget.shippingTerms &&
-      budget.reference
-  );
-
-  useEffect(() => {
-    console.log(budget);
-  }, [budget]);
 
   return (
     <Container>
@@ -195,311 +69,61 @@ const CreateBudget: React.FC = () => {
         Cadastro de Orçamento
       </Typography>
 
-      {/* Dados do Cliente */}
-      <Paper sx={{ padding: 2, marginBottom: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          Dados do Representante
-        </Typography>
-        <Box display="flex" gap={2}>
-          <Autocomplete
-            options={representativeList}
-            getOptionLabel={(option) => option.name}
-            noOptionsText="Pesquise um representante cadastrado."
-            inputValue={representativeSearchInput}
-            onInputChange={(_e, value) => setRepresentativeSearchInput(value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Busque um representante"
-                required
-                onChange={(e) => setRepresentativeSearchInput(e.target.value)}
-              />
-            )}
-            onChange={(_event, value) =>
-              setBudget({
-                ...budget,
-                representative: value || ({} as IRepresentative),
-                client: value?.client || ({} as IClient),
-              })
-            }
-            sx={{ flexGrow: 1 }}
-          />
-        </Box>
-
-        {budget.representative?.name && (
-          <Box mt={2} p={2} borderRadius={4} bgcolor="#f5f5f5">
-            <Typography variant="subtitle1" marginBottom={2}>
-              Cliente: {budget.client.name}
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Typography variant="subtitle1">
-                  Nome: {budget.representative.name}
-                </Typography>
-                {budget.representative.email && (
-                  <Typography variant="subtitle1">
-                    Email: {budget.representative.email}
-                  </Typography>
-                )}
-              </Grid>
-              <Grid item xs={6}>
-                {budget.representative.phone && (
-                  <Typography variant="subtitle1">
-                    Telefone: {budget.representative.phone}
-                  </Typography>
-                )}
-                <Typography variant="subtitle1">
-                  Endereço: {budget.representative.address}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Box>
-        )}
-      </Paper>
+      {/* Seletor de Representante */}
+      <RepresentativeSelector
+        representativeList={form.representativeList}
+        searchInput={form.representativeSearchInput}
+        onSearchChange={form.setRepresentativeSearchInput}
+        onSelect={form.handleSelectRepresentative}
+        selectedRepresentative={form.budget.representative}
+      />
 
       {/* Produtos */}
       <Paper sx={{ padding: 2, marginBottom: 2 }}>
         <Typography variant="h5" gutterBottom>
           Produtos
         </Typography>
-        <Box display="flex" gap={2}>
-          <Autocomplete
-            options={productList}
-            getOptionLabel={(option) => option.name}
-            noOptionsText="Pesquise um produto cadastrado."
-            inputValue={productSearchTerm}
-            onInputChange={(_e, value) => setProductSearchTerm(value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Busque um produto"
-                required
-                onChange={(e) => setProductSearchTerm(e.target.value)}
-              />
-            )}
-            onChange={(_event, value) => value && handleAddProduct(value)}
-            sx={{ flexGrow: 1 }}
-          />
-          {/* <Button
-            variant="contained"
-            onClick={() => setOpenProductModal(true)}
-            startIcon={<Storefront />}
-          >
-            Adicionar
-          </Button> */}
-        </Box>
 
-        {selectedProducts.length > 0 && (
-          <>
-            {selectedProducts.map((product, index) => (
-              <Paper
-                key={index}
-                sx={{
-                  padding: 2,
-                  marginY: 2,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <Box flexGrow={1}>
-                  <Typography variant="subtitle1">
-                    {product.product.name}
-                  </Typography>
-                  <Typography variant="body2">
-                    Valor Unitário: R${" "}
-                    {brMoneyMask(product.product.unitValue.toString())}
-                  </Typography>
-                </Box>
-                <Box display="flex" alignItems="center">
-                  <Button
-                    size="small"
-                    onClick={() => updateProductQuantity(index, 1)}
-                  >
-                    <ArrowDropUp />
-                  </Button>
-                  {editingIndex === index ? (
-                    <TextField
-                      value={editedQuantity}
-                      onChange={(e) => setEditedQuantity(e.target.value)}
-                      onBlur={() => handleSaveQuantity(index)}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          handleSaveQuantity(index);
-                        }
-                      }}
-                      autoFocus
-                      variant="outlined"
-                      size="small"
-                      sx={{ width: "60px", marginX: 1 }}
-                    />
-                  ) : (
-                    <Typography
-                      onClick={() =>
-                        handleEditQuantity(index, product.quantity)
-                      }
-                    >
-                      {product.quantity}
-                    </Typography>
-                  )}
-                  <Button
-                    size="small"
-                    onClick={() => updateProductQuantity(index, -1)}
-                  >
-                    <ArrowDropDown />
-                  </Button>
-                  <Button
-                    color="secondary"
-                    onClick={() => handleRemoveProduct(index)}
-                    startIcon={<Delete />}
-                  >
-                    Remover
-                  </Button>
-                </Box>
-              </Paper>
-            ))}
-            <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
-              <Typography variant="h6">
-                Valor Total: R$ {brMoneyMask(budget.totalValue.toFixed(0))}
-              </Typography>
-            </Box>
-          </>
+        <ProductSelector
+          productList={form.productList}
+          searchTerm={form.productSearchTerm}
+          onSearchChange={form.setProductSearchTerm}
+          onAddProduct={form.addProduct}
+        />
+
+        <ProductList
+          products={form.selectedProducts}
+          onRemove={form.removeProduct}
+          onQuantityChange={form.updateProductQuantity}
+          // Não passa onValueChange - criação não permite editar valor
+        />
+
+        {form.selectedProducts.length > 0 && (
+          <BudgetSummary totalValue={form.totalValue} />
         )}
       </Paper>
 
-      {/* Datas e Observações */}
-      <Paper sx={{ padding: 2, marginBottom: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          Prazos e Observações
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
-            <TextField
-              label="Prazo para Entrega"
-              type="text"
-              placeholder="EX.: Á COMBINAR / 20 DIAS"
-              fullWidth
-              required
-              value={budget.estimatedDate || ""}
-              onChange={(e) =>
-                setBudget({ ...budget, estimatedDate: e.target.value })
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Validade da Proposta"
-              type="text"
-              fullWidth
-              required
-              placeholder="Ex.: 15 DIAS ÚTEIS "
-              value={budget.maxDealDate || ""}
-              onChange={(e) =>
-                setBudget({ ...budget, maxDealDate: e.target.value })
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Condição de Pagamento"
-              type="text"
-              fullWidth
-              placeholder="28 DDL"
-              value={budget.paymentTerms}
-              onChange={(e) =>
-                setBudget({ ...budget, paymentTerms: e.target.value })
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <Autocomplete
-              options={["CIF", "FOB"]}
-              value={budget.shippingTerms}
-              onChange={(_, value) =>
-                setBudget({ ...budget, shippingTerms: value })
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Condição de Entrega" fullWidth />
-              )}
-            />
-          </Grid>
-        </Grid>
-        <TextField
-          label="Garantia"
-          fullWidth
-          margin="normal"
-          required
-          value={budget.guarantee}
-          onChange={(e) => setBudget({ ...budget, guarantee: e.target.value })}
-        />
-        <TextField
-          label="Imposto"
-          fullWidth
-          margin="normal"
-          required
-          value={budget.tax}
-          onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
-        />
+      {/* Prazos e Observações */}
+      <BudgetTermsForm
+        budget={form.budget}
+        onChange={(updates) =>
+          form.setBudget((prev) => ({ ...prev, ...updates }))
+        }
+      />
 
-        <TextField
-          label="Referência"
-          fullWidth
-          margin="normal"
-          required
-          value={budget.reference}
-          onChange={(e) => setBudget({ ...budget, reference: e.target.value })}
-          placeholder="Orçamento / Proposta de fornecimento"
-        />
-      </Paper>
-
-      {/* Botão Salvar */}
+      {/* Botões de Ação */}
       <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
         <Button
           variant="contained"
-          onClick={() => handleAddBudget(budget)}
-          disabled={!budget || !isBudgetValid}
+          onClick={handleSubmit}
+          disabled={!form.isValid}
         >
           Salvar
         </Button>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={() => {
-            Swal.fire({
-              title: "Deseja mesmo descartar o orçamento atual?",
-              icon: "warning",
-              showCancelButton: true,
-              cancelButtonText: "Cancelar",
-              confirmButtonColor: "#3085d6",
-              cancelButtonColor: "#d33",
-              confirmButtonText: "Sim, descartar!",
-            }).then((result) => {
-              if (result.isConfirmed) {
-                navigate("/orcamentos");
-              }
-            });
-          }}
-        >
+        <Button variant="contained" color="error" onClick={handleCancel}>
           Cancelar
         </Button>
       </Box>
-
-      <CreateClientModal
-        open={openClientModal}
-        handleClose={() => setOpenClientModal(false)}
-      />
-
-      <CreateRepresentativeModal
-        open={openRepresentativeModal}
-        handleClose={() => setOpenRepresentativeModal(false)}
-      />
-
-      <CreateProductModal
-        open={openProductModal}
-        handleClose={() => setOpenProductModal(false)}
-      />
     </Container>
   );
 };

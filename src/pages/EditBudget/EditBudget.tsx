@@ -1,76 +1,61 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Autocomplete,
   Container,
-  Paper,
-  TextField,
   Typography,
   Button,
   Box,
-  Grid,
+  Paper,
+  CircularProgress,
 } from "@mui/material";
-import {
-  ArrowDropDown,
-  ArrowDropUp,
-  Delete,
-  PersonAdd,
-  Storefront,
-  Edit,
-} from "@mui/icons-material";
-import { IProduct } from "../../interfaces/iproduct";
-import { IBudget, ISelectedProducts } from "../../interfaces/ibudget";
-import { IClient } from "../../interfaces/iclient";
-import { searchProducts } from "../../services/productServices";
-import ClientModal from "../../components/Modal/Create/CreateClientModal/CreateClientModal";
-import ProductModal from "../../components/Modal/Create/CreateProductModal/CreateProductModal";
-import useDebounce from "../../hooks/useDebounce";
-import { getBudgetById, updateBudget } from "../../services/budgetServices";
-import { IRepresentative } from "../../interfaces/irepresentative";
-import { searchRepresentatives } from "../../services/representativeServices";
-import RepresentativeModal from "../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
-import { useLocation, useNavigate } from "react-router-dom";
-import { brMoneyMask, formatCurrencyToNumber } from "../../utils/Masks";
+import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
+import { getBudgetById, updateBudget } from "../../services/budgetServices";
+import { useBudgetForm } from "../../hooks/useBudgetForm";
+import { IBudget } from "../../interfaces/ibudget";
+import {
+  RepresentativeSelector,
+  ProductSelector,
+  ProductList,
+  BudgetTermsForm,
+  BudgetSummary,
+} from "../../components/Budget";
 
 const EditBudget: React.FC = () => {
-  const [budget, setBudget] = useState<IBudget>({
-    tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
-    guarantee:
-      "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
-  } as IBudget);
-  const [openClientModal, setOpenClientModal] = useState(false);
-  const [openRepresentativeModal, setOpenRepresentativeModal] = useState(false);
-  const [openProductModal, setOpenProductModal] = useState(false);
-  const location = useLocation();
-  const budgetId = location.pathname.split("/")[3];
-  const [representativeList, setRepresentativeList] = useState<
-    IRepresentative[]
-  >([]);
-  const [productList, setProductList] = useState<IProduct[]>([]);
-  const [representativeSearchInput, setRepresentativeSearchInput] =
-    useState("");
-  const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [selectedProducts, setSelectedProducts] = useState<ISelectedProducts[]>(
-    []
-  );
   const navigate = useNavigate();
+  const { id: budgetId } = useParams<{ id: string }>();
+  const [initialData, setInitialData] = useState<IBudget | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const debouncedRepresentativeSearchTerm = useDebounce(
-    representativeSearchInput,
-    1000
-  );
-  const debouncedProductSearchTerm = useDebounce(productSearchTerm, 1000);
+  // Carregar dados do orçamento para edição
+  useEffect(() => {
+    if (budgetId) {
+      setIsLoading(true);
+      getBudgetById(budgetId)
+        .then((data) => {
+          setInitialData(data);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [budgetId]);
 
-  // Adicionar orçamento
-  const handleUpdateBudget = async () => {
+  const form = useBudgetForm({
+    initialData,
+    allowCustomProductValue: true, // Edição permite alterar valores dos produtos
+  });
+
+  const handleSubmit = async () => {
+    if (!budgetId) return;
+
     try {
-      await updateBudget(budgetId, budget); // Certifique-se de que a função é assíncrona
+      await updateBudget(budgetId, form.budget);
       Swal.fire({
         icon: "success",
         title: "Sucesso!",
         text: "Orçamento atualizado com sucesso!",
       }).then(() => {
-        navigate("/Orcamentos"); // Redireciona após o usuário clicar em "OK"
+        navigate("/Orcamentos");
       });
     } catch (error) {
       Swal.fire({
@@ -82,463 +67,101 @@ const EditBudget: React.FC = () => {
     }
   };
 
-  // Atualizar lista de clientes ao pesquisar
-  useEffect(() => {
-    if (debouncedRepresentativeSearchTerm) {
-      searchRepresentatives(debouncedRepresentativeSearchTerm).then(
-        setRepresentativeList
-      );
-    } else {
-      setRepresentativeList([]);
-    }
-  }, [debouncedRepresentativeSearchTerm]);
-
-  // Atualizar lista de produtos ao pesquisar
-  useEffect(() => {
-    if (debouncedProductSearchTerm) {
-      searchProducts(debouncedProductSearchTerm).then((products) => {
-        const mappedProducts: IProduct[] = products.map((product) => ({
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          ncm: product.ncm,
-          icms: product.icms,
-          unitValue: product.unitValue,
-          createdAt: product.createdAt,
-          updatedAt: product.updatedAt,
-        }));
-        setProductList(mappedProducts);
-      });
-    } else {
-      setProductList([]);
-    }
-  }, [debouncedProductSearchTerm]);
-
-  // Calcular valor total do orçamento ao alterar produtos
-  useEffect(() => {
-    const totalValue = selectedProducts.reduce(
-      (acc, { product, quantity, customUnitValue }) => {
-        const unitPrice = customUnitValue ?? product.unitValue;
-        return acc + unitPrice * quantity;
-      },
-      0
-    );
-    setBudget((prev) => ({
-      ...prev,
-      totalValue,
-      selectedProducts: selectedProducts,
-    }));
-  }, [selectedProducts]);
-
-  const handleAddProduct = (product: IProduct) => {
-    setSelectedProducts((prev) => [
-      ...prev,
-      { product, quantity: 1 } as ISelectedProducts,
-    ]);
-  };
-
-  const handleRemoveProduct = (index: number) => {
+  const handleCancel = () => {
     Swal.fire({
-      title: "Tem certeza?",
-      text: "Tem certeza que deseja remover este produto?",
+      title: "Deseja descartar as alterações?",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sim, remover!",
-      cancelButtonText: "Cancelar",
-      reverseButtons: true,
+      cancelButtonText: "Continuar Editando",
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sim, descartar!",
     }).then((result) => {
       if (result.isConfirmed) {
-        setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+        navigate("/Orcamentos");
       }
     });
   };
 
-  const updateProductQuantity = (index: number, delta: number) => {
-    setSelectedProducts((prev) =>
-      prev
-        .map((p, i) =>
-          i === index ? { ...p, quantity: p.quantity + delta } : p
-        )
-        .filter((p) => p.quantity > 0)
+  if (isLoading) {
+    return (
+      <Container>
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="50vh"
+        >
+          <CircularProgress />
+        </Box>
+      </Container>
     );
-  };
-
-  // Atualizar valor unitário customizado do produto (apenas local para este orçamento)
-  // Valor é armazenado em centavos (90000 = R$ 900,00)
-  const updateProductValue = (index: number, newValue: string) => {
-    // Remove formatação e converte para número em centavos
-    const cleanValue = newValue.replace(/\D/g, "");
-    const valueInCents = parseInt(cleanValue, 10);
-
-    setSelectedProducts((prev) =>
-      prev.map((p, i) =>
-        i === index
-          ? {
-              ...p,
-              customUnitValue: isNaN(valueInCents) ? undefined : valueInCents,
-            }
-          : p
-      )
-    );
-  };
-
-  const isBudgetValid = Boolean(
-    budget?.representative &&
-      selectedProducts.length > 0 &&
-      budget?.estimatedDate &&
-      budget?.maxDealDate &&
-      budget?.guarantee &&
-      budget?.shippingTerms &&
-      budget?.reference
-  );
-
-  useEffect(() => {
-    if (budgetId) {
-      getBudgetById(budgetId).then((budgetData) => {
-        if (budgetData) {
-          setBudget(budgetData);
-          setSelectedProducts(budgetData.selectedProducts || []);
-        }
-      });
-    }
-  }, [budgetId]);
+  }
 
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        Cadastro de Orçamento
+        Editar Orçamento #{budgetId}
       </Typography>
 
-      {/* Dados do Cliente */}
-      <Paper sx={{ padding: 2, marginBottom: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          Dados do Representante
-        </Typography>
-        <Box display="flex" gap={2}>
-          <Autocomplete
-            options={representativeList}
-            getOptionLabel={(option) => option.name}
-            noOptionsText="Pesquise um cliente cadastrado."
-            inputValue={representativeSearchInput}
-            onInputChange={(_e, value) => setRepresentativeSearchInput(value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Busque um representante"
-                required
-                onChange={(e) => setRepresentativeSearchInput(e.target.value)}
-              />
-            )}
-            onChange={(_event, value) =>
-              setBudget({
-                ...budget,
-                representative: value || ({} as IRepresentative),
-                client: value?.client || ({} as IClient),
-              })
-            }
-            sx={{ flexGrow: 1 }}
-          />
-          <Button
-            variant="contained"
-            onClick={() => setOpenClientModal(true)}
-            startIcon={<PersonAdd />}
-          >
-            Adicionar
-          </Button>
-        </Box>
-
-        {budget.representative?.name && (
-          <Box mt={2} p={2} borderRadius={4} bgcolor="#f5f5f5">
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Typography variant="subtitle1">
-                  Nome: {budget.representative.name}
-                </Typography>
-                {budget.representative.email && (
-                  <Typography variant="subtitle1">
-                    Email: {budget.representative.email}
-                  </Typography>
-                )}
-              </Grid>
-              <Grid item xs={6}>
-                {budget.representative.phone && (
-                  <Typography variant="subtitle1">
-                    Telefone: {budget.representative.phone}
-                  </Typography>
-                )}
-                <Typography variant="subtitle1">
-                  Endereço: {budget.representative.address}
-                </Typography>
-              </Grid>
-            </Grid>
-          </Box>
-        )}
-      </Paper>
+      {/* Seletor de Representante */}
+      <RepresentativeSelector
+        representativeList={form.representativeList}
+        searchInput={form.representativeSearchInput}
+        onSearchChange={form.setRepresentativeSearchInput}
+        onSelect={form.handleSelectRepresentative}
+        selectedRepresentative={form.budget.representative}
+        // No modo edição, pode-se desabilitar a troca de representante se necessário:
+        // disabled={true}
+      />
 
       {/* Produtos */}
       <Paper sx={{ padding: 2, marginBottom: 2 }}>
         <Typography variant="h5" gutterBottom>
           Produtos
         </Typography>
-        <Box display="flex" gap={2}>
-          <Autocomplete
-            options={productList}
-            getOptionLabel={(option) => option.name}
-            noOptionsText="Pesquise um produto cadastrado."
-            inputValue={productSearchTerm}
-            onInputChange={(_e, value) => setProductSearchTerm(value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Busque um produto"
-                required
-                onChange={(e) => setProductSearchTerm(e.target.value)}
-              />
-            )}
-            onChange={(_event, value) => value && handleAddProduct(value)}
-            sx={{ flexGrow: 1 }}
-          />
-          <Button
-            variant="contained"
-            onClick={() => setOpenProductModal(true)}
-            startIcon={<Storefront />}
-          >
-            Adicionar
-          </Button>
-        </Box>
 
-        {selectedProducts.length > 0 && (
-          <>
-            {selectedProducts.map((item, index) => {
-              const currentUnitValue =
-                item.customUnitValue ?? item.product.unitValue;
-              const itemTotal = currentUnitValue * item.quantity;
+        <ProductSelector
+          productList={form.productList}
+          searchTerm={form.productSearchTerm}
+          onSearchChange={form.setProductSearchTerm}
+          onAddProduct={form.addProduct}
+        />
 
-              return (
-                <Paper
-                  key={index}
-                  sx={{
-                    padding: 2,
-                    marginY: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                  }}
-                >
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
-                    <Box flexGrow={1}>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {item.product.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Valor original: R${" "}
-                        {brMoneyMask(item.product.unitValue.toString())}
-                      </Typography>
-                    </Box>
-                    <Button
-                      color="error"
-                      onClick={() => handleRemoveProduct(index)}
-                      startIcon={<Delete />}
-                      size="small"
-                    >
-                      Remover
-                    </Button>
-                  </Box>
+        <ProductList
+          products={form.selectedProducts}
+          onRemove={form.removeProduct}
+          onQuantityChange={form.updateProductQuantity}
+          onValueChange={form.updateProductCustomValue} // Edição permite alterar valor
+          showOriginalValue={true} // Mostra valor original para referência
+        />
 
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        label="Valor Unitário (R$)"
-                        size="small"
-                        fullWidth
-                        value={brMoneyMask(currentUnitValue.toString())}
-                        onChange={(e) =>
-                          updateProductValue(index, e.target.value)
-                        }
-                        InputProps={{
-                          startAdornment: (
-                            <Edit
-                              sx={{
-                                mr: 1,
-                                color: "text.secondary",
-                                fontSize: 18,
-                              }}
-                            />
-                          ),
-                        }}
-                        helperText={
-                          item.customUnitValue !== undefined
-                            ? "Valor customizado"
-                            : ""
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={6} sm={3}>
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => updateProductQuantity(index, -1)}
-                        >
-                          <ArrowDropDown />
-                        </Button>
-                        <Typography sx={{ minWidth: 30, textAlign: "center" }}>
-                          {item.quantity}
-                        </Typography>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={() => updateProductQuantity(index, 1)}
-                        >
-                          <ArrowDropUp />
-                        </Button>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6} sm={5}>
-                      <Box textAlign="right">
-                        <Typography variant="body2" color="text.secondary">
-                          Subtotal:
-                        </Typography>
-                        <Typography
-                          variant="h6"
-                          color="primary"
-                          fontWeight="bold"
-                        >
-                          R$ {brMoneyMask(itemTotal.toFixed(0))}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </Paper>
-              );
-            })}
-            <Box mt={2} p={2} borderRadius={4} bgcolor="#f9f9f9">
-              <Typography variant="h6">
-                Valor Total: R${" "}
-                {brMoneyMask((budget?.totalValue || 0).toFixed(0))}
-              </Typography>
-            </Box>
-          </>
+        {form.selectedProducts.length > 0 && (
+          <BudgetSummary totalValue={form.totalValue} />
         )}
       </Paper>
 
-      {/* Datas e Observações */}
-      <Paper sx={{ padding: 2, marginBottom: 2 }}>
-        <Typography variant="h5" gutterBottom>
-          Prazos e Observações
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
-            <TextField
-              label="Prazo para Entrega"
-              type="text"
-              placeholder="EX.: Á COMBINAR / 20 DIAS"
-              fullWidth
-              required
-              value={budget.estimatedDate || ""}
-              onChange={(e) =>
-                setBudget({ ...budget, estimatedDate: e.target.value })
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Validade da Proposta"
-              type="text"
-              fullWidth
-              required
-              placeholder="Ex.: 28 DDL"
-              value={budget.maxDealDate || ""}
-              onChange={(e) =>
-                setBudget({ ...budget, maxDealDate: e.target.value })
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              label="Condição de Pagamento"
-              type="text"
-              fullWidth
-              placeholder="28 DDL"
-              value={budget.paymentTerms}
-              onChange={(e) =>
-                setBudget({ ...budget, paymentTerms: e.target.value })
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <Autocomplete
-              options={["CIF", "FOB"]}
-              value={budget.shippingTerms}
-              onChange={(_, value) =>
-                setBudget({ ...budget, shippingTerms: value })
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Condição de Entrega" fullWidth />
-              )}
-            />
-          </Grid>
-        </Grid>
-        <TextField
-          label="Garantia"
-          fullWidth
-          margin="normal"
-          required
-          value={budget.guarantee}
-          onChange={(e) => setBudget({ ...budget, guarantee: e.target.value })}
-        />
-        <TextField
-          label="Imposto"
-          fullWidth
-          margin="normal"
-          required
-          value={budget.tax}
-          onChange={(e) => setBudget({ ...budget, tax: e.target.value })}
-        />
-        <TextField
-          label="Referência"
-          fullWidth
-          margin="normal"
-          required
-          value={budget.reference}
-          onChange={(e) => setBudget({ ...budget, reference: e.target.value })}
-          placeholder="Orçamento / Proposta de fornecimento"
-        />
-      </Paper>
-
-      {/* Botão Salvar */}
-      <Button
-        variant="contained"
-        sx={{ mt: 2 }}
-        onClick={() => {
-          handleUpdateBudget();
-        }}
-        disabled={!budget || !isBudgetValid}
-      >
-        Salvar Edição
-      </Button>
-
-      <ClientModal
-        open={openClientModal}
-        handleClose={() => setOpenClientModal(false)}
+      {/* Prazos e Observações */}
+      <BudgetTermsForm
+        budget={form.budget}
+        onChange={(updates) =>
+          form.setBudget((prev) => ({ ...prev, ...updates }))
+        }
       />
 
-      <RepresentativeModal
-        open={openRepresentativeModal}
-        handleClose={() => setOpenRepresentativeModal(false)}
-      />
-
-      <ProductModal
-        open={openProductModal}
-        handleClose={() => setOpenProductModal(false)}
-      />
+      {/* Botões de Ação */}
+      <Box display="flex" justifyContent="flex-end" gap={2} mt={2} mb={4}>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={!form.isValid}
+        >
+          Salvar Alterações
+        </Button>
+        <Button variant="contained" color="error" onClick={handleCancel}>
+          Cancelar
+        </Button>
+      </Box>
     </Container>
   );
 };
