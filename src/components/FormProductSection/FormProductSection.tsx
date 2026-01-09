@@ -10,9 +10,9 @@ import { ArrowDropDown, ArrowDropUp, Delete } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
 import { ISelectedProducts } from "../../interfaces/ibudget";
 import { brMoneyMask } from "../../utils/Masks";
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import useDebounce from "../../hooks/useDebounce";
-import { searchProducts } from "../../services/productServices";
+import { useData } from "../../context/DataContext";
 import Swal from "sweetalert2";
 
 interface ProductSectionProps {
@@ -25,28 +25,27 @@ const FormProductSection: React.FC<ProductSectionProps> = ({
   onProductsChange,
 }) => {
   const [searchInput, setSearchInput] = useState("");
-  const [productList, setProductList] = useState<IProduct[]>([]);
-  const debouncedSearch = useDebounce(searchInput, 800);
+  const debouncedSearch = useDebounce(searchInput, 300);
 
-  useEffect(() => {
-    if (debouncedSearch) {
-      searchProducts(debouncedSearch).then((products) => {
-        setProductList(products);
-      });
-    } else {
-      setProductList([]);
-    }
-  }, [debouncedSearch]);
+  // Usa dados do cache via DataContext - SEM chamadas ao Firestore!
+  const { products: allProducts } = useData();
 
-  useEffect(() => {
-    onProductsChange(selectedProducts);
-    console.log(selectedProducts);
-  }, [selectedProducts, onProductsChange]);
+  // Filtragem local dos produtos baseada no termo de busca
+  const productList = useMemo(() => {
+    if (!debouncedSearch) return [];
+
+    return allProducts.filter(
+      (product) =>
+        product.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        product.ncm?.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [allProducts, debouncedSearch]);
 
   const handleAddProduct = (product: IProduct) => {
     const exists = selectedProducts.find((p) => p.product.id === product.id);
     if (exists) return;
     onProductsChange([...selectedProducts, { product, quantity: 1 }]);
+    setSearchInput("");
   };
 
   const handleUpdateQuantity = (index: number, delta: number) => {
@@ -75,7 +74,7 @@ const FormProductSection: React.FC<ProductSectionProps> = ({
   };
 
   const totalValue = selectedProducts.reduce(
-    (acc, { product, quantity }) => acc + product.unitValue * quantity,
+    (acc, { product, quantity }) => acc + (product.unitValue || 0) * quantity,
     0
   );
 
@@ -87,7 +86,7 @@ const FormProductSection: React.FC<ProductSectionProps> = ({
 
       <Autocomplete
         options={productList}
-        getOptionLabel={(option) => option.name}
+        getOptionLabel={(option) => option.name || ""}
         inputValue={searchInput}
         getOptionDisabled={(option) =>
           selectedProducts.some((p) => p.product.id === option.id)
@@ -95,7 +94,9 @@ const FormProductSection: React.FC<ProductSectionProps> = ({
         onInputChange={(_, value) => setSearchInput(value)}
         onChange={(_, value) => value && handleAddProduct(value)}
         isOptionEqualToValue={(option, value) => option.id === value.id}
-        noOptionsText="Nenhum produto encontrado"
+        noOptionsText={
+          debouncedSearch ? "Nenhum produto encontrado" : "Digite para buscar"
+        }
         renderInput={(params) => (
           <TextField {...params} label="Buscar produto" fullWidth />
         )}
@@ -104,60 +105,58 @@ const FormProductSection: React.FC<ProductSectionProps> = ({
 
       <Box sx={{ p: 1 }}>
         {selectedProducts.map((item, index) => (
-          <>
-            <Paper
-              key={item.product.id}
-              elevation={1}
-              sx={{
-                p: 3,
-                mb: 2,
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderRadius: 2,
-              }}
-            >
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {item.product.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Valor unitário: R${" "}
-                  {brMoneyMask(item.product.unitValue.toString())}
-                </Typography>
-              </Box>
+          <Paper
+            key={item.product.id}
+            elevation={1}
+            sx={{
+              p: 3,
+              mb: 2,
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderRadius: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600}>
+                {item.product.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Valor unitário: R${" "}
+                {brMoneyMask((item.product.unitValue || 0).toString())}
+              </Typography>
+            </Box>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <Button
-                  size="small"
-                  onClick={() => handleUpdateQuantity(index, 1)}
-                >
-                  <ArrowDropUp />
-                </Button>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Button
+                size="small"
+                onClick={() => handleUpdateQuantity(index, 1)}
+              >
+                <ArrowDropUp />
+              </Button>
 
-                <Typography>{item.quantity}</Typography>
+              <Typography>{item.quantity}</Typography>
 
-                <Button
-                  size="small"
-                  onClick={() => handleUpdateQuantity(index, -1)}
-                >
-                  <ArrowDropDown />
-                </Button>
+              <Button
+                size="small"
+                onClick={() => handleUpdateQuantity(index, -1)}
+              >
+                <ArrowDropDown />
+              </Button>
 
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  onClick={() => handleRemoveProduct(index)}
-                  startIcon={<Delete />}
-                  sx={{ ml: 2 }}
-                >
-                  Remover
-                </Button>
-              </Box>
-            </Paper>
-          </>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => handleRemoveProduct(index)}
+                startIcon={<Delete />}
+                sx={{ ml: 2 }}
+              >
+                Remover
+              </Button>
+            </Box>
+          </Paper>
         ))}
       </Box>
 

@@ -12,6 +12,7 @@ import {
 import { styled } from "@mui/system";
 import { IProduct } from "../../../../interfaces/iproduct";
 import { addProduct } from "../../../../services/productServices";
+import { useData } from "../../../../context/DataContext";
 import ncmData from "../../../../tabela_ncm.json";
 import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
 
@@ -38,10 +39,16 @@ interface CreateProductModalProps {
   handleClose: () => void;
 }
 
-const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClose }) => {
+const CreateProductModal: React.FC<CreateProductModalProps> = ({
+  open,
+  handleClose,
+}) => {
   const [product, setProduct] = useState<IProduct>({} as IProduct);
   const [error, setError] = useState<string | null>(null);
   const [maskedUnitValue, setMaskedUnitValue] = useState<string>("");
+
+  // Usa dados do cache
+  const { addProductToCache } = useData();
 
   const handleGenericChange = (name: string, value: string) => {
     setProduct((prevProduct) => ({ ...prevProduct, [name]: value }));
@@ -85,21 +92,19 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({ open, handleClo
   };
 
   const handleAddProduct = async () => {
-    if (
-      !product.name ||
-      !product.ncm ||
-      !product.unitValue
-    ) {
+    if (!product.name || !product.ncm || !product.unitValue) {
       setError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
     try {
       await addProduct(product);
+      // Atualiza o cache local em vez de recarregar a página
+      addProductToCache(product);
       handleClose();
       setProduct({} as IProduct);
+      setMaskedUnitValue("");
       setError(null);
-      window.location.reload();
     } catch (error) {
       console.error("Erro ao adicionar produto:", error);
       setError("Ocorreu um erro ao adicionar o produto. Tente novamente.");

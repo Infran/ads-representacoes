@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Home } from "./pages/Home/Home";
 import Products from "./pages/Products/Products";
 import Clients from "./pages/Clients/Clients";
-import  Budgets  from "./pages/Budgets/Budgets";
+import Budgets from "./pages/Budgets/Budgets";
 import Representatives from "./pages/Representatives/Representatives";
 import DefaultLayout from "./layouts/DefaultLayout";
 import { Login } from "./components/Login/Login";
@@ -14,9 +14,10 @@ import CreateBudget from "./components/CreateBudget/CreateBudget";
 // import BudgetForm from "./components/BudgetForm/BudgetForm";
 import NewCreateBudget from "./pages/CreateBudget.tsx/CreateBudget";
 import EditBudget from "./pages/EditBudget/EditBudget";
+import { DataProvider } from "./context/DataContext";
 
 const AppRouter = () => {
-  const { currentUser: user } = useContext(AuthContext)
+  const { currentUser: user } = useContext(AuthContext);
   if (!user) {
     return (
       <Router>
@@ -29,24 +30,26 @@ const AppRouter = () => {
     );
   } else {
     return (
-      <Router>
-        <Routes>
-          <Route element={<ProtectedRoutes />}>
-          <Route path="/" element={<DefaultLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/*" element={<Home />} />
-            <Route path="Home" element={<Home />} />
-            <Route path="Produtos" element={<Products />} />
-            <Route path="Clientes" element={<Clients />} />
-            <Route path="Representantes" element={<Representatives />} />
-            <Route path="Orcamentos" element={<Budgets />} />
-            <Route path="Orcamentos/Adicionar" element={<CreateBudget />} />
-            <Route path="newForm" element={<NewCreateBudget />} />
-            <Route path="Orcamentos/Editar/:id" element={<EditBudget />} />
-          </Route>
-          </Route>
-        </Routes>
-      </Router>
+      <DataProvider>
+        <Router>
+          <Routes>
+            <Route element={<ProtectedRoutes />}>
+              <Route path="/" element={<DefaultLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/*" element={<Home />} />
+                <Route path="Home" element={<Home />} />
+                <Route path="Produtos" element={<Products />} />
+                <Route path="Clientes" element={<Clients />} />
+                <Route path="Representantes" element={<Representatives />} />
+                <Route path="Orcamentos" element={<Budgets />} />
+                <Route path="Orcamentos/Adicionar" element={<CreateBudget />} />
+                <Route path="newForm" element={<NewCreateBudget />} />
+                <Route path="Orcamentos/Editar/:id" element={<EditBudget />} />
+              </Route>
+            </Route>
+          </Routes>
+        </Router>
+      </DataProvider>
     );
   }
 };

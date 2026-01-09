@@ -61,7 +61,8 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ title }) => {
         if (result.isConfirmed) {
           navigate("/Orcamentos");
         } else if (result.dismiss === Swal.DismissReason.cancel) {
-          window.location.reload();
+          // Re-render em vez de recarregar a página
+          navigate("/Orcamentos/Adicionar");
         }
       });
     } catch (error) {

@@ -11,17 +11,30 @@ import {
   BudgetTermsForm,
   BudgetSummary,
 } from "../../components/Budget";
+import { useData } from "../../context/DataContext";
 
 const CreateBudget: React.FC = () => {
   const navigate = useNavigate();
 
+  // Obtém dados do cache para busca local
+  const {
+    products: cachedProducts,
+    representatives: cachedRepresentatives,
+    refreshBudgets,
+  } = useData();
+
   const form = useBudgetForm({
-    allowCustomProductValue: false, // Criação não permite editar valor dos produtos
+    allowCustomProductValue: false,
+    cachedProducts,
+    cachedRepresentatives,
   });
 
   const handleSubmit = async () => {
     try {
       await addBudget(form.budget);
+      // Atualiza o cache de orçamentos
+      await refreshBudgets();
+
       Swal.fire({
         icon: "success",
         title: "Sucesso!",
@@ -34,7 +47,8 @@ const CreateBudget: React.FC = () => {
         if (result.isConfirmed) {
           navigate("/Orcamentos");
         } else if (result.dismiss === Swal.DismissReason.cancel) {
-          window.location.reload();
+          // Re-render o formulário em vez de recarregar a página
+          navigate("/Orcamentos/Adicionar");
         }
       });
     } catch (error) {

@@ -3,8 +3,6 @@ import { IBudget, ISelectedProducts } from "../interfaces/ibudget";
 import { IProduct } from "../interfaces/iproduct";
 import { IRepresentative } from "../interfaces/irepresentative";
 import { IClient } from "../interfaces/iclient";
-import { searchProducts } from "../services/productServices";
-import { searchRepresentatives } from "../services/representativeServices";
 import useDebounce from "./useDebounce";
 import Swal from "sweetalert2";
 
@@ -18,6 +16,10 @@ interface UseBudgetFormOptions {
   initialData?: IBudget | null;
   /** Se true, permite editar o valor unitário dos produtos (apenas no modo edição) */
   allowCustomProductValue?: boolean;
+  /** Lista de produtos do cache para busca local */
+  cachedProducts?: IProduct[];
+  /** Lista de representantes do cache para busca local */
+  cachedRepresentatives?: IRepresentative[];
 }
 
 interface UseBudgetFormReturn {
@@ -51,7 +53,12 @@ interface UseBudgetFormReturn {
 export const useBudgetForm = (
   options: UseBudgetFormOptions = {}
 ): UseBudgetFormReturn => {
-  const { initialData, allowCustomProductValue = false } = options;
+  const {
+    initialData,
+    allowCustomProductValue = false,
+    cachedProducts = [],
+    cachedRepresentatives = [],
+  } = options;
 
   // Estado principal
   const [budget, setBudget] = useState<IBudget>(
@@ -69,18 +76,14 @@ export const useBudgetForm = (
   // Estado de busca de representantes
   const [representativeSearchInput, setRepresentativeSearchInput] =
     useState("");
-  const [representativeList, setRepresentativeList] = useState<
-    IRepresentative[]
-  >([]);
   const debouncedRepresentativeSearch = useDebounce(
     representativeSearchInput,
-    500
+    300
   );
 
   // Estado de busca de produtos
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [productList, setProductList] = useState<IProduct[]>([]);
-  const debouncedProductSearch = useDebounce(productSearchTerm, 500);
+  const debouncedProductSearch = useDebounce(productSearchTerm, 300);
 
   // Efeito para atualizar quando initialData mudar (útil para edição)
   useEffect(() => {
@@ -90,37 +93,31 @@ export const useBudgetForm = (
     }
   }, [initialData]);
 
-  // Buscar representantes
-  useEffect(() => {
-    if (debouncedRepresentativeSearch) {
-      searchRepresentatives(debouncedRepresentativeSearch).then(
-        setRepresentativeList
-      );
-    } else {
-      setRepresentativeList([]);
-    }
-  }, [debouncedRepresentativeSearch]);
+  // Filtrar representantes localmente do cache - SEM chamadas ao Firestore!
+  const representativeList = useMemo(() => {
+    if (!debouncedRepresentativeSearch) return [];
 
-  // Buscar produtos
-  useEffect(() => {
-    if (debouncedProductSearch) {
-      searchProducts(debouncedProductSearch).then((products) => {
-        const mappedProducts: IProduct[] = products.map((product) => ({
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          ncm: product.ncm,
-          icms: product.icms,
-          unitValue: product.unitValue,
-          createdAt: product.createdAt,
-          updatedAt: product.updatedAt,
-        }));
-        setProductList(mappedProducts);
-      });
-    } else {
-      setProductList([]);
-    }
-  }, [debouncedProductSearch]);
+    return cachedRepresentatives.filter((rep) =>
+      rep.name
+        ?.toLowerCase()
+        .includes(debouncedRepresentativeSearch.toLowerCase())
+    );
+  }, [debouncedRepresentativeSearch, cachedRepresentatives]);
+
+  // Filtrar produtos localmente do cache - SEM chamadas ao Firestore!
+  const productList = useMemo(() => {
+    if (!debouncedProductSearch) return [];
+
+    return cachedProducts.filter(
+      (product) =>
+        product.name
+          ?.toLowerCase()
+          .includes(debouncedProductSearch.toLowerCase()) ||
+        product.ncm
+          ?.toLowerCase()
+          .includes(debouncedProductSearch.toLowerCase())
+    );
+  }, [debouncedProductSearch, cachedProducts]);
 
   // Calcular total
   const totalValue = useMemo(() => {
@@ -130,7 +127,7 @@ export const useBudgetForm = (
           allowCustomProductValue && customUnitValue !== undefined
             ? customUnitValue
             : product.unitValue;
-        return acc + unitPrice * quantity;
+        return acc + (unitPrice || 0) * quantity;
       },
       0
     );

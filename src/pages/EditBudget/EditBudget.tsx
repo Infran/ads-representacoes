@@ -19,12 +19,20 @@ import {
   BudgetTermsForm,
   BudgetSummary,
 } from "../../components/Budget";
+import { useData } from "../../context/DataContext";
 
 const EditBudget: React.FC = () => {
   const navigate = useNavigate();
   const { id: budgetId } = useParams<{ id: string }>();
   const [initialData, setInitialData] = useState<IBudget | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Obtém dados do cache para busca local
+  const {
+    products: cachedProducts,
+    representatives: cachedRepresentatives,
+    updateBudgetInCache,
+  } = useData();
 
   // Carregar dados do orçamento para edição
   useEffect(() => {
@@ -42,7 +50,9 @@ const EditBudget: React.FC = () => {
 
   const form = useBudgetForm({
     initialData,
-    allowCustomProductValue: true, // Edição permite alterar valores dos produtos
+    allowCustomProductValue: true,
+    cachedProducts,
+    cachedRepresentatives,
   });
 
   const handleSubmit = async () => {

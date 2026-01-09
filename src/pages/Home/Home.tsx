@@ -1,17 +1,10 @@
-import React, { useEffect, useState, useMemo } from "react";
-import {
-  Box,
-  Typography,
-  Grid,
-  Divider,
-  CircularProgress,
-} from "@mui/material";
+import React, { useMemo } from "react";
+import { Box, Typography, Grid, Divider } from "@mui/material";
 import {
   Description,
   AttachMoney,
   Inventory2,
   Business,
-  People,
   Badge,
 } from "@mui/icons-material";
 import {
@@ -19,51 +12,15 @@ import {
   RecentBudgets,
   QuickAccessCard,
 } from "../../components/Dashboard";
-import { getBudgets } from "../../services/budgetServices";
-import { getClients } from "../../services/clientServices";
-import { getProducts } from "../../services/productServices";
-import { IBudget } from "../../interfaces/ibudget";
-import { IClient } from "../../interfaces/iclient";
-import { IProduct } from "../../interfaces/iproduct";
+import { useData } from "../../context/DataContext";
 import { brMoneyMask } from "../../utils/Masks";
 
-interface DashboardData {
-  budgets: IBudget[];
-  clients: IClient[];
-  products: IProduct[];
-}
-
 export const Home = () => {
-  const [data, setData] = useState<DashboardData>({
-    budgets: [],
-    clients: [],
-    products: [],
-  });
-  const [loading, setLoading] = useState(true);
+  // Usa o contexto de dados com cache - SEM chamadas diretas ao Firestore!
+  const { budgets, clients, products, loading } = useData();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [budgets, clients, products] = await Promise.all([
-          getBudgets(),
-          getClients(),
-          getProducts(),
-        ]);
-        setData({ budgets, clients, products });
-      } catch (error) {
-        console.error("Erro ao carregar dados do dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // Cálculos para KPIs
+  // Cálculos para KPIs (todos feitos localmente com dados do cache)
   const kpiData = useMemo(() => {
-    const { budgets, clients, products } = data;
-
     // Total de orçamentos
     const totalBudgets = budgets.length;
 
@@ -121,7 +78,18 @@ export const Home = () => {
       totalClients: clients.length,
       lastClient,
     };
-  }, [data]);
+  }, [budgets, clients, products]);
+
+  // Contagem de representantes únicos (calculado dos orçamentos)
+  const uniqueRepresentativesCount = useMemo(() => {
+    const repIds = new Set<string>();
+    budgets.forEach((b) => {
+      if (b.representative?.id) {
+        repIds.add(String(b.representative.id));
+      }
+    });
+    return repIds.size;
+  }, [budgets]);
 
   return (
     <Box
@@ -157,7 +125,7 @@ export const Home = () => {
           <KPICard
             title="Orçamentos"
             value={kpiData.totalBudgets}
-            subtitle="orçamentos gerados"
+            subtitle="Orçamentos gerados"
             extraChip={
               kpiData.budgetsThisMonth > 0
                 ? {
@@ -173,13 +141,8 @@ export const Home = () => {
         <Grid item xs={12} sm={6} md={3}>
           <KPICard
             title="Valor Total em Orçamentos"
-            value={`R$ ${brMoneyMask(kpiData.totalValue.toFixed(0))}`}
-            subtitle="valor acumulado"
-            extraInfo={
-              kpiData.maxBudget > 0
-                ? `Maior: R$ ${brMoneyMask(kpiData.maxBudget.toFixed(0))}`
-                : undefined
-            }
+            value={`R$ ---,--`}
+            subtitle="(Em desenvolvimento)"
             icon={AttachMoney}
             loading={loading}
           />
@@ -188,7 +151,7 @@ export const Home = () => {
           <KPICard
             title="Produtos Cadastrados"
             value={kpiData.totalProducts}
-            subtitle="produtos no catálogo"
+            subtitle="Produtos no catálogo"
             extraInfo={
               kpiData.topProducts.length > 0 ? (
                 <Box component="span">
@@ -208,7 +171,7 @@ export const Home = () => {
           <KPICard
             title="Clientes"
             value={kpiData.totalClients}
-            subtitle="empresas cadastradas"
+            subtitle="Empresas cadastradas"
             extraInfo={
               kpiData.lastClient !== "-"
                 ? `Último: ${kpiData.lastClient}`
@@ -229,7 +192,7 @@ export const Home = () => {
           boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}
       >
-        <RecentBudgets budgets={data.budgets} loading={loading} />
+        <RecentBudgets budgets={budgets} loading={loading} />
       </Box>
 
       {/* Acesso Rápido */}
@@ -254,13 +217,7 @@ export const Home = () => {
           <Grid item xs={12} sm={6} md={4}>
             <QuickAccessCard
               title="Representantes"
-              count={
-                data.budgets.reduce((acc, b) => {
-                  const repId = b.representative?.id;
-                  if (repId && !acc.includes(repId)) acc.push(repId);
-                  return acc;
-                }, [] as string[]).length
-              }
+              count={uniqueRepresentativesCount}
               subtitle="representantes"
               icon={Badge}
               link="/Representantes"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Autocomplete,
   Box,
@@ -13,7 +13,7 @@ import { styled } from "@mui/system";
 import { IRepresentative } from "../../../../interfaces/irepresentative";
 import { IClient } from "../../../../interfaces/iclient";
 import { addRepresentative } from "../../../../services/representativeServices";
-import { searchClients } from "../../../../services/clientServices";
+import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
 import { cepMask, mobilePhoneMask, phoneMask } from "../../../../utils/Masks";
 
@@ -80,22 +80,21 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
     {} as IRepresentative
   );
   const [error, setError] = useState<string | null>(null);
-  const [clientList, setClientList] = useState<IClient[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
-  const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 500);
+  const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 300);
 
-  useEffect(() => {
-    if (debouncedClientSearchTerm) {
-      searchClients(debouncedClientSearchTerm).then(clients => {
-        setClientList(clients);
-      }).catch(error => {
-        console.error("Erro ao buscar clientes:", error);
-        setClientList([]);
-      });
-    } else {
-      setClientList([]);
-    }
-  }, [debouncedClientSearchTerm]);
+  // Usa dados do cache - SEM chamadas ao Firestore!
+  const { clients: allClients, addRepresentativeToCache } = useData();
+
+  // Filtra clientes localmente
+  const clientList = useMemo(() => {
+    if (!debouncedClientSearchTerm) return [];
+    return allClients.filter((client) =>
+      client.name
+        ?.toLowerCase()
+        .includes(debouncedClientSearchTerm.toLowerCase())
+    );
+  }, [allClients, debouncedClientSearchTerm]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -110,10 +109,11 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
 
     try {
       await addRepresentative(representative);
+      // Atualiza o cache local em vez de recarregar a página
+      addRepresentativeToCache(representative);
       handleClose();
       setRepresentative({} as IRepresentative);
       setError(null);
-      window.location.reload(); // Reload the page to reflect changes
     } catch (error) {
       console.error("Erro ao adicionar representante:", error);
       setError(
@@ -188,7 +188,6 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
                 label="Cliente"
                 variant="outlined"
                 fullWidth
-
               />
             )}
           />

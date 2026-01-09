@@ -11,7 +11,13 @@ import {
 import { styled } from "@mui/system";
 import { IClient } from "../../../../interfaces/iclient";
 import { addClient } from "../../../../services/clientServices";
-import { cepMask, cnpjMask, mobilePhoneMask, phoneMask } from "../../../../utils/Masks";
+import { useData } from "../../../../context/DataContext";
+import {
+  cepMask,
+  cnpjMask,
+  mobilePhoneMask,
+  phoneMask,
+} from "../../../../utils/Masks";
 
 const modalStyle = {
   position: "absolute",
@@ -68,9 +74,15 @@ interface CreateClientModalProps {
   handleClose: () => void;
 }
 
-const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose }) => {
+const CreateClientModal: React.FC<CreateClientModalProps> = ({
+  open,
+  handleClose,
+}) => {
   const [client, setClient] = useState<IClient>({} as IClient);
   const [error, setError] = useState<string | null>(null);
+
+  // Usa dados do cache
+  const { addClientToCache } = useData();
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -88,11 +100,11 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({ open, handleClose
       console.log("Adicionando cliente:", client);
       await addClient(client);
 
-      // Limpa o formulário e o erro após a adição bem-sucedida
+      // Atualiza o cache local em vez de recarregar a página
+      addClientToCache(client);
       handleClose();
       setClient({} as IClient);
       setError(null);
-      window.location.reload();
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
       setError("Ocorreu um erro ao adicionar o cliente. Tente novamente.");

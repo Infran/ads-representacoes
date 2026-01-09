@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./Budgets.css";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import {
@@ -21,7 +21,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { getBudgets } from "../../services/budgetServices";
+import { useData } from "../../context/DataContext";
 import { IBudget } from "../../interfaces/ibudget";
 import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
 import ReactDOM from "react-dom";
@@ -39,7 +39,10 @@ type SortOption =
 
 const Budgets = () => {
   const navigate = useNavigate();
-  const [budgetList, setBudgetList] = useState<IBudget[]>([]);
+
+  // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
+  const { budgets: budgetList, removeBudgetFromCache } = useData();
+
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
 
@@ -182,13 +185,11 @@ const Budgets = () => {
     setMaxValue("");
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const budgets: IBudget[] = await getBudgets();
-      setBudgetList(budgets);
-    };
-    fetchData();
-  }, []);
+  const handleDeleteSuccess = (deletedId: string) => {
+    // Atualiza o cache local em vez de recarregar a página
+    removeBudgetFromCache(deletedId);
+    setDeleteModalId(null);
+  };
 
   const formatDate = (timestamp: { seconds: number } | undefined) => {
     if (!timestamp?.seconds) return "-";
@@ -476,8 +477,7 @@ const Budgets = () => {
               <DeleteBudgetModal
                 open={deleteModalId === budget.id}
                 onClose={() => {
-                  setDeleteModalId(null);
-                  window.location.reload();
+                  handleDeleteSuccess(budget.id);
                 }}
                 budget={budget}
               />

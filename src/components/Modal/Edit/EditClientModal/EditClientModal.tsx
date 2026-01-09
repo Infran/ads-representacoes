@@ -10,7 +10,11 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { IClient } from "../../../../interfaces/iclient";
-import { getClientById, updateClient } from "../../../../services/clientServices";
+import {
+  getClientById,
+  updateClient,
+} from "../../../../services/clientServices";
+import { useData } from "../../../../context/DataContext";
 
 const modalStyle = {
   position: "absolute",
@@ -77,6 +81,9 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Usa dados do cache
+  const { updateClientInCache } = useData();
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setClient({ ...client, [name]: value });
@@ -108,26 +115,24 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
 
     try {
       await updateClient(client);
+      // Atualiza o cache local em vez de recarregar a página
+      updateClientInCache(client);
       handleClose();
       setClient({} as IClient);
       setError(null);
-      window.location.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao editar cliente:", error);
       setError(
         error.response?.data?.message ||
-        "Ocorreu um erro ao editar o cliente. Tente novamente."
+          "Ocorreu um erro ao editar o cliente. Tente novamente."
       );
     }
   };
 
-  const isFormValid = client.name && client.cep
+  const isFormValid = client.name && client.cep;
 
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-    >
+    <Modal open={open} onClose={handleClose}>
       <Box sx={modalStyle}>
         <Typography
           variant="h6"

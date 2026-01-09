@@ -1,75 +1,78 @@
-import { useEffect, useState } from 'react';
-import { Box, CircularProgress } from '@mui/material';
-import PageHeader from './../../components/PageHeader/PageHeader';
-import CreateRepresentativeModal from '../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal';
-import { PersonAdd } from '@mui/icons-material';
-import { IRepresentative } from '../../interfaces/irepresentative';
-import { getRepresentatives, deleteRepresentative } from '../../services/representativeServices';
-import SearchBar from '../../components/SearchBar/SearchBar';
-import DeleteRepresentativeModal from '../../components/Modal/Delete/DeleteRepresentativeModal';
-import RepresentativeTable from '../../components/Tables/RepresentativeTable/RepresentativeTable';
+import { useState, useMemo } from "react";
+import { Box, CircularProgress } from "@mui/material";
+import PageHeader from "./../../components/PageHeader/PageHeader";
+import CreateRepresentativeModal from "../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
+import { PersonAdd } from "@mui/icons-material";
+import { IRepresentative } from "../../interfaces/irepresentative";
+import { deleteRepresentative } from "../../services/representativeServices";
+import SearchBar from "../../components/SearchBar/SearchBar";
+import DeleteRepresentativeModal from "../../components/Modal/Delete/DeleteRepresentativeModal";
+import RepresentativeTable from "../../components/Tables/RepresentativeTable/RepresentativeTable";
+import { useData } from "../../context/DataContext";
 
 const Representatives = () => {
   const [openModal, setOpenModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [representativesList, setRepresentativesList] = useState<IRepresentative[]>([]);
-  const [filteredRepresentativesList, setFilteredRepresentativesList] = useState<IRepresentative[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [selectedRepresentative, setSelectedRepresentative] = useState<IRepresentative | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRepresentative, setSelectedRepresentative] =
+    useState<IRepresentative | null>(null);
+
+  // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
+  const {
+    representatives: representativesList,
+    loading,
+    removeRepresentativeFromCache,
+  } = useData();
+
+  // Filtragem local dos representantes
+  const filteredRepresentativesList = useMemo(() => {
+    if (!searchTerm) return representativesList;
+
+    return representativesList.filter((representative) => {
+      return (
+        representative.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        representative.email
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        representative.phone
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        representative.address?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
+  }, [representativesList, searchTerm]);
 
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
   const handleCloseDeleteModal = () => setOpenDeleteModal(false);
 
   const handleEdit = (id: string) => {
-    console.log('Editando representante com ID:', id);
+    console.log("Editando representante com ID:", id);
   };
 
   const handleDelete = (representative: IRepresentative) => {
-    setSelectedRepresentative(representative); // Define o representante selecionado
-    setOpenDeleteModal(true); // Abre o modal de exclusão
+    setSelectedRepresentative(representative);
+    setOpenDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
     if (selectedRepresentative) {
       try {
-        await deleteRepresentative(selectedRepresentative.id); // Exclui o representante
-        setRepresentativesList((prev) => prev.filter((r) => r.id !== selectedRepresentative.id)); // Atualiza a lista de representantes
-        setFilteredRepresentativesList((prev) => prev.filter((r) => r.id !== selectedRepresentative.id)); // Atualiza a lista filtrada
-        setOpenDeleteModal(false); // Fecha o modal
+        await deleteRepresentative(selectedRepresentative.id);
+        // Atualiza o cache local em vez de recarregar a página
+        removeRepresentativeFromCache(selectedRepresentative.id);
+        setOpenDeleteModal(false);
+        setSelectedRepresentative(null);
       } catch (error) {
-        console.error('Erro ao excluir representante:', error);
+        console.error("Erro ao excluir representante:", error);
       }
     }
   };
 
   const handleSearch = () => {
-    const filtered = representativesList.filter((representative) => {
-      return (
-        representative.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        representative.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        representative.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        representative.address?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    });
-    setFilteredRepresentativesList(filtered);
+    // A filtragem já é feita pelo useMemo, então não precisa fazer nada aqui
+    // Mantido para compatibilidade com SearchBar
   };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const representatives = await getRepresentatives();
-        setRepresentativesList(representatives);
-        setFilteredRepresentativesList(representatives);
-      } catch (error) {
-        console.error('Erro ao buscar representantes:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   return (
     <>
@@ -87,11 +90,20 @@ const Representatives = () => {
           inputLabel="Digite o nome do representante"
         />
         {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" height={200}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height={200}
+          >
             Carregando... <CircularProgress />
           </Box>
         ) : (
-          <RepresentativeTable rows={filteredRepresentativesList} onEdit={handleEdit} onDelete={handleDelete} />
+          <RepresentativeTable
+            rows={filteredRepresentativesList}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         )}
       </Box>
 
