@@ -108,9 +108,11 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
     }
 
     try {
-      await addRepresentative(representative);
-      // Atualiza o cache local em vez de recarregar a página
-      addRepresentativeToCache(representative);
+      // addRepresentative agora retorna o representante criado com ID gerado
+      const createdRepresentative = await addRepresentative(representative);
+
+      // Atualiza o cache local com o representante completo (incluindo ID)
+      addRepresentativeToCache(createdRepresentative);
       handleClose();
       setRepresentative({} as IRepresentative);
       setError(null);

@@ -97,11 +97,11 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
     }
 
     try {
-      console.log("Adicionando cliente:", client);
-      await addClient(client);
+      // addClient agora retorna o cliente criado com ID gerado
+      const createdClient = await addClient(client);
 
-      // Atualiza o cache local em vez de recarregar a página
-      addClientToCache(client);
+      // Atualiza o cache local com o cliente completo (incluindo ID)
+      addClientToCache(createdClient);
       handleClose();
       setClient({} as IClient);
       setError(null);

@@ -98,9 +98,11 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
     }
 
     try {
-      await addProduct(product);
-      // Atualiza o cache local em vez de recarregar a página
-      addProductToCache(product);
+      // addProduct agora retorna o produto criado com ID gerado
+      const createdProduct = await addProduct(product);
+
+      // Atualiza o cache local com o produto completo (incluindo ID)
+      addProductToCache(createdProduct);
       handleClose();
       setProduct({} as IProduct);
       setMaskedUnitValue("");

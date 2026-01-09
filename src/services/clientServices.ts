@@ -2,17 +2,25 @@ import {
   collection,
   doc,
   getDocs,
-  setDoc,
   getDoc,
-  limit,
-  query,
-  serverTimestamp,
+  updateDoc,
+  setDoc,
   deleteDoc,
+  serverTimestamp,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { IClient } from "../interfaces/iclient";
 
-// Tipando a função de buscar clientes
+// ============================================================================
+// FUNÇÕES DE LEITURA
+// ============================================================================
+
+/**
+ * Busca todos os clientes do Firestore.
+ * NOTA: Prefira usar useData().clients do DataContext para evitar chamadas desnecessárias.
+ * Esta função é usada internamente pelo DataContext para popular o cache.
+ */
 export const getClients = async (): Promise<IClient[]> => {
   const clientsCollection = collection(db, "clients");
   const clientsSnapshot = await getDocs(clientsCollection);
@@ -23,96 +31,157 @@ export const getClients = async (): Promise<IClient[]> => {
   })) as IClient[];
 };
 
-// Função de busca de clientes com filtro
-export const searchClients = async (searchTerm: string) => {
-  const clientsCollection = collection(db, "clients");
-  const clientsQuery = query(clientsCollection, limit(10)); // Limita a 10 clientes
-
-  const clientsSnapshot = await getDocs(clientsQuery);
-  const clients: IClient[] = clientsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as IClient[];
-
-  // Filtrando os clientes com base no termo de busca
-  const filteredClients = clients.filter(
-    (client) =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (client.email &&
-        client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (client.phone &&
-        client.phone.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  return filteredClients;
-};
-
-// Função para buscar um cliente pelo ID
+/**
+ * Busca um cliente pelo ID.
+ * @param id - ID do cliente
+ * @returns Cliente encontrado ou null se não existir
+ */
 export const getClientById = async (id: string): Promise<IClient | null> => {
+  if (!id) {
+    console.warn("getClientById chamado com ID vazio");
+    return null;
+  }
+
   try {
     const clientDoc = doc(db, "clients", id);
     const clientSnap = await getDoc(clientDoc);
 
     if (!clientSnap.exists()) {
-      console.log("Documento não encontrado");
-      return null; // Retorna null se o documento não existir
+      return null;
     }
 
     return { id: clientSnap.id, ...clientSnap.data() } as IClient;
   } catch (error) {
-    console.error("Erro ao buscar cliente: ", error);
-    throw error; // Rejeita a promessa para que o chamador possa lidar com o erro
+    console.error("Erro ao buscar cliente:", error);
+    throw error;
   }
 };
 
-// Função para obter o próximo ID de cliente
+/**
+ * @deprecated Use useData().searchClientsLocal() para busca com cache local.
+ * Esta função ainda faz chamadas ao Firestore - evite usá-la.
+ */
+export const searchClients = async (searchTerm: string): Promise<IClient[]> => {
+  console.warn(
+    "[DEPRECATED] searchClients está deprecated. Use searchClientsLocal do DataContext para evitar reads no Firestore."
+  );
+
+  const clients = await getClients();
+
+  if (!searchTerm?.trim()) {
+    return clients;
+  }
+
+  const term = searchTerm.toLowerCase();
+  return clients.filter(
+    (client) =>
+      client.name?.toLowerCase().includes(term) ||
+      client.email?.toLowerCase().includes(term) ||
+      client.phone?.toLowerCase().includes(term) ||
+      client.cnpj?.toLowerCase().includes(term)
+  );
+};
+
+// ============================================================================
+// FUNÇÕES DE ESCRITA
+// ============================================================================
+
+/**
+ * Gera o próximo ID de cliente de forma atômica usando transação.
+ * Isso garante que dois requests simultâneos não gerem o mesmo ID.
+ * @returns Próximo ID disponível
+ */
 export const getNextClientId = async (): Promise<number> => {
   const docRef = doc(db, "meta", "lastClientId");
-  const docSnap = await getDoc(docRef);
 
-  const nextId = docSnap.exists() ? docSnap.data().id + 1 : 1;
-  await setDoc(docRef, { id: nextId });
-
-  return nextId;
+  return runTransaction(db, async (transaction) => {
+    const docSnap = await transaction.get(docRef);
+    const data = docSnap.data();
+    const nextId = docSnap.exists() && data ? data.id + 1 : 1;
+    transaction.set(docRef, { id: nextId });
+    return nextId;
+  });
 };
 
-// Função para adicionar um novo cliente
-export const addClient = async (client: IClient): Promise<void> => {
-  try {
-    const id = await getNextClientId();
-    const createdAt = serverTimestamp();
-    const updatedAt = serverTimestamp();
-
-    const newClient = { ...client, id, createdAt, updatedAt };
-
-    const docRef = doc(db, "clients", id.toString());
-    await setDoc(docRef, newClient);
-
-    console.log("Cliente adicionado com sucesso!");
-  } catch (error) {
-    console.error("Erro ao adicionar cliente: ", error);
+/**
+ * Valida os dados do cliente antes de salvar.
+ * @param client - Cliente a ser validado
+ * @throws Error se os dados forem inválidos
+ */
+const validateClient = (client: Partial<IClient>): void => {
+  if (!client.name?.trim()) {
+    throw new Error("Nome do cliente é obrigatório");
+  }
+  if (!client.cep?.trim()) {
+    throw new Error("CEP do cliente é obrigatório");
   }
 };
 
-// Função para atualizar um cliente
+/**
+ * Adiciona um novo cliente ao Firestore.
+ * @param client - Dados do cliente (sem ID, será gerado automaticamente)
+ * @returns Cliente criado com ID e timestamps
+ * @throws Error se a validação falhar ou ocorrer erro no Firestore
+ */
+export const addClient = async (
+  client: Omit<IClient, "id" | "createdAt" | "updatedAt">
+): Promise<IClient> => {
+  // Valida os dados
+  validateClient(client);
 
+  // Gera ID único de forma atômica
+  const id = await getNextClientId();
+  const createdAt = serverTimestamp();
+  const updatedAt = serverTimestamp();
+
+  const newClient = {
+    ...client,
+    id: id.toString(), // Converte para string para compatibilidade com a interface
+    createdAt,
+    updatedAt,
+  } as IClient;
+
+  const docRef = doc(db, "clients", id.toString());
+  await setDoc(docRef, newClient);
+
+  return newClient;
+};
+
+/**
+ * Atualiza um cliente existente.
+ * Usa updateDoc para atualização parcial, preservando campos não enviados.
+ * @param client - Cliente com dados atualizados (ID obrigatório)
+ * @throws Error se o ID não for fornecido ou ocorrer erro no Firestore
+ */
 export const updateClient = async (client: IClient): Promise<void> => {
-  try {
-    const docRef = doc(db, "clients", client.id.toString());
-    await setDoc(docRef, client);
-    console.log("Cliente atualizado com sucesso!");
-  } catch (error) {
-    console.error("Erro ao atualizar cliente: ", error);
+  if (!client.id) {
+    throw new Error("ID do cliente é obrigatório para atualização");
   }
+
+  // Valida os dados
+  validateClient(client);
+
+  const docRef = doc(db, "clients", client.id.toString());
+  const updatedAt = serverTimestamp();
+
+  // Remove campos undefined antes de enviar
+  const cleanedClient = Object.fromEntries(
+    Object.entries(client).filter(([_, value]) => value !== undefined)
+  );
+
+  await updateDoc(docRef, { ...cleanedClient, updatedAt });
 };
 
-
+/**
+ * Exclui um cliente pelo ID.
+ * @param id - ID do cliente a ser excluído
+ * @throws Error se ocorrer erro no Firestore
+ */
 export const deleteClient = async (id: string): Promise<void> => {
-  try {
-    const docRef = doc(db, "clients", id);
-    await deleteDoc(docRef);
-    console.log("Cliente excluído com sucesso!");
-  } catch (error) {
-    console.error("Erro ao excluir cliente: ", error);
+  if (!id) {
+    throw new Error("ID do cliente é obrigatório para exclusão");
   }
+
+  const docRef = doc(db, "clients", id);
+  await deleteDoc(docRef);
 };
