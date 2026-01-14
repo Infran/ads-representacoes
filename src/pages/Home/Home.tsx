@@ -95,9 +95,6 @@ export const Home = () => {
     <Box
       sx={{
         width: "100%",
-        maxWidth: 1400,
-        margin: "0 auto",
-        padding: 3,
         display: "flex",
         flexDirection: "column",
         gap: 4,

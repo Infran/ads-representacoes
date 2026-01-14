@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Autocomplete,
   Box,
@@ -11,9 +11,11 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { IRepresentative } from "../../../../interfaces/irepresentative";
-import { IClient } from "../../../../interfaces/iclient";
-import { getRepresentativeById, updateRepresentative } from "../../../../services/representativeServices";
-import { searchClients } from "../../../../services/clientServices";
+import {
+  getRepresentativeById,
+  updateRepresentative,
+} from "../../../../services/representativeServices";
+import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
 
 const modalStyle = {
@@ -69,7 +71,7 @@ const StyledTextField = styled(TextField)({
 interface EditRepresentativeModalProps {
   open: boolean;
   handleClose: () => void;
-  id: string; 
+  id: string;
 }
 
 const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
@@ -77,11 +79,25 @@ const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
   handleClose,
   id,
 }) => {
-  const [representative, setRepresentative] = useState<IRepresentative>({} as IRepresentative);
+  const [representative, setRepresentative] = useState<IRepresentative>(
+    {} as IRepresentative
+  );
   const [error, setError] = useState<string | null>(null);
-  const [clientList, setClientList] = useState<IClient[]>([]);
   const [clientSearchTerm, setClientSearchTerm] = useState<string>("");
-  const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 500);
+  const debouncedClientSearchTerm = useDebounce(clientSearchTerm, 300);
+
+  // Usa dados do cache - SEM chamadas ao Firestore!
+  const { clients: allClients, updateRepresentativeInCache } = useData();
+
+  // Filtra clientes localmente
+  const clientList = useMemo(() => {
+    if (!debouncedClientSearchTerm) return [];
+    return allClients.filter((client) =>
+      client.name
+        ?.toLowerCase()
+        .includes(debouncedClientSearchTerm.toLowerCase())
+    );
+  }, [allClients, debouncedClientSearchTerm]);
 
   useEffect(() => {
     const fetchRepresentativeData = async () => {
@@ -101,19 +117,6 @@ const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
     }
   }, [id]);
 
-  useEffect(() => {
-    if (debouncedClientSearchTerm) {
-      searchClients(debouncedClientSearchTerm).then(clients => {
-        setClientList(clients);
-      }).catch(error => {
-        console.error("Erro ao buscar clientes:", error);
-        setClientList([]);
-      });
-    } else {
-      setClientList([]);
-    }
-  }, [debouncedClientSearchTerm]);
-
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setRepresentative({ ...representative, [name]: value });
@@ -127,9 +130,13 @@ const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
 
     try {
       await updateRepresentative(representative);
+
+      // IMPORTANTE: Atualiza o cache para refletir as alterações imediatamente
+      updateRepresentativeInCache(representative);
+
       handleClose();
       setRepresentative({} as IRepresentative);
-      setError(null);// Atualiza a lista de representantes após a edição
+      setError(null);
     } catch (error) {
       console.error("Erro ao editar representante:", error);
       setError("Ocorreu um erro ao editar o representante. Tente novamente.");

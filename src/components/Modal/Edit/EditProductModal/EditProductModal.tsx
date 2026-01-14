@@ -11,7 +11,11 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { IProduct } from "../../../../interfaces/iproduct";
-import { getProductById, updateProduct } from "../../../../services/productServices";
+import {
+  getProductById,
+  updateProduct,
+} from "../../../../services/productServices";
+import { useData } from "../../../../context/DataContext";
 import ncmData from "../../../../tabela_ncm.json";
 import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
 
@@ -47,6 +51,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const [product, setProduct] = useState<IProduct>({} as IProduct);
   const [error, setError] = useState<string | null>(null);
   const [maskedUnitValue, setMaskedUnitValue] = useState<string>("");
+
+  // Hook para atualizar o cache
+  const { updateProductInCache } = useData();
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -111,17 +118,17 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const handleEditProduct = async () => {
-    if (
-      !product.name ||
-      !product.ncm ||
-      !product.unitValue
-    ) {
+    if (!product.name || !product.ncm || !product.unitValue) {
       setError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
     try {
       await updateProduct(product);
+
+      // IMPORTANTE: Atualiza o cache para refletir as alterações imediatamente
+      updateProductInCache(product);
+
       handleClose();
       setProduct({} as IProduct);
       setError(null);

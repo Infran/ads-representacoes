@@ -1,6 +1,14 @@
 import React from "react";
-import { Box, Button, Grid, Paper, TextField, Typography } from "@mui/material";
-import { ArrowDropDown, ArrowDropUp, Delete, Edit } from "@mui/icons-material";
+import {
+  Box,
+  IconButton,
+  Grid,
+  Paper,
+  TextField,
+  Typography,
+  InputAdornment,
+} from "@mui/material";
+import { Remove, Add, Delete, Edit } from "@mui/icons-material";
 import { ISelectedProducts } from "../../interfaces/ibudget";
 import { brMoneyMask } from "../../utils/Masks";
 
@@ -8,6 +16,8 @@ interface ProductListProps {
   products: ISelectedProducts[];
   onRemove: (index: number) => void;
   onQuantityChange: (index: number, delta: number) => void;
+  /** Callback para definir quantidade diretamente */
+  onSetQuantity?: (index: number, quantity: number) => void;
   /** Callback para editar valor customizado - se não fornecido, não mostra campo de edição */
   onValueChange?: (index: number, value: string) => void;
   /** Se true, mostra o valor original do produto quando há valor customizado */
@@ -18,6 +28,7 @@ const ProductList: React.FC<ProductListProps> = ({
   products,
   onRemove,
   onQuantityChange,
+  onSetQuantity,
   onValueChange,
   showOriginalValue = false,
 }) => {
@@ -26,6 +37,13 @@ const ProductList: React.FC<ProductListProps> = ({
   if (products.length === 0) {
     return null;
   }
+
+  const handleQuantityInput = (index: number, value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 1 && onSetQuantity) {
+      onSetQuantity(index, numValue);
+    }
+  };
 
   return (
     <>
@@ -67,14 +85,14 @@ const ProductList: React.FC<ProductListProps> = ({
                   </Typography>
                 )}
               </Box>
-              <Button
+              <IconButton
                 color="error"
                 onClick={() => onRemove(index)}
-                startIcon={<Delete />}
                 size="small"
+                title="Remover produto"
               >
-                Remover
-              </Button>
+                <Delete fontSize="small" />
+              </IconButton>
             </Box>
 
             <Grid container spacing={2} alignItems="center">
@@ -105,24 +123,57 @@ const ProductList: React.FC<ProductListProps> = ({
               )}
 
               <Grid item xs={6} sm={3}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Button
+                <Box display="flex" alignItems="center">
+                  <IconButton
                     size="small"
-                    variant="outlined"
                     onClick={() => onQuantityChange(index, -1)}
+                    disabled={item.quantity <= 1}
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      p: 0.5,
+                    }}
                   >
-                    <ArrowDropDown />
-                  </Button>
-                  <Typography sx={{ minWidth: 30, textAlign: "center" }}>
-                    {item.quantity}
-                  </Typography>
-                  <Button
+                    <Remove fontSize="small" />
+                  </IconButton>
+                  <TextField
                     size="small"
-                    variant="outlined"
+                    value={item.quantity}
+                    onChange={(e) => handleQuantityInput(index, e.target.value)}
+                    inputProps={{
+                      style: { textAlign: "center", width: 40 },
+                      min: 1,
+                      type: "number",
+                    }}
+                    sx={{
+                      mx: 1,
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: "divider",
+                        },
+                      },
+                      "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+                        {
+                          display: "none",
+                        },
+                      "& input[type=number]": {
+                        MozAppearance: "textfield",
+                      },
+                    }}
+                  />
+                  <IconButton
+                    size="small"
                     onClick={() => onQuantityChange(index, 1)}
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      p: 0.5,
+                    }}
                   >
-                    <ArrowDropUp />
-                  </Button>
+                    <Add fontSize="small" />
+                  </IconButton>
                 </Box>
               </Grid>
 

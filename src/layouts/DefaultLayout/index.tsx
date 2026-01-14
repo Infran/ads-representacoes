@@ -1,31 +1,47 @@
 import { Outlet } from "react-router-dom";
-import Sidebar from "../../components/Sidebar/Sidebar";
 import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+import { Sidebar, AppHeader, LayoutProvider } from "../../components/Layout";
+
+const drawerWidth = 260;
+const collapsedWidth = 73;
 
 export default function DefaultLayout() {
   return (
-    <Box
-      sx={{
-        display: "flex",
-        minHeight: "100vh", // Garante que o layout ocupe toda a altura da tela
-        maxWidth: "100%",  // Garante largura completa
-      }}
-    >
-      <Sidebar />
-      <Box
-        component="main"
-        sx={{
-          width: "100%", // Ocupa toda a largura disponível
-          display: "flex",
-          flexDirection: "column", // Componentes internos em coluna
-          alignItems: "stretch", // Garante que ocupem largura total
-          backgroundColor: "#f9f9f9", // Fundo para destacar o conteúdo
-          marginTop: 8, // Espaçamento superior
-          padding: 2, // Espaçamento interno
-        }}
-      >
-        <Outlet />
+    <LayoutProvider>
+      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+        <CssBaseline />
+
+        {/* AppHeader fixo no topo */}
+        <AppHeader />
+
+        {/* Sidebar lateral */}
+        <Sidebar />
+
+        {/* Área de conteúdo principal */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100vh",
+            // Margem superior para compensar o AppBar fixo
+            marginTop: { xs: "56px", sm: "64px" },
+            // Padding para o conteúdo
+            padding: { xs: 2, sm: 3 },
+            // Background suave
+            backgroundColor: "#FAFAFA",
+            // Transição suave quando sidebar abre/fecha
+            transition: "margin-left 225ms cubic-bezier(0.4, 0, 0.6, 1) 0ms",
+            // Overflow para conteúdo longo
+            overflowX: "hidden",
+            overflowY: "auto",
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
-    </Box>
+    </LayoutProvider>
   );
 }

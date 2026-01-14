@@ -5,6 +5,7 @@ import { IRepresentative } from "../interfaces/irepresentative";
 import { IClient } from "../interfaces/iclient";
 import useDebounce from "./useDebounce";
 import Swal from "sweetalert2";
+import { useData } from "../context/DataContext";
 
 const DEFAULT_BUDGET: Partial<IBudget> = {
   tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
@@ -14,12 +15,25 @@ const DEFAULT_BUDGET: Partial<IBudget> = {
 
 interface UseBudgetFormOptions {
   initialData?: IBudget | null;
-  /** Se true, permite editar o valor unitário dos produtos (apenas no modo edição) */
-  allowCustomProductValue?: boolean;
-  /** Lista de produtos do cache para busca local */
-  cachedProducts?: IProduct[];
-  /** Lista de representantes do cache para busca local */
-  cachedRepresentatives?: IRepresentative[];
+}
+
+/** Status de validação por seção do formulário */
+export interface SectionValidation {
+  representative: {
+    isComplete: boolean;
+    message?: string;
+  };
+  products: {
+    isComplete: boolean;
+    count: number;
+    message?: string;
+  };
+  terms: {
+    isComplete: boolean;
+    filledCount: number;
+    totalRequired: number;
+    message?: string;
+  };
 }
 
 interface UseBudgetFormReturn {
@@ -43,22 +57,23 @@ interface UseBudgetFormReturn {
   addProduct: (product: IProduct) => void;
   removeProduct: (index: number) => void;
   updateProductQuantity: (index: number, delta: number) => void;
+  setProductQuantity: (index: number, quantity: number) => void;
   updateProductCustomValue: (index: number, value: string) => void;
 
   // Validação
   isValid: boolean;
+  sectionValidation: SectionValidation;
   totalValue: number;
 }
 
 export const useBudgetForm = (
   options: UseBudgetFormOptions = {}
 ): UseBudgetFormReturn => {
-  const {
-    initialData,
-    allowCustomProductValue = false,
-    cachedProducts = [],
-    cachedRepresentatives = [],
-  } = options;
+  const { initialData } = options;
+
+  // Obtém dados do cache via DataContext
+  const { products: cachedProducts, representatives: cachedRepresentatives } =
+    useData();
 
   // Estado principal
   const [budget, setBudget] = useState<IBudget>(
@@ -95,7 +110,8 @@ export const useBudgetForm = (
 
   // Filtrar representantes localmente do cache - SEM chamadas ao Firestore!
   const representativeList = useMemo(() => {
-    if (!debouncedRepresentativeSearch) return [];
+    // Se não há busca, retorna todos os representantes
+    if (!debouncedRepresentativeSearch) return cachedRepresentatives;
 
     return cachedRepresentatives.filter((rep) =>
       rep.name
@@ -106,7 +122,8 @@ export const useBudgetForm = (
 
   // Filtrar produtos localmente do cache - SEM chamadas ao Firestore!
   const productList = useMemo(() => {
-    if (!debouncedProductSearch) return [];
+    // Se não há busca, retorna todos os produtos
+    if (!debouncedProductSearch) return cachedProducts;
 
     return cachedProducts.filter(
       (product) =>
@@ -119,19 +136,17 @@ export const useBudgetForm = (
     );
   }, [debouncedProductSearch, cachedProducts]);
 
-  // Calcular total
+  // Calcular total - agora SEMPRE considera customUnitValue se existir
   const totalValue = useMemo(() => {
     return selectedProducts.reduce(
       (acc, { product, quantity, customUnitValue }) => {
         const unitPrice =
-          allowCustomProductValue && customUnitValue !== undefined
-            ? customUnitValue
-            : product.unitValue;
+          customUnitValue !== undefined ? customUnitValue : product.unitValue;
         return acc + (unitPrice || 0) * quantity;
       },
       0
     );
-  }, [selectedProducts, allowCustomProductValue]);
+  }, [selectedProducts]);
 
   // Sincronizar produtos selecionados com o budget
   useEffect(() => {
@@ -188,10 +203,16 @@ export const useBudgetForm = (
     );
   }, []);
 
+  const setProductQuantity = useCallback((index: number, quantity: number) => {
+    if (quantity < 1) return;
+    setSelectedProducts((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, quantity } : p))
+    );
+  }, []);
+
+  // Edição de valor customizado - agora SEMPRE habilitado
   const updateProductCustomValue = useCallback(
     (index: number, newValue: string) => {
-      if (!allowCustomProductValue) return;
-
       const cleanValue = newValue.replace(/\D/g, "");
       const valueInCents = parseInt(cleanValue, 10);
 
@@ -206,21 +227,68 @@ export const useBudgetForm = (
         )
       );
     },
-    [allowCustomProductValue]
+    []
   );
 
-  // Validação
-  const isValid = useMemo(() => {
-    return Boolean(
-      budget?.representative?.name &&
-        selectedProducts.length > 0 &&
-        budget?.estimatedDate &&
-        budget?.maxDealDate &&
-        budget?.guarantee &&
-        budget?.shippingTerms &&
-        budget?.reference
+  // Validação por seção
+  const sectionValidation = useMemo((): SectionValidation => {
+    // Seção Representante
+    const hasRepresentative = Boolean(budget?.representative?.name);
+    const representativeSection = {
+      isComplete: hasRepresentative,
+      message: hasRepresentative ? undefined : "Selecione um representante",
+    };
+
+    // Seção Produtos
+    const productCount = selectedProducts.length;
+    const productsSection = {
+      isComplete: productCount > 0,
+      count: productCount,
+      message: productCount > 0 ? undefined : "Adicione pelo menos um produto",
+    };
+
+    // Seção Termos/Condições
+    const requiredTermFields = [
+      { field: "estimatedDate", label: "Prazo para Entrega" },
+      { field: "maxDealDate", label: "Validade da Proposta" },
+      { field: "guarantee", label: "Garantia" },
+      { field: "shippingTerms", label: "Condição de Entrega" },
+      { field: "reference", label: "Referência" },
+    ];
+
+    const filledTerms = requiredTermFields.filter(({ field }) =>
+      Boolean(budget?.[field as keyof IBudget])
     );
+
+    const missingFields = requiredTermFields
+      .filter(({ field }) => !budget?.[field as keyof IBudget])
+      .map(({ label }) => label);
+
+    const termsSection = {
+      isComplete: filledTerms.length === requiredTermFields.length,
+      filledCount: filledTerms.length,
+      totalRequired: requiredTermFields.length,
+      message:
+        missingFields.length > 0
+          ? `Campos obrigatórios: ${missingFields.join(", ")}`
+          : undefined,
+    };
+
+    return {
+      representative: representativeSection,
+      products: productsSection,
+      terms: termsSection,
+    };
   }, [budget, selectedProducts]);
+
+  // Validação geral (todas as seções completas)
+  const isValid = useMemo(() => {
+    return (
+      sectionValidation.representative.isComplete &&
+      sectionValidation.products.isComplete &&
+      sectionValidation.terms.isComplete
+    );
+  }, [sectionValidation]);
 
   return {
     budget,
@@ -236,8 +304,10 @@ export const useBudgetForm = (
     addProduct,
     removeProduct,
     updateProductQuantity,
+    setProductQuantity,
     updateProductCustomValue,
     isValid,
+    sectionValidation,
     totalValue,
   };
 };

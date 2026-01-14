@@ -9,12 +9,8 @@ import { Login } from "./components/Login/Login";
 import { AuthContext } from "./context/ContextAuth";
 import ProtectedRoutes from "./utils/ProtectedRoutes";
 import { useContext } from "react";
-import CreateBudget from "./components/CreateBudget/CreateBudget";
-// import EditBudget from "./components/EditBudget/EditBudget";
-// import BudgetForm from "./components/BudgetForm/BudgetForm";
-import NewCreateBudget from "./pages/CreateBudget.tsx/CreateBudget";
-import EditBudget from "./pages/EditBudget/EditBudget";
 import { DataProvider } from "./context/DataContext";
+import BudgetFormPage from "./pages/BudgetFormPage";
 
 const AppRouter = () => {
   const { currentUser: user } = useContext(AuthContext);
@@ -42,9 +38,14 @@ const AppRouter = () => {
                 <Route path="Clientes" element={<Clients />} />
                 <Route path="Representantes" element={<Representatives />} />
                 <Route path="Orcamentos" element={<Budgets />} />
-                <Route path="Orcamentos/Adicionar" element={<CreateBudget />} />
-                <Route path="newForm" element={<NewCreateBudget />} />
-                <Route path="Orcamentos/Editar/:id" element={<EditBudget />} />
+                <Route
+                  path="Orcamentos/Adicionar"
+                  element={<BudgetFormPage mode="create" />}
+                />
+                <Route
+                  path="Orcamentos/Editar/:id"
+                  element={<BudgetFormPage mode="edit" />}
+                />
               </Route>
             </Route>
           </Routes>
