@@ -57,19 +57,22 @@ export const Login = () => {
             background: "#f7f6f9", // Fundo do conteúdo
           }}
         >
-          <Typography
-            variant="h4"
-            gutterBottom
-            align="center"
+          <Box
             sx={{
-              fontWeight: "bold",
-              color: "#3b3b79", // Cor do título
-              textTransform: "uppercase",
-              marginBottom: 3,
+              display: "flex",
+              justifyContent: "center",
+              mb: 2,
             }}
           >
-            ADS Representações
-          </Typography>
+            <img
+              src="/logo.png"
+              alt="ADS Representações"
+              style={{
+                maxWidth: 200,
+                height: "auto",
+              }}
+            />
+          </Box>
 
           <Box
             component="form"
@@ -114,7 +117,7 @@ export const Login = () => {
                 },
               }}
             >
-              Login
+              Entrar
             </Button>
           </Box>
         </CardContent>
@@ -126,7 +129,7 @@ export const Login = () => {
             color: "#f7f6f9",
           }}
         >
-          <Typography variant="body2">© 2024 ADS Representações</Typography>
+          <Typography variant="body2">© 2026 ADS Representações</Typography>
         </Box>
       </Card>
     </Container>
