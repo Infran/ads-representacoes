@@ -289,10 +289,10 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
                       {product.quantity}
                     </Text>
                     <Text style={styles.tableContentSmallSpacing}>
-                      {brMoneyMask(unitValue.toFixed(0))}
+                      R$ {brMoneyMask(unitValue.toFixed(0))}
                     </Text>
                     <Text style={styles.tableContentSmallSpacing}>
-                      {brMoneyMask(totalValue.toFixed(0))}
+                      R$ {brMoneyMask(totalValue.toFixed(0))}
                     </Text>
                   </div>
                 );
@@ -307,7 +307,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
           </div>
         </div>
         <div style={styles.budgetTotalValue}>
-          <Text>Total do Orçamento: {brMoneyMask(total.toFixed(0))}</Text>
+          <Text>Total do Orçamento: R$ {brMoneyMask(total.toFixed(0))}</Text>
         </div>
         <div style={styles.budgetFooterInfoContainer}>
           <div style={styles.budgetFooterInfoLabels}>
