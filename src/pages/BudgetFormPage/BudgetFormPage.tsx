@@ -30,6 +30,7 @@ import {
   updateBudget,
 } from "../../services/budgetServices";
 import { BudgetTemplate } from "../../utils/PDFGenerator/BudgetPdf";
+import { brMoneyMask } from "../../utils/Masks";
 
 import {
   BudgetAccordion,
@@ -390,10 +391,7 @@ const BudgetFormPage: React.FC<BudgetFormPageProps> = ({ mode }) => {
               }}
             >
               <Typography variant="h6" fontWeight={600}>
-                Total: R${" "}
-                {form.totalValue.toLocaleString("pt-BR", {
-                  minimumFractionDigits: 2,
-                })}
+                Total: R$ {brMoneyMask(form.totalValue.toFixed(0))}
               </Typography>
             </Paper>
           )}
