@@ -109,10 +109,7 @@ export const Home = () => {
           sx={{ fontWeight: 700, color: "#2C3E50", mb: 1 }}
         >
           Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Visão geral do seu negócio
-        </Typography>
+        </Typography>       
         <Divider sx={{ mt: 2 }} />
       </Box>
 
