@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "ads-representacoes-dev"
+    "default": "ads-representacoes-dev",
+    "development": "ads-representacoes-dev",
+    "production": "ads-representacoes"
   }
 }

@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Somente usuários autenticados e explicitamente autorizados (allowlist).
+    // A allowlist é a coleção `staff/{uid}`, provisionada por um admin no Console
+    // (auto-cadastrar-se no Auth NÃO basta para obter acesso — SEG-02).
+    function isStaff() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+
+    // Coleções de negócio: leitura/escrita apenas para staff.
+    match /clients/{id}         { allow read, write: if isStaff(); }
+    match /products/{id}        { allow read, write: if isStaff(); }
+    match /representatives/{id} { allow read, write: if isStaff(); }
+
+    // Contadores atômicos de ID (meta/lastBudgetId, lastClientId, ...): só staff.
+    match /meta/{doc}           { allow read, write: if isStaff(); }
+
+    // Orçamentos: staff + integridade mínima confirmada contra IBudget.
+    match /budgets/{id} {
+      allow read:           if isStaff();
+      allow create, update: if isStaff()
+        && request.resource.data.totalValue is number
+        && request.resource.data.totalValue >= 0
+        && request.resource.data.selectedProducts is list;
+      allow delete:         if isStaff();
+    }
+
+    // Nega tudo o que não foi explicitamente permitido (inclui a própria `staff`,
+    // que só deve ser escrita via Console/Admin SDK).
+    match /{document=**} { allow read, write: if false; }
+  }
+}

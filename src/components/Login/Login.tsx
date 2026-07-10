@@ -8,25 +8,56 @@ import {
   Button,
   Card,
   CardContent,
+  Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+
+// Traduz o código de erro do Firebase Auth para uma mensagem pt-BR ao usuário.
+const getLoginErrorMessage = (code?: string): string => {
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/invalid-email":
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+      return "E-mail ou senha inválidos.";
+    case "auth/user-disabled":
+      return "Esta conta foi desativada.";
+    case "auth/too-many-requests":
+      return "Muitas tentativas. Tente novamente mais tarde.";
+    case "auth/network-request-failed":
+      return "Falha de conexão. Verifique sua internet.";
+    default:
+      return "Não foi possível entrar. Tente novamente.";
+  }
+};
 
 export const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleEmailChange = (event) => setEmail(event.target.value);
-  const handlePasswordChange = (event) => setPassword(event.target.value);
+  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+    setEmail(event.target.value);
+  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+    setPassword(event.target.value);
 
-  const submitLogin = async (event) => {
+  const submitLogin = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (submitting) return; // evita duplo submit
+    setError("");
+    setSubmitting(true);
     try {
       await login(email, password);
       navigate("/Home");
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
+      const code = (error as { code?: string })?.code;
+      console.error("Erro ao fazer login:", code);
+      setError(getLoginErrorMessage(code));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -84,6 +115,7 @@ export const Login = () => {
               gap: 2,
             }}
           >
+            {error && <Alert severity="error">{error}</Alert>}
             <TextField
               id="email"
               label="Email"
@@ -107,6 +139,7 @@ export const Login = () => {
             <Button
               type="submit"
               variant="contained"
+              disabled={submitting}
               sx={{
                 padding: 1.5,
                 fontSize: "1rem",
@@ -117,7 +150,7 @@ export const Login = () => {
                 },
               }}
             >
-              Entrar
+              {submitting ? "Entrando..." : "Entrar"}
             </Button>
           </Box>
         </CardContent>

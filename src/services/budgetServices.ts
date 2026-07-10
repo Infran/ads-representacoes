@@ -39,7 +39,10 @@ export const getBudgets = async (): Promise<IBudget[]> => {
 export const getBudgetById = async (
   budgetId: string
 ): Promise<IBudget | null> => {
-  if (!budgetId || typeof budgetId !== "string") {
+  // Whitelist: IDs de orçamento são numéricos (getNextBudgetId().toString()).
+  // Rejeita qualquer coisa que não seja só dígitos — impede que um parâmetro de
+  // URL malicioso (ex.: "abc%2Fx") altere a estrutura do path do Firestore.
+  if (!/^\d+$/.test(budgetId)) {
     console.warn("getBudgetById chamado com ID inválido:", budgetId);
     return null;
   }
@@ -164,6 +167,10 @@ export const updateBudget = async (
   if (!budgetId) {
     throw new Error("ID do orçamento é obrigatório para atualização");
   }
+
+  // Valida os dados antes de gravar (mesmas regras de addBudget). O fluxo de
+  // edição (BudgetFormPage) envia o orçamento completo em form.budget.
+  validateBudget(budget);
 
   const docRef = doc(db, "budgets", budgetId);
   const updatedAt = Timestamp.now();
