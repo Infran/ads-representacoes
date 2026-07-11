@@ -1,0 +1,51 @@
+name: CI (lint + tests + firestore rules)
+
+# Governança contínua (SEG S3.1 + EST F1). Roda em todo push e PR:
+# lint, characterization tests (Vitest/jsdom) e testes das firestore.rules
+# no Firestore Emulator. NÃO faz deploy — é aditivo e não toca o deploy.yaml
+# (cujas branches estão cruzadas com os ambientes reais, achado SEG-09-rev).
+# Para BLOQUEAR o deploy quando o CI falhar, use branch protection exigindo
+# este check, ou adicione `needs: ci` ao job de deploy (decisão do usuário).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Java (Firestore Emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Instala do zero contornando o bug de optionalDependencies do npm com o
+      # binário nativo do rollup (mesmo motivo do deploy.yaml).
+      - name: Install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
+          npm install --legacy-peer-deps
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests (characterization)
+        run: npm run test:run
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Firestore rules tests (emulator)
+        run: npm run test:rules

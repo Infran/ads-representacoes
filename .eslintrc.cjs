@@ -15,4 +15,23 @@ module.exports = {
       { allowConstantExport: true },
     ],
   },
+  overrides: [
+    {
+      // Arquivos de teste (Vitest) e setup: globals do Vitest + jsdom.
+      // Inclui os characterization tests em src/ e os testes de regras em test/.
+      files: ['src/**/*.{test,spec}.{ts,tsx}', 'src/test/**', 'test/**'],
+      env: { node: true },
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+      },
+    },
+  ],
 }

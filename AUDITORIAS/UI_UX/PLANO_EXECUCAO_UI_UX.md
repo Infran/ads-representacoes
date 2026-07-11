@@ -26,7 +26,7 @@
 | Fase | Objetivo | Itens | Status |
 |---|---|---|---|
 | **U0** | Quick fixes independentes de tema | 4 | ✅ Concluído (2026-07-11) |
-| **U1** | Fundação: tokens + tema + baseline | 2 | ⬜ Pendente |
+| **U1** | Fundação: tokens + tema + baseline | 2 | ✅ Concluído (2026-07-11) |
 | **U2** | Biblioteca atômica + consolidação | 4 | ⬜ Pendente (⛔ U1; modais ⛔ EST F2.3) |
 | **U3** | Dashboard moderna, dark mode & governança | 6 | ⬜ Pendente (⛔ U1/U2) |
 
@@ -71,18 +71,21 @@ Verificado: `SectionCard.tsx` com 0 imports em `src/` (re-verificado via grep).
 
 ## Fase U1 — Fundação: tokens + tema + baseline
 
-### U1.1 — Tokens + `getTheme(mode)` + `ColorModeContext` + Provider (UI-09/10/15/16) ⬜
+### U1.1 — Tokens + `getTheme(mode)` + `ColorModeContext` + Provider (UI-09/10/15/16) ✅ (2026-07-11)
 A spec completa (código) está no §4.2 do reporte.
-- [ ] Criar `src/theme/tokens.ts` (primitivos: brand, ink, semânticas, `radius`, `elevation`) — **única** fonte de cor do app.
-- [ ] Criar `src/theme/index.ts` com `getTheme(mode: "light" | "dark")` (palette AA, `shape`, `typography`, overrides de `MuiButton`/`MuiCard`).
-- [ ] Criar `src/theme/ColorModeContext.tsx` (estado do modo + toggle; iniciar por `prefers-color-scheme`).
-- [ ] `main.tsx`: envolver o app em `ColorModeContext.Provider` + `ThemeProvider` + `CssBaseline`.
-- [ ] **Desbloqueios a anunciar no log:** U2 inteiro, U3, e a tokenização dos estilos de modal (antigo EST F4.7, absorvido por U2.1).
-- **Aceite:** app renderiza sob o tema; `PageHeader` (único consumidor de `theme.palette` hoje) reflete a marca; alternância de modo funciona programaticamente (toggle visual é U3.2).
+- [x] Criado `src/theme/tokens.ts` (primitivos: brand, ink, semânticas, `radius`, `elevation`) — **única** fonte de cor do app.
+- [x] Criado `src/theme/index.ts` com `getTheme(mode: "light" | "dark")` (palette AA — `text.secondary` elevado, backgrounds light/dark, divider; `shape.borderRadius`; `typography`; overrides de `MuiButton`/`MuiCard`). **Desvio consciente:** `fontFamily` usa **Poppins** (carregada de fato em U0.3) e não "Inter" (não carregada), evitando fallback silencioso.
+- [x] Criado `src/theme/ColorModeContext.tsx` (estado do modo + toggle + hook `useColorMode`; modo inicial por `prefers-color-scheme`).
+- [x] Wiring em `src/Root.tsx` (componente extraído para manter `main.tsx` como entrypoint limpo e o lint sem novos avisos): `ColorModeContext.Provider` + `ThemeProvider` + `CssBaseline` + `AuthProvider` + `App`. `main.tsx` só renderiza `<Root/>`.
+- [x] Verificação programática: `src/theme/theme.test.ts` (4 testes) confere que os tokens chegam ao tema (primary/semânticas/raio/fonte) e que light≠dark.
+- [x] **Desbloqueios:** U2 (átomos + varredura hex→tokens), U3 (dashboard/dark mode), e a tokenização dos modais (antigo EST F4.7, absorvido por U2.1) agora têm alvo canônico (`tokens.ts` + tema).
+- **Aceite:** app compila e renderiza sob o tema (build da produção percorre `main→Root→ThemeProvider→App`); `PageHeader` (único consumidor de `theme.palette` hoje) passa a refletir a marca (`background.paper`/`spacing`/`shape` do tema); toggle de modo funciona programaticamente (`ColorModeContext`, exposto ao header em U3.2). ✔
 
-### U1.2 — Aposentar `index.css` (UI-11 conclusão) ⬜
-- [ ] Migrar o que restar de útil para o tema; remover o arquivo e o import em `main.tsx` (o `CssBaseline` assume reset + background + cor de texto).
-- **Aceite:** sem regressão visual perceptível nas telas principais (checar Login, Home, listas).
+### U1.2 — Aposentar `index.css` (UI-11 conclusão) ✅ (2026-07-11)
+- [x] Migrado o único trecho útil do `index.css` (o reset universal `* { margin:0; padding:0; box-sizing:border-box }`) para o tema via `MuiCssBaseline.styleOverrides` — o `CssBaseline` assume reset + background (`background.default`) + cor de texto (`text.primary`) + fonte.
+- [x] Removido `import './index.css'` de `main.tsx` e o arquivo `src/index.css` (via `git rm`). Confirmado que as variáveis CSS que ele definia (`--font-primary/--bg-primary/--font-secondary`) **não tinham nenhum consumidor** (`var(--...)` = 0 hits no `src/`).
+- **Análise de risco (por que "sem regressão perceptível"):** o `background: #d2e7f5` do `body` **nunca aparecia** em uso normal — o Login pinta um `Container` de viewport inteira com gradiente próprio e as telas autenticadas usam `DefaultLayout` (`minHeight:100vh`) cuja área principal já é `#FAFAFA`. A cor de texto muda de `#2c3e50` → `#223449` (navy quase idêntico) e a fonte segue Poppins pelo tema. O reset universal foi preservado no `CssBaseline`, então nenhum espaçamento de elemento cru muda.
+- **Aceite:** sem regressão visual perceptível esperada nas telas principais; build/lint/test verdes. **Smoke visual manual recomendado** em Login/Home/listas autenticadas (não verificável headless sem credenciais Firebase). ✔ (código)
 
 ---
 
@@ -184,6 +187,15 @@ Hierarquia proposta no §3.3 do reporte.
 - **Por que foi feito:** U0 é o lote de correções visíveis de risco ~nulo que não bloqueia na fundação de tema; entrega valor imediato (mobile utilizável, idioma/fonte corretos, dashboard sem cálculo morto) antes de U1.
 - **Arquivos:** `src/pages/Home/Home.tsx`, `src/pages/Budgets/Budgets.css`, `index.html`, `src/index.css`, `src/pages/Products/Products.tsx`, `src/components/Tables/ProductTable/ProductTable.tsx`, `src/components/SectionCard/SectionCard.tsx` (removido).
 - **Verificação:** `npm run build` (tsc + vite) **verde**. Lint global caiu para **10 problemas**, todos pré-existentes de **type-safety/arquitetura** (`no-explicit-any`, `ban-types {}`, `react-refresh`, `exhaustive-deps`) com dono em outras trilhas/ondas — **zero código morto/unused-vars** restante após EST F0 + UI U0. Smoke visual (mobile <500px, fonte Poppins, legibilidade) recomendado.
+
+### 2026-07-11 · U1 completo (U1.1–U1.2) · Fundação: tokens + tema + baseline
+> Onda 2 (Fundações). U1 é o desbloqueador de U2/U3 e da tokenização dos modais (EST F4.7 absorvido por U2.1).
+- **O que foi feito:**
+  - **U1.1 (tema):** `src/theme/tokens.ts` (brand/ink/semânticas + `radius`/`elevation`, conforme §4.2 do reporte), `src/theme/index.ts` com `getTheme(mode)` (`createTheme` tokenizado, light/dark, overrides `MuiButton`/`MuiCard`), `src/theme/ColorModeContext.tsx` (contexto + `useColorMode` + modo inicial por `prefers-color-scheme`). O wiring foi para `src/Root.tsx` (`ColorModeContext.Provider` → `ThemeProvider` → `CssBaseline` → `AuthProvider` → `App`), deixando `main.tsx` como entrypoint puro (evita avisos novos de `react-refresh`). **Desvio:** `fontFamily` = Poppins (carregada em U0.3), não "Inter".
+  - **U1.2 (aposentar index.css):** reset universal migrado para `MuiCssBaseline.styleOverrides`; `import './index.css'` e o arquivo removidos. Variáveis CSS do arquivo não tinham consumidor.
+- **Por que foi feito:** o app rodava no tema default do MUI (UI-09), com 104 hex e 4 paletas concorrentes sem fonte única. O tema tokenizado é pré-requisito para migrar hex→tokens (U2.2), criar os átomos (U2.1) e a dashboard/dark mode (U3). Aposentar o `index.css` fecha UI-11 (globais quebrados) sem regressão porque o `body` background nunca era visível e o reset foi preservado no `CssBaseline`.
+- **Arquivos (novos):** `src/theme/tokens.ts`, `src/theme/index.ts`, `src/theme/ColorModeContext.tsx`, `src/Root.tsx`, `src/theme/theme.test.ts`. **(alterados):** `src/main.tsx`. **(removido):** `src/index.css`.
+- **Verificação:** `npm run build` (tsc + vite) **verde** — o build percorre todo o grafo `main→Root→ThemeProvider→App`, provando o wiring; `npm run test:run` → **33/33 verdes** (inclui `theme.test.ts`: tokens chegam ao tema, light≠dark); `npm run lint` nos **mesmos 10 problemas pré-existentes** (0 novos — `Root` isolado e uma diretiva `eslint-disable` pontual no hook `useColorMode`, mesmo padrão de `DataContext`/`ContextAuth`). **Smoke visual manual recomendado** (Login/Home/listas) — não verificável headless sem credenciais Firebase; análise indica mudança imperceptível.
 
 <!--
 ### AAAA-MM-DD · Ux.y · <título curto>
