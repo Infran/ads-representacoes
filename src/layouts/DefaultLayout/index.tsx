@@ -1,10 +1,9 @@
 import { Outlet } from "react-router-dom";
+import { Suspense } from "react";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Sidebar, AppHeader, LayoutProvider } from "../../components/Layout";
-
-const drawerWidth = 260;
-const collapsedWidth = 73;
 
 export default function DefaultLayout() {
   return (
@@ -39,7 +38,20 @@ export default function DefaultLayout() {
             overflowY: "auto",
           }}
         >
-          <Outlet />
+          <Suspense
+            fallback={
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="60vh"
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </Box>
       </Box>
     </LayoutProvider>

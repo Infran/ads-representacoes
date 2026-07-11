@@ -60,7 +60,7 @@
 | **SEG S0.3** | Timer de logout 2h + `clearTimeout` (resolve PERF-15) | Sessão hoje dura ~30h por bug literal |
 | **SEG S0.4** | Corrigir aliases do `.firebaserc` | Deploy manual pode publicar no ambiente errado |
 
-### 🔧 Onda 1 — Correções funcionais & quick wins (paralelizável por trilha)
+### 🔧 Onda 1 — Correções funcionais & quick wins (paralelizável por trilha) — ✅ Concluída no código (2026-07-11; ⚠️ ressalva P0.3)
 | Trilha | Itens | Destaques |
 |---|---|---|
 | EST F0 | F0.1–F0.7 | Bug do modal de exclusão (A-01), filtro em centavos (A-04), fim do `reload()` (A-03), **memoizar `value`** (A-07 = PERF-T04 = UI-28), código morto, `.gitignore` |
@@ -114,7 +114,7 @@
 | Styled-components duplicados nos 6 modais | EST D-01 · UI-07/13 | **EST F2.3** (centralizar já) → **UI U2.1** (tokenizar; absorve EST F4.7) | Sequência, não duplicação |
 | Criação não-atômica (contador + doc) | SEG-05 | **EST F2.1** implementa · **SEG S2.1** especifica/valida | — |
 | Validação no `updateBudget` / sanitizar ID | SEG-06/07 | **SEG S1.1/S1.2** (antes do factory) | EST F2.1 **preserva** |
-| KPI morto + cálculo morto em `kpiData` | UI-18/19 · PERF-10/T12 | **UI U0.1** — 🟡 card removido 2026-07-10 (placeholder resolvido); **falta remover** `totalValue`/`maxBudget` mortos | PERF referencia |
+| KPI morto + cálculo morto em `kpiData` | UI-18/19 · PERF-10/T12 | **UI U0.1** — ✅ **Resolvido** (card removido 2026-07-10; `totalValue`/`maxBudget` + `brMoneyMask` mortos removidos 2026-07-11) | PERF referencia |
 | Dashboard lê N para mostrar 5 | PERF-03/T03 · PERF-07/T10 · UI-30 | **PERF P0.3** (absorve T10 — sort O(N) morre) | UI referencia |
 | Zero code-splitting/lazy | PERF-01/T01 · UI-32/35 | **PERF P0.2** | UI coordena chunk dos charts (U3.1) |
 | Login engole erro / duplo submit | SEG-10 · UI-23/26 | **SEG S1.3** (comportamento) | UI U2.2/U2.3 só re-estiliza |
@@ -152,14 +152,14 @@ ONDA 5  EST F4 (refino) ──► F4.6 (ADR) desbloqueia PERF P2.1 · F4.1 coord
 |---|---|---|---|
 | Regras Firestore versionadas + testadas | ❌ inexistentes no repo | ✅ deny-by-default + testes no CI | SEG · Onda 0/2 |
 | Duração real da sessão | ~30 h (bug) | 2 h | SEG · Onda 0 |
-| Bugs funcionais (A-01, A-04, UI-24, KPI morto) | 4 abertos | 0 | EST/UI · Onda 1 |
-| Bundle inicial (gzip) | monolítico (PDF incluso) | PDF/DataGrid/charts em chunks lazy (~-40%) | PERF · Onda 1 |
-| Reads da home (widget recentes) | N docs | 5 docs | PERF · Onda 1 |
-| Re-render por mudança de entidade | global (8 comunidades) | local | EST F0.5/F2.2 · Ondas 1/3 |
+| Bugs funcionais (A-01, A-04, UI-24, KPI morto) | ✅ **0** (corrigidos na Onda 1) | 0 | EST/UI · Onda 1 ✅ |
+| Bundle inicial (gzip) | ✅ **Login ~302 kB gzip (era 1.123 kB, −73%)**; PDF/DataGrid/NCM em chunks lazy | PDF/DataGrid/charts lazy (~-40%) | PERF · Onda 1 ✅ (meta superada) |
+| Reads da home (widget recentes) | N docs (primitivo `getRecentBudgets(5)` pronto; rewire ⛔ depende de U3.1/P2.1) | 5 docs | PERF · Onda 1 🟡 → 4 |
+| Re-render por mudança de entidade | ✅ `value` memoizado (F0.5); split por entidade fica p/ F2.2 | local | EST F0.5/F2.2 · Ondas 1/3 |
 | Camada de services | ~750 linhas, 4× repetida, add não-atômico | ~250 linhas, factory, **add atômico** | EST+SEG · Onda 3 |
 | I/O de cache por CRUD | re-serializa 4 coleções | 1 coleção | PERF · Onda 3 |
 | `ThemeProvider`/tokens | 0 tema · 104 hex · 4 paletas | 1 tema light/dark · hex ≈ 0 fora de `tokens.ts` | UI · Ondas 2/4 |
-| `console.*` em produção | 83 / 27 arquivos | 0 (logger + drop) | EST+PERF · Ondas 1/5 |
+| `console.*` em produção | 🟡 **drop no build de prod já ativo** (P0.2 — 0 `console.*` nos chunks); logger por env (F4.5) ainda pendente p/ dev | 0 (logger + drop) | EST+PERF · Ondas 1/5 |
 | Suíte de testes | inexistente | unit + characterization + rules | EST F1 + SEG S3.1 · Onda 2 |
 | God Components | 501/498/421 linhas | < ~200 (orquestração) | EST F3 · Onda 4 |
 
@@ -179,12 +179,14 @@ ONDA 5  EST F4 (refino) ──► F4.6 (ADR) desbloqueia PERF P2.1 · F4.1 coord
 
 - **2026-07-09 — Plano diretor criado.** As 4 auditorias (Estrutura, Segurança, Performance, UI/UX) tiveram seus reportes convertidos de "diagnóstico + sugestões" para "diagnóstico + plano consolidado", cada uma com seu `PLANO_EXECUCAO_*.md` (fases, checklists, aceites e log). Todos os achados-chave foram verificados contra o código-fonte; correções de premissa relevantes: inexistência de `ThemeProvider` (mudou o plano de tokens), subcomponentes de orçamento já extraídos (reduziu escopo de EST F3.1), duplicação do PDF legado em `RecentBudgets.tsx` (ampliou EST F4.3), CI usando `--project=<id>` direto (recalibrou o risco de SEG-09). A matriz de dono único (§3) elimina os overlaps que existiam entre os backlogs originais (memoização, reload, timer, console, PDF, modais, Login, KPI, paginação, denormalização). **Nenhum código de produção foi alterado na consolidação.**
 - **2026-07-10 — Execução (branch `refatoracao-auditorias`).** Onda 0 + Onda 1/Segurança implementadas no código (S0.1/S0.3/S0.4 + S1.1–S1.4). Depois, mudanças ad-hoc trazidas da `main` foram reconciliadas com o roadmap: **EST F4.3 / SEG-12 / UI-33** (PDF legado) resolvidos via `openBudgetPdf()` (Blob, nos 2 call sites) — fora da ordem planejada e como função compartilhada em vez de rota React; **UI-18** resolvido por remoção do card "Valor Total" (diverge do plano de exibir o valor), deixando **PERF-10/T12** (`totalValue`/`maxBudget` mortos em `kpiData`) como limpeza pendente; `ProductTable` ganhou paginação local + sort numérico (não substitui **PERF P1.2**). `npm run build` verde.
+- **2026-07-11 (parte 2) — Onda 1 fechada: PERF P0.** Deps mortas removidas (`uuid`/`react-pdf`/`react-firebase-hooks`/`dayjs`/`dotenv`, 13 pacotes); code-splitting via `manualChunks` (vendor-react/mui/mui-x/firebase/pdf) + `React.lazy` nas 6 rotas + `Suspense`; `esbuild.drop` de `console`/`debugger` só em prod. **Resultado:** bundle crítico do Login **5.783 kB → ~1.096 kB** (gzip **1.123 → ~302 kB, ≈ −73%**); @react-pdf, DataGrid e `tabela_ncm.json` fora do caminho do Login; **0 `console.*`** em prod. **P0.3:** primitivo `getRecentBudgets(5)` (indexado) entregue; rewire do widget **deferido** — a Home ainda lê N para os KPIs, então "ler 5 e não N" é inatingível até U3.1/P2.1 (documentado). Build + `tsc` verdes; lint nos mesmos 10 pré-existentes. **Onda 1 concluída no código** → próximo é a Onda 2 (fundações: testes + tema + testes de regras).
+- **2026-07-11 — Onda 0 encerrada (Console) + Onda 1 avança (EST F0 · UI U0).** (1) **Onda 0 concluída de ponta a ponta:** `staff/{uid}` provisionado (2 dev + 2 prod, via API REST) e `firestore.rules` publicadas em dev→prod; deny-by-default validado (403 sem auth) nos dois projetos; S0.2 encerrado (conta-fantasma = risco residual aceito). Detalhes em `PLANO_EXECUCAO_SEGURANCA.md` (2026-07-11). (2) **EST F0 (F0.1–F0.7) concluída:** bugs A-01 (modal exclusão), A-04 (filtro em centavos), A-03 (`reload`→`reset`), A-06 (null-safety), A-07/PERF-06 (memo do `value`), M-01 (`Sidebar.old`), M-03 (`.gitignore`) + limpeza do código morto que travava o lint. (3) **UI U0 (U0.1–U0.4) concluída:** `kpiData` morto removido (fecha **PERF-10/T12**), bug responsivo <500px, `lang="pt-BR"`+Poppins+globais do `index.css`, `SectionCard`/`handleEdit` mortos. Cross-refs fechados nas duas pontas (**PERF-T04/T08/T12**). `npm run build` + `npx tsc --noEmit` verdes; lint global reduzido a 10 problemas pré-existentes de type-safety/arquitetura (donos: UI U2.1/PageHeader, EST F2.2/F3.3, SEG). **Nenhuma ação de infra/deploy nesta rodada.**
 
 ---
 
-**Status geral:** 🟡 Onda 0 + Onda 1/Segurança **executadas no código** (2026-07-10) · demais itens das Ondas 1–5 pendentes
-**Próximo passo:** concluir as **ações de Console/deploy da Onda 0** (provisionar `staff/{uid}` **antes** de publicar, publicar `firestore.rules` dev→prod, desabilitar signup) — só então o deploy de produção deixa de estar congelado. Detalhes e log: [PLANO_EXECUCAO_SEGURANCA.md](SEGURANCA/PLANO_EXECUCAO_SEGURANCA.md) (entrada 2026-07-10).
+**Status geral:** 🟢 **Onda 0 concluída** (código + Console). 🟢 **Onda 1 concluída** (código) — ✅ SEG S1, ✅ EST F0, ✅ UI U0, ✅ PERF P0 (⚠️ P0.3: primitivo `getRecentBudgets` entregue, rewire do widget deferido por bloqueio arquitetural). Ondas 2–5 pendentes.
+**Próximo passo:** **Onda 2 — Fundações:** `EST F1` (Vitest + RTL + characterization tests — desbloqueia F2/F3 e valida as correções da Onda 1), `UI U1` (tokens + `getTheme` + `ThemeProvider`/`CssBaseline` — desbloqueia U2/U3), `SEG S3.1` (testes de `firestore.rules` no emulador + CI). Detalhes nos `PLANO_EXECUCAO_*` respectivos. **Pendências carregadas da Onda 1:** rewire de `RecentBudgets` (acoplado a U3.1/P2.1) e `tabela_ncm.json` sob demanda (otimização futura de PERF).
 
-> **Execução 2026-07-10 (código):** SEG S0.1 (rules + `firebase.json`), S0.3 (timer 2h + `clearTimeout` — resolve PERF-15), S0.4 (`.firebaserc`), e Onda 1 de Segurança S1.1–S1.4. **Extra reconciliado:** EST F4.3/SEG-12/UI-33 (PDF `openBudgetPdf`) e UI-18 (card KPI removido). `npm run build` verde; sem lint novo. **Ações de Console pendentes** listadas acima. As correções de código estão prontas mas o **perímetro só fica ativo após publicar as regras** — deploy de produção segue congelado até lá.
+> **Deploy de produção:** perímetro **ativo** (regras publicadas), mas atenção ao achado **SEG-09-rev** — `deploy.yaml` tem as branches cruzadas com os ambientes reais; não fazer push para `development`/`main` sem alinhar com o usuário (ver `PLANO_EXECUCAO_SEGURANCA.md`).
 >
-> **Limpezas pendentes que sobraram das mudanças ad-hoc:** remover `kpiData.totalValue`/`maxBudget` mortos (PERF-10/T12) e decidir o futuro do KPI "Valor Total" (reabrir como hero em U3.1, se quiserem).
+> **Lint global (10 problemas restantes):** não é código morto — são `no-explicit-any` (CustomTable→UI U2.1, EditClientModal→EST F3.3, ContextAuth→SEG), `ban-types {}` (PageHeader→UI), `react-refresh` (DataContext→EST F2.2; ContextAuth/LayoutContext/BudgetPdf arquitetural) e `exhaustive-deps` (ContextAuth→SEG S0.3). Cada um resolve na sua trilha/onda; o gate `--max-warnings 0` só fica verde quando esses donos rodarem.

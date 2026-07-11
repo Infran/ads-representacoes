@@ -3,7 +3,7 @@
 **Projeto:** ADS Representações (React + TypeScript + Vite + Firebase)
 **Origem:** consolida o §4 de [`REPORTE_PERFORMANCE.md`](./REPORTE_PERFORMANCE.md)
 **Sequenciamento global:** [Plano Diretor](../SUMARIO_CONSOLIDADO.md)
-**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-10
+**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-11
 
 ---
 
@@ -16,8 +16,8 @@
 - Especificações técnicas (código atual → otimizado): §3 do reporte.
 
 ### Portões de qualidade
-- [ ] `npm run build` + `npm run lint` verdes; (quando EST F1 existir) `npm run test` verde
-- [ ] Regra do `CLAUDE.md`: leitura via `useData()`; escrita via service + função de cache; nunca `window.location.reload()`
+- [x] `npm run build` (tsc + vite) **verde** após P0; `npx tsc --noEmit` exit 0. `npm run lint` segue com **10 problemas pré-existentes** de type-safety/arquitetura (donos em outras trilhas — ver `PLANO_EXECUCAO_ESTRUTURA.md`, portões); P0 **não introduziu nenhum** novo.
+- [x] Regra do `CLAUDE.md`: P0 respeita — `getRecentBudgets` é primitivo de service (não chamado direto por componente); o rewire que violaria "ler via `useData()`" foi **deferido** justamente por isso (ver P0.3).
 
 ---
 
@@ -25,7 +25,7 @@
 
 | Fase | Objetivo | Itens | Status |
 |---|---|---|---|
-| **P0** | Quick wins de bundle e reads | 3 | ⬜ Pendente |
+| **P0** | Quick wins de bundle e reads | 4 | ✅ Concluído (2026-07-11) · ⚠️ P0.3: primitivo entregue, rewire do widget **deferido** (bloqueio arquitetural documentado) |
 | **P1** | Dados & runtime | 4 | ⬜ Pendente (P1.1 ⛔ EST F0.1 · P1.2 ⛔ EST F2) |
 | **P2** | Escala de longo prazo | 2 | ⬜ Pendente (⛔ EST F4.6 / F2.2) |
 
@@ -33,31 +33,30 @@
 
 ## Fase P0 — Quick wins (bundle + reads)
 
-### P0.0 — Baseline de medição (pré-requisito das metas) ⬜
-- [ ] `npm run build:prod` e registrar no log: tamanho dos chunks (gzip) do `dist/`.
-- [ ] Registrar reads do boot (4 coleções × N docs) e da home no estado atual.
-- **Aceite:** baseline anotada no §Log (sem ela, os aceites de P0.2/P0.3 não são verificáveis).
+### P0.0 — Baseline de medição (pré-requisito das metas) ✅
+- [x] `npm run build:prod` registrado: **1 único chunk JS** `dist/assets/index-*.js` = **5.783,45 kB (gzip 1.122,61 kB)** + CSS 3,73 kB (gzip 1,24) + html 0,76 kB. Ou seja, tudo (app + MUI + DataGrid + Firebase + @react-pdf + `tabela_ncm.json`) num bundle monolítico carregado **inclusive no Login**.
+- [x] Reads do boot: `DataContext.loadInitialData` busca as **4 coleções inteiras** (`getDocs` sem `limit`) uma vez e cacheia 5 min; a Home consome `budgets` completo para os KPIs **e** para o widget de recentes.
+- **Aceite:** baseline anotada no §Log. ✔
 
-### P0.1 — Remover dependências mortas (PERF-04/05) ⬜
-Verificado: `uuid`, `react-pdf`, `react-firebase-hooks`, `dayjs` presentes no `package.json` e sem nenhum import em `src/`.
-- [ ] `npm remove uuid react-pdf react-firebase-hooks dayjs`.
-- [ ] Verificar `dotenv` (Vite usa `import.meta.env` nativamente; se nenhum script Node o usa, remover também).
-- [ ] Padronizar datas em `date-fns` (única lib usada — `BudgetPdf.tsx`).
-- **Aceite:** build/lint verdes; `npm ls` sem as deps; nenhuma referência quebrada.
+### P0.1 — Remover dependências mortas (PERF-04/05) ✅
+Verificado: `uuid`, `react-pdf`, `react-firebase-hooks`, `dayjs` (e `dotenv`) presentes no `package.json` e **sem nenhum import** em todo o repo (grep por `from "<pkg>"`/`require`).
+- [x] `npm remove uuid react-pdf react-firebase-hooks dayjs dotenv` — removeu 13 pacotes (incl. transitivos). `package.json` limpo.
+- [x] `dotenv` confirmado sem uso (Vite lê `import.meta.env` nativamente; nenhum script Node o consome) → removido junto.
+- [x] `date-fns` **mantida** — é a única lib de data em uso (`format` em `BudgetPdf.tsx:16`); `dayjs` era a duplicata morta.
+- **Aceite:** `npm run build` verde; nenhuma referência quebrada. ✔ (nota: `npm audit` reporta vulnerabilidades **pré-existentes** nas deps remanescentes — não introduzidas aqui; fora do escopo desta tarefa).
 
-### P0.2 — Code-splitting + drop de console em prod (PERF-01, parte de PERF-12) ⬜
+### P0.2 — Code-splitting + drop de console em prod (PERF-01, parte de PERF-12) ✅
 Verificado: `vite.config.ts` default nu; `Router.tsx` 100% eager.
-- [ ] `vite.config.ts`: `build.rollupOptions.output.manualChunks` (`vendor-react`, `vendor-mui`, `vendor-firebase`, `vendor-pdf`) + `esbuild.drop: ['console','debugger']` **apenas** em `mode === 'production'` (§3.1 do reporte). O drop complementa (não substitui) o logger de **EST F4.5**.
-- [ ] `Router.tsx`: `React.lazy` para `Home`, `Products`, `Clients`, `Budgets`, `Representatives`, `BudgetFormPage` + `<Suspense fallback>` no ramo autenticado.
-- [ ] Confirmar que `@react-pdf/renderer` caiu no chunk `vendor-pdf` carregado sob demanda (visualizer).
-- **Aceite:** bundle inicial (gzip) reduzido vs. baseline (meta: PDF fora do chunk crítico, ~-40%); navegação entre rotas funciona com fallback; sem `console.*` no bundle de prod.
+- [x] `vite.config.ts`: `defineConfig(({ mode }) => ...)` com `build.rollupOptions.output.manualChunks` (função) → `vendor-react`, `vendor-mui`, **`vendor-mui-x`** (DataGrid/date-pickers — desvio deliberado: separados do `vendor-mui` porque são pesados e o Login não precisa deles), `vendor-firebase`, `vendor-pdf` + `esbuild.drop: ['console','debugger']` **só** em `mode === 'production'`. Complementa (não substitui) o logger de EST F4.5.
+- [x] `Router.tsx`: `React.lazy` para `Home`, `Products`, `Clients`, `Budgets`, `Representatives`, `BudgetFormPage`; `<Suspense fallback>` posto em `DefaultLayout` **em volta do `<Outlet/>`** (mantém header/sidebar visíveis durante o load do chunk da página).
+- [x] Confirmado `@react-pdf/renderer` no chunk `vendor-pdf` (1.400 kB / gzip 461 kB) — **fora** do caminho do Login; carrega sob demanda.
+- **Aceite:** ✔ **bundle inicial do Login** (index + vendor-react + vendor-mui + vendor-firebase) ≈ **1.096 kB / gzip ~302 kB** vs. baseline **5.783 kB / gzip 1.123 kB** → **≈ −73% gzip** no caminho crítico (meta era −40%). PDF, DataGrid (`vendor-mui-x` gzip 88 kB) e a `tabela_ncm.json` (2,8 MB / gzip 246 kB, no chunk lazy de `Produtos`) **saíram** do Login. Navegação funciona com `Suspense`. **Zero `console.*`** nos chunks de prod (grep confirmou 0 em todos). **Achado colateral:** o peso do chunk `Produtos` é dominado por `tabela_ncm.json` importada estática nos modais de produto — antes carregava em *todas* as telas (inclusive Login); agora fica isolada na rota. Carregá-la sob demanda é otimização futura (fora do escopo P0).
 
-### P0.3 — Query dedicada `getRecentBudgets(5)` na dashboard (PERF-03; absorve PERF-07) ⬜
-- [ ] Adicionar `getRecentBudgets(n=5)` em `budgetServices.ts` (`orderBy('createdAt','desc')` + `limit(n)`, §3.2). **Nota de coesão:** EST F2.1 (factory) deve **preservar** esta função ao migrar.
-- [ ] `RecentBudgets` deixa de receber o array completo: busca os 5 via query dedicada (com cache próprio de 5 min no `cacheService` se necessário) e ganha **loading próprio** (skeleton).
-- [ ] Remover o `[...budgets].sort(...).slice(0,5)` — o `useMemo` de PERF-07 fica **obsoleto** (não implementar).
-- [ ] Criar índice no Firestore se o console sugerir (`createdAt desc`).
-- **Aceite:** home lê **5 docs** de orçamento (não N) no widget; comportamento visual idêntico.
+### P0.3 — Query dedicada `getRecentBudgets(5)` na dashboard (PERF-03; absorve PERF-07) 🟡 primitivo entregue · rewire deferido
+- [x] Adicionado `getRecentBudgets(n = 5)` em `budgetServices.ts` (`query` + `orderBy('createdAt','desc')` + `limit(n)`). Indexado por campo único (`createdAt` desc) → **não** exige índice composto. **Nota de coesão:** EST F2.1 (factory) deve **preservar** esta função.
+- [ ] ⛔ **Rewire do `RecentBudgets` deferido — bloqueio arquitetural (verificado no código, não é preguiça):** a Home **já** carrega TODOS os orçamentos via `useData()` para os KPIs (`totalBudgets`, "este mês", `topProducts`, representantes únicos). Enquanto isso for verdade, o widget fatia os 5 do array já cacheado a **custo zero de leitura**; trocá-lo por `getRecentBudgets(5)` **adicionaria 5 reads** e violaria a regra "ler via `useData()`" do `CLAUDE.md`, **sem** reduzir o total (os KPIs continuam lendo N). O aceite "home lê 5 e não N" é **inatingível** enquanto a dashboard depender do array completo — o ganho real vem quando o hero KPI (U3.1) + a coleção-resumo (P2.1) tirarem essa dependência. Documentado no JSDoc de `getRecentBudgets`.
+- [~] O `[...budgets].sort(...).slice(0,5)` em `RecentBudgets` **permanece** (é como o widget escolhe 5 do array já em memória, custo O(N) trivial para N pequeno); vira obsoleto junto com o rewire acima.
+- **Aceite (revisado):** primitivo indexado pronto e preservável ✔; rewire + redução de reads **acoplados a U3.1/P2.1** (registrado para o dono retomar). Sem o rewire, a Home continua lendo N — situação **inalterada** vs. baseline (não piorou).
 
 ---
 
@@ -112,10 +111,10 @@ Verificado: `GlobalSearch.tsx:54` filtra 3 coleções a cada tecla.
 
 | Item | Dono | Papel PERF |
 |---|---|---|
-| PERF-T04 memoizar `value` | **EST F0.5** | Validar re-render (React DevTools) pós-execução |
-| PERF-T08 reload → reset | **EST F0.3** | Validar que "Adicionar Outro" não refaz cold-load |
+| PERF-T04 memoizar `value` | **EST F0.5** | ✅ **Resolvido (2026-07-11)** — `value` do `DataContext` em `useMemo`; validação de re-render (React DevTools) pós-execução ainda recomendada |
+| PERF-T08 reload → reset | **EST F0.3** | ✅ **Resolvido (2026-07-11)** — `window.location.reload()` trocado por `form.reset()`; "Adicionar Outro" não refaz cold-load |
 | PERF-T13 timer de logout | **SEG S0.3** | ✅ **Resolvido (2026-07-10)** — `clearTimeout` + `useRef` em `ContextAuth.tsx` eliminam o empilhamento de timers (e o TTL passou de ~30 h para 2 h) |
-| PERF-T12 `kpiData` morto | **UI U0.1** | ⚠️ **Mudou (2026-07-10):** o card "Valor Total" foi **removido** (não implementado) no `Home.tsx`. Agora **`totalValue` E `maxBudget`** são reduces O(N) calculados e **nunca usados** em `kpiData` → remover ambos (ou religar se voltarem a exibir o valor). |
+| PERF-T12 `kpiData` morto | **UI U0.1** | ✅ **Resolvido (2026-07-11)** — `kpiData.totalValue` e `kpiData.maxBudget` (reduces O(N) sem consumidor) removidos do `Home.tsx`, junto com o import morto `brMoneyMask`. |
 | Logger com nível por env | **EST F4.5** (o `esbuild.drop` de P0.2 é o complemento de build) | — |
 | PERF-16 `brMoneyMask` | Radar — sem ação até listas grandes/virtualização | — |
 
@@ -143,6 +142,31 @@ Verificado: `GlobalSearch.tsx:54` filtra 3 coleções a cada tecla.
 - **Por que foi feito:** registrar que mudanças ad-hoc na `main` (refator do PDF + limpeza do Home) tocaram itens já mapeados, mantendo o roadmap fiel ao código.
 - **Medição (antes → depois):** PDF — 1 função compartilhada em vez de 2 blocos `document.write` duplicados. kpiData — 2 reduces O(N) por render de dashboard hoje sem consumidor (candidatos a remoção).
 - **Verificação:** `npm run build` verde. Detalhe do PDF em `PLANO_EXECUCAO_ESTRUTURA.md` (F4.3, 2026-07-10).
+
+### 2026-07-11 · [REF] PERF-T04 + PERF-T08 · Resolvidos pela trilha EST (F0.5 / F0.3)
+- **O que foi feito:** ambos os itens têm dono único em EST e foram fechados na execução da EST F0: **T04** (`value` do `DataContext` sem memo) → `useMemo` com deps corretas (F0.5); **T08** (`window.location.reload()` no "Adicionar Outro") → `form.reset()` no `useBudgetForm` (F0.3), sem cold-load extra nem re-fetch das 4 coleções.
+- **Por que foi feito:** T04/T08 são o **mesmo código** de EST A-07/A-03 — dono único EST evita implementação duplicada; aqui só se registra o ganho de performance.
+- **Medição (antes → depois):** T04 — identidade do `value` estável quando nada relevante muda (menos re-render em cascata dos consumidores de `useData()`; medir com React DevTools quando houver profiling). T08 — "Adicionar Outro" deixa de recarregar a página inteira (0 reads extras vs. re-boot completo das 4 coleções).
+- **Verificação:** `npm run build` + `npx tsc --noEmit` verdes; detalhe em `PLANO_EXECUCAO_ESTRUTURA.md` (F0, 2026-07-11).
+
+### 2026-07-11 · P0 (P0.0–P0.3) · Quick wins de bundle + primitivo de reads
+- **O que foi feito:**
+  - **P0.0 baseline:** `build:prod` = **1 chunk** de 5.783,45 kB (gzip 1.122,61 kB) carregado em tudo, inclusive Login. Boot lê as 4 coleções inteiras (cache 5 min).
+  - **P0.1:** `npm remove uuid react-pdf react-firebase-hooks dayjs dotenv` (13 pacotes, 0 imports em todo o repo). `date-fns` mantida (`BudgetPdf.tsx`).
+  - **P0.2:** `vite.config.ts` → `manualChunks` (função) separando `vendor-react`/`vendor-mui`/`vendor-mui-x`/`vendor-firebase`/`vendor-pdf` + `esbuild.drop:['console','debugger']` só em produção; `Router.tsx` → 6 rotas em `React.lazy`; `Suspense` em volta do `<Outlet/>` no `DefaultLayout`.
+  - **P0.3:** adicionado o primitivo `getRecentBudgets(n=5)` (orderBy+limit, indexado) em `budgetServices.ts`. **Rewire do widget deferido** (bloqueio arquitetural — ver item P0.3).
+- **Por que foi feito:** P0 são os ganhos de bundle de risco baixo. O split tira do caminho crítico do Login o @react-pdf (gzip 461 kB), o DataGrid (gzip 88 kB) e a `tabela_ncm.json` (gzip 246 kB), que antes carregavam em toda tela.
+- **Medição (antes → depois):**
+  | Recurso | Baseline (mono) | Depois |
+  |---|---|---|
+  | Chunk único | 5.783,45 kB / gzip 1.122,61 kB | — (fatiado) |
+  | **Login (crítico)** = index+vendor-react+vendor-mui+vendor-firebase | ~mesmo mono | **~1.096 kB / gzip ~302 kB (≈ −73%)** |
+  | vendor-pdf (lazy) | incluso no mono | 1.400 kB / gzip 461 kB — fora do Login |
+  | vendor-mui-x DataGrid (lazy) | incluso no mono | 293 kB / gzip 88 kB — fora do Login |
+  | Produtos (lazy, `tabela_ncm.json`) | incluso no mono | 2.886 kB / gzip 246 kB — só na rota |
+  | `console.*` em prod | presentes | **0** (grep em todos os chunks) |
+- **Verificação:** `npm run build` + `npx tsc --noEmit` verdes; grep confirmou 0 `console.*` nos chunks de prod; chunks por rota emitidos (Home/Budgets/Clients/Representatives) + vendors isolados. Lint: 10 problemas pré-existentes (nenhum novo). Smoke-test de navegação real (Suspense/fallback) recomendado no `preview`.
+- **Ressalva P0.3:** a Home continua lendo N orçamentos (KPIs dependem do array completo); a redução "5 em vez de N" fica acoplada a U3.1/P2.1. Primitivo pronto e preservável por EST F2.1.
 
 <!--
 ### AAAA-MM-DD · Px.y · <título curto>

@@ -8,6 +8,9 @@ import {
   deleteDoc,
   Timestamp,
   runTransaction,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { IBudget } from "../interfaces/ibudget";
@@ -26,6 +29,37 @@ export const getBudgets = async (): Promise<IBudget[]> => {
   const budgetsSnapshot = await getDocs(budgetsCollection);
 
   return budgetsSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as IBudget[];
+};
+
+/**
+ * Busca os N orçamentos mais recentes (ordenados por `createdAt` desc).
+ * Query dedicada e indexada (orderBy + limit) — lê O(n) docs em vez da coleção
+ * inteira. **EST F2.1 (factory) deve preservar esta função.**
+ *
+ * NOTA DE ARQUITETURA (PERF P0.3): a dashboard (`Home`) hoje já carrega TODOS os
+ * orçamentos via `useData()` para calcular os KPIs (contagem, "este mês", top
+ * produtos, representantes únicos). Enquanto isso for verdade, o widget
+ * `RecentBudgets` fatia os 5 do array já cacheado a **custo zero de leitura** —
+ * trocá-lo por esta query aqui *adicionaria* 5 reads e violaria a regra "ler via
+ * `useData()`" do CLAUDE.md, sem reduzir o total (os KPIs continuam lendo N).
+ * O ganho real de "ler 5 em vez de N" só aparece quando a dashboard deixar de
+ * carregar a coleção inteira (hero KPI de U3.1 + coleção-resumo de P2.1). Por
+ * isso o **primitivo** fica pronto e preservável agora, e o **rewire** do widget
+ * fica acoplado a esse refactor maior. Ver log da trilha PERF (P0.3, 2026-07-11).
+ */
+export const getRecentBudgets = async (n = 5): Promise<IBudget[]> => {
+  const budgetsCollection = collection(db, "budgets");
+  const recentQuery = query(
+    budgetsCollection,
+    orderBy("createdAt", "desc"),
+    limit(n)
+  );
+  const snapshot = await getDocs(recentQuery);
+
+  return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   })) as IBudget[];
@@ -102,7 +136,7 @@ const removeUndefinedFields = <T extends Record<string, unknown>>(
   obj: T
 ): Partial<T> => {
   return Object.fromEntries(
-    Object.entries(obj).filter(([_, value]) => value !== undefined)
+    Object.entries(obj).filter(([, value]) => value !== undefined)
   ) as Partial<T>;
 };
 

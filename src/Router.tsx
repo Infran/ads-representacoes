@@ -1,16 +1,23 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Home } from "./pages/Home/Home";
-import Products from "./pages/Products/Products";
-import Clients from "./pages/Clients/Clients";
-import Budgets from "./pages/Budgets/Budgets";
-import Representatives from "./pages/Representatives/Representatives";
 import DefaultLayout from "./layouts/DefaultLayout";
 import { Login } from "./components/Login/Login";
 import { AuthContext } from "./context/ContextAuth";
 import ProtectedRoutes from "./utils/ProtectedRoutes";
-import { useContext } from "react";
+import { useContext, lazy } from "react";
 import { DataProvider } from "./context/DataContext";
-import BudgetFormPage from "./pages/BudgetFormPage";
+
+// Rotas autenticadas carregadas sob demanda (code-splitting — PERF P0.2).
+// Tira o app autenticado (+ DataGrid/PDF) do bundle inicial do Login.
+const Home = lazy(() =>
+  import("./pages/Home/Home").then((m) => ({ default: m.Home }))
+);
+const Products = lazy(() => import("./pages/Products/Products"));
+const Clients = lazy(() => import("./pages/Clients/Clients"));
+const Budgets = lazy(() => import("./pages/Budgets/Budgets"));
+const Representatives = lazy(
+  () => import("./pages/Representatives/Representatives")
+);
+const BudgetFormPage = lazy(() => import("./pages/BudgetFormPage"));
 
 const AppRouter = () => {
   const { currentUser: user } = useContext(AuthContext);
