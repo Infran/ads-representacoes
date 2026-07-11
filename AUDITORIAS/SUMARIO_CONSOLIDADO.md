@@ -110,11 +110,11 @@
 | Bug do modal de exclusão (cancelar remove) | EST A-01 | **EST F0.1** (contrato `onDeleted`) | Pré-requisito de PERF P1.1 |
 | N `DeleteBudgetModal` montados | PERF-09/T05 | **PERF P1.1** (após EST F0.1) | EST F3.2 parte deste estado |
 | 83 `console.*` em produção | EST §1 · SEG-11 · PERF-12/T11 | **EST F4.5** (logger) + **PERF P0.2** (`esbuild.drop`) | Complementares, não duplicados |
-| PDF via `document.write`+`ReactDOM.render` (2 call sites) | EST A-02 · SEG-12 · UI-33 | **EST F4.3** (`Budgets.tsx` **e** `RecentBudgets.tsx`) | SEG/UI marcam resolvido |
+| ~~PDF via `document.write`+`ReactDOM.render` (2 call sites)~~ ✅ **Resolvido 2026-07-10** | EST A-02 · SEG-12 · UI-33 | **EST F4.3** — `openBudgetPdf()` (Blob) nos 2 call sites | SEG/UI resolvidos |
 | Styled-components duplicados nos 6 modais | EST D-01 · UI-07/13 | **EST F2.3** (centralizar já) → **UI U2.1** (tokenizar; absorve EST F4.7) | Sequência, não duplicação |
 | Criação não-atômica (contador + doc) | SEG-05 | **EST F2.1** implementa · **SEG S2.1** especifica/valida | — |
 | Validação no `updateBudget` / sanitizar ID | SEG-06/07 | **SEG S1.1/S1.2** (antes do factory) | EST F2.1 **preserva** |
-| KPI morto + cálculo morto em `kpiData` | UI-18/19 · PERF-10/T12 | **UI U0.1** (exibir resolve; remover `maxBudget` se sem uso) | PERF referencia |
+| KPI morto + cálculo morto em `kpiData` | UI-18/19 · PERF-10/T12 | **UI U0.1** — 🟡 card removido 2026-07-10 (placeholder resolvido); **falta remover** `totalValue`/`maxBudget` mortos | PERF referencia |
 | Dashboard lê N para mostrar 5 | PERF-03/T03 · PERF-07/T10 · UI-30 | **PERF P0.3** (absorve T10 — sort O(N) morre) | UI referencia |
 | Zero code-splitting/lazy | PERF-01/T01 · UI-32/35 | **PERF P0.2** | UI coordena chunk dos charts (U3.1) |
 | Login engole erro / duplo submit | SEG-10 · UI-23/26 | **SEG S1.3** (comportamento) | UI U2.2/U2.3 só re-estiliza |
@@ -178,10 +178,13 @@ ONDA 5  EST F4 (refino) ──► F4.6 (ADR) desbloqueia PERF P2.1 · F4.1 coord
 ## 7. Registro de Consolidação
 
 - **2026-07-09 — Plano diretor criado.** As 4 auditorias (Estrutura, Segurança, Performance, UI/UX) tiveram seus reportes convertidos de "diagnóstico + sugestões" para "diagnóstico + plano consolidado", cada uma com seu `PLANO_EXECUCAO_*.md` (fases, checklists, aceites e log). Todos os achados-chave foram verificados contra o código-fonte; correções de premissa relevantes: inexistência de `ThemeProvider` (mudou o plano de tokens), subcomponentes de orçamento já extraídos (reduziu escopo de EST F3.1), duplicação do PDF legado em `RecentBudgets.tsx` (ampliou EST F4.3), CI usando `--project=<id>` direto (recalibrou o risco de SEG-09). A matriz de dono único (§3) elimina os overlaps que existiam entre os backlogs originais (memoização, reload, timer, console, PDF, modais, Login, KPI, paginação, denormalização). **Nenhum código de produção foi alterado na consolidação.**
+- **2026-07-10 — Execução (branch `refatoracao-auditorias`).** Onda 0 + Onda 1/Segurança implementadas no código (S0.1/S0.3/S0.4 + S1.1–S1.4). Depois, mudanças ad-hoc trazidas da `main` foram reconciliadas com o roadmap: **EST F4.3 / SEG-12 / UI-33** (PDF legado) resolvidos via `openBudgetPdf()` (Blob, nos 2 call sites) — fora da ordem planejada e como função compartilhada em vez de rota React; **UI-18** resolvido por remoção do card "Valor Total" (diverge do plano de exibir o valor), deixando **PERF-10/T12** (`totalValue`/`maxBudget` mortos em `kpiData`) como limpeza pendente; `ProductTable` ganhou paginação local + sort numérico (não substitui **PERF P1.2**). `npm run build` verde.
 
 ---
 
 **Status geral:** 🟡 Onda 0 + Onda 1/Segurança **executadas no código** (2026-07-10) · demais itens das Ondas 1–5 pendentes
 **Próximo passo:** concluir as **ações de Console/deploy da Onda 0** (provisionar `staff/{uid}` **antes** de publicar, publicar `firestore.rules` dev→prod, desabilitar signup) — só então o deploy de produção deixa de estar congelado. Detalhes e log: [PLANO_EXECUCAO_SEGURANCA.md](SEGURANCA/PLANO_EXECUCAO_SEGURANCA.md) (entrada 2026-07-10).
 
-> **Execução 2026-07-10 (código):** SEG S0.1 (rules + `firebase.json`), S0.3 (timer 2h + `clearTimeout` — resolve PERF-15), S0.4 (`.firebaserc`), e Onda 1 de Segurança S1.1–S1.4. `npm run build` verde; sem lint novo. **Ações de Console pendentes** listadas acima. As correções de código estão prontas mas o **perímetro só fica ativo após publicar as regras** — deploy de produção segue congelado até lá.
+> **Execução 2026-07-10 (código):** SEG S0.1 (rules + `firebase.json`), S0.3 (timer 2h + `clearTimeout` — resolve PERF-15), S0.4 (`.firebaserc`), e Onda 1 de Segurança S1.1–S1.4. **Extra reconciliado:** EST F4.3/SEG-12/UI-33 (PDF `openBudgetPdf`) e UI-18 (card KPI removido). `npm run build` verde; sem lint novo. **Ações de Console pendentes** listadas acima. As correções de código estão prontas mas o **perímetro só fica ativo após publicar as regras** — deploy de produção segue congelado até lá.
+>
+> **Limpezas pendentes que sobraram das mudanças ad-hoc:** remover `kpiData.totalValue`/`maxBudget` mortos (PERF-10/T12) e decidir o futuro do KPI "Valor Total" (reabrir como hero em U3.1, se quiserem).

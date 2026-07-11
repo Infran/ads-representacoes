@@ -3,7 +3,7 @@
 **Projeto:** ADS Representações (React + TypeScript + Vite + Firebase)
 **Origem:** consolida o §4/§6 de [`REPORTE_ESTRUTURA.md`](./REPORTE_ESTRUTURA.md)
 **Criado em:** 2026-07-09
-**Última atualização:** 2026-07-09
+**Última atualização:** 2026-07-10
 
 ---
 
@@ -34,7 +34,7 @@
 | **F1** | Rede de segurança (testes) | 2 | ⬜ Pendente |
 | **F2** | Desduplicação estrutural | 3 | ⬜ Pendente |
 | **F3** | Quebra de God Components | 3 | ⬜ Pendente |
-| **F4** | Refino & dívida técnica | 7 | ⬜ Pendente |
+| **F4** | Refino & dívida técnica | 7 | 🟨 F4.3 ✅ (2026-07-10, fora de ordem) · demais ⬜ |
 
 ### Grafo de dependências
 ```
@@ -145,7 +145,7 @@ Confirmado: **0 imports** em `src/`. Sidebar ativo é `src/components/Layout/Sid
 - [ ] Extrair `useBudgetFilters()` (estado + `useMemo` de filtro/ordenação, l.60–149).
 - [ ] Extrair `<BudgetListItem budget />` (l.334–474).
 - [ ] Trocar o `switch(sortBy)` (l.121–138) por `const comparators: Record<SortOption, (a,b)=>number>` (resolve S-02).
-- [ ] Mover `handleOpenPdf` para util temporário (substituído por rota em F4.3).
+- [x] `handleOpenPdf` já não tem lógica de PDF — delega a `openBudgetPdf()` (feito em F4.3, 2026-07-10). Ao fatiar, é só um handler fino.
 - **Aceite:** `Budgets.tsx` vira orquestração; item por componente; ordenação por mapa.
 
 ### F3.3 — `EntityForm` compartilhado Create/Edit (E-04, E-05) ⬜
@@ -168,10 +168,12 @@ Confirmado: **0 imports** em `src/`. Sidebar ativo é `src/components/Layout/Sid
 - [ ] Mapa de comparadores (se não feito em F3.2).
 - **Aceite:** novos critérios/campos sem editar `switch`/`useMemo`.
 
-### F4.3 — Rota React de PDF (A-02 = SEG-12 = UI-33) ⬜
-- [ ] Criar rota `/Orcamentos/PDF/:id` renderizando `BudgetPdfPage` dentro do app; atualizar `src/Router.tsx` e `sidebarConfig.ts` se preciso.
-- [ ] Substituir `window.open`+`document.write`+`ReactDOM.render` nos **2 call sites** (verificados): `Budgets.tsx:155-177` **e** `RecentBudgets.tsx:41-63` (duplicação encontrada na verificação da trilha PERF).
-- **Aceite:** "Ver PDF" sem API legada em ambos os pontos; nada de `ReactDOM.render`; SEG-12 e UI-33 marcados como resolvidos.
+### F4.3 — Fim do PDF legado nos 2 call sites (A-02 = SEG-12 = UI-33) ✅ (2026-07-10)
+Resolvido, porém **com mecanismo diferente do planejado**: em vez de uma rota React `/Orcamentos/PDF/:id`, foi criada a função `openBudgetPdf(budget)` em `src/utils/PDFGenerator/BudgetPdf.tsx` que gera o PDF como **Blob** (`pdf(...).toBlob()` do `@react-pdf/renderer`) e o abre no visualizador nativo (fallback de download se pop-up bloqueado; tratamento de erro). O aceite — sem API legada nos dois pontos — foi atingido.
+- [x] Removido `window.open`+`document.write`+`ReactDOM.render` dos **2 call sites**: `Budgets.tsx` (`handleOpenPdf`) **e** `RecentBudgets.tsx` (`handleOpenPdf`) — ambos agora só chamam `openBudgetPdf(budget)`. Duplicação eliminada.
+- [x] Removidos os imports de `ReactDOM` e `BudgetPdfPage` (não usados) desses dois arquivos.
+- [ ] (opcional, não feito) Rota React dedicada — decidiu-se pela função Blob compartilhada, mais simples e sem `ReactDOM.render`. Reabrir só se quiser deep-link para o PDF.
+- **Aceite:** "Ver PDF" sem API legada em ambos os pontos; nada de `ReactDOM.render`. ✔ **SEG-12 e UI-33 resolvidos** (anotados nas respectivas trilhas).
 
 ### F4.4 — Remover funções `@deprecated` (M-02, D-06) ⬜
 - [ ] Excluir `searchRepresentatives`/equivalentes já substituídas por `searchXLocal`; conferir 0 imports.
@@ -233,6 +235,12 @@ Confirmado: **0 imports** em `src/`. Sidebar ativo é `src/components/Layout/Sid
 - **O que foi feito:** com a consolidação das 4 auditorias no [Plano Diretor](../SUMARIO_CONSOLIDADO.md), este plano recebeu ajustes de **dono único**: (1) **F2.1** ganhou o requisito de criação **atômica** (SEG S2.1) e a obrigação de preservar os endurecimentos de SEG S1.1/S1.2 e o `getRecentBudgets` de PERF P0.3; (2) **F4.3** passou a cobrir os **2 call sites** do PDF legado (`Budgets.tsx` **e** `RecentBudgets.tsx` — duplicação descoberta na verificação da trilha PERF) e resolve também SEG-12/UI-33; (3) **F4.5** anotado como resolutor de SEG-11/PERF-12 (o `esbuild.drop` complementar fica com PERF P0.2); (4) **F4.7 transferido** para UI U2.1 (a tokenização dos estilos de modal acontece na biblioteca atômica — evita tokenizar `modalStyles.ts` duas vezes).
 - **Por que foi feito:** garantir que nenhum item seja implementado por duas trilhas e que refatorações estruturais não desfaçam correções de segurança/performance aplicadas antes delas.
 - **Verificação:** somente documentos de planejamento alterados; nenhum código de produção tocado.
+
+### 2026-07-10 · F4.3 (fora de ordem) · Fim do PDF legado nos 2 call sites
+- **O que foi feito:** criada `openBudgetPdf(budget)` em `src/utils/PDFGenerator/BudgetPdf.tsx` (gera Blob via `pdf(...).toBlob()`, abre no visualizador nativo, com fallback de download e `try/catch`). `Budgets.tsx` e `RecentBudgets.tsx` tiveram o `window.open`+`document.write`+`ReactDOM.render` removido — ambos os `handleOpenPdf` agora só chamam `openBudgetPdf`. Removidos imports de `ReactDOM`/`BudgetPdfPage`.
+- **Por que foi feito:** matava o achado A-02/D (PDF legado duplicado) e destravava SEG-12/UI-33. Optou-se pela função Blob compartilhada em vez da rota React planejada — mais simples, sem `ReactDOM.render` e sem a aba `about:blank` em branco que a abordagem antiga produzia.
+- **Arquivos:** `src/utils/PDFGenerator/BudgetPdf.tsx`, `src/pages/Budgets/Budgets.tsx`, `src/components/Dashboard/RecentBudgets.tsx`.
+- **Verificação:** `npm run build` verde. Cross-ref resolvido em Segurança (SEG-12), UI/UX (UI-33) e Performance (achado-novo da duplicação do PDF). Nota: a rota dedicada fica opcional (só se quiserem deep-link).
 
 <!--
 ### AAAA-MM-DD · Fx.y · <título curto>

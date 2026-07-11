@@ -3,7 +3,7 @@
 **Projeto:** ADS Representações (React + TypeScript + Vite + Firebase)
 **Origem:** consolida o §4 de [`REPORTE_PERFORMANCE.md`](./REPORTE_PERFORMANCE.md)
 **Sequenciamento global:** [Plano Diretor](../SUMARIO_CONSOLIDADO.md)
-**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-09
+**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-10
 
 ---
 
@@ -72,6 +72,7 @@ Verificado: `vite.config.ts` default nu; `Router.tsx` 100% eager.
 
 ### P1.2 — Paginação por cursor em Orçamentos (PERF-02) ⛔ depende de EST F2.1/F2.2 ⬜
 Executar **depois** do factory/store para não migrar os services duas vezes.
+> Nota (2026-07-10): o `ProductTable.tsx` ganhou paginação **local** do DataGrid (`initialState` pageSize 10) + `sortComparator` numérico no `id`. É melhoria pontual dessa tabela, **não** substitui este item — P1.2 é paginação por **cursor no Firestore** dos Orçamentos (boot O(página) em vez de O(N)); o DataGrid ainda carrega o array completo.
 - [ ] `getBudgetsPage(pageSize, cursor)` com `orderBy`+`limit`+`startAfter` (§3.2) — idealmente como capacidade do `createCrudService`.
 - [ ] Integração no `DataContext`/store: cache passa a ser por página; "carregar mais" anexa a próxima página.
 - [ ] Criar índice composto se o console sugerir.
@@ -114,7 +115,7 @@ Verificado: `GlobalSearch.tsx:54` filtra 3 coleções a cada tecla.
 | PERF-T04 memoizar `value` | **EST F0.5** | Validar re-render (React DevTools) pós-execução |
 | PERF-T08 reload → reset | **EST F0.3** | Validar que "Adicionar Outro" não refaz cold-load |
 | PERF-T13 timer de logout | **SEG S0.3** | ✅ **Resolvido (2026-07-10)** — `clearTimeout` + `useRef` em `ContextAuth.tsx` eliminam o empilhamento de timers (e o TTL passou de ~30 h para 2 h) |
-| PERF-T12 `kpiData` morto | **UI U0.1** (exibe `totalValue`; remove `maxBudget` se seguir sem uso) | — |
+| PERF-T12 `kpiData` morto | **UI U0.1** | ⚠️ **Mudou (2026-07-10):** o card "Valor Total" foi **removido** (não implementado) no `Home.tsx`. Agora **`totalValue` E `maxBudget`** são reduces O(N) calculados e **nunca usados** em `kpiData` → remover ambos (ou religar se voltarem a exibir o valor). |
 | Logger com nível por env | **EST F4.5** (o `esbuild.drop` de P0.2 é o complemento de build) | — |
 | PERF-16 `brMoneyMask` | Radar — sem ação até listas grandes/virtualização | — |
 
@@ -136,6 +137,12 @@ Verificado: `GlobalSearch.tsx:54` filtra 3 coleções a cada tecla.
 - **O que foi feito:** o timer de auto-logout de `ContextAuth.tsx` foi corrigido pelo dono único **SEG S0.3**: handle guardado em `useRef`, `clearTimeout` antes de reagendar/no `logout`/no cleanup do `useEffect`, e `SESSION_TTL_MS = 2h` (o bug fazia ~30 h). Aqui apenas registramos o ganho de performance (fim do vazamento/empilhamento de `setTimeout`).
 - **Por que foi feito:** PERF-T13 e SEG-03 são o **mesmo código** — dono único SEG evita implementação duplicada.
 - **Verificação:** `npm run build` verde; ver log detalhado em `AUDITORIAS/SEGURANCA/PLANO_EXECUCAO_SEGURANCA.md` (entrada 2026-07-10). Validação em runtime (não empilhar timers) fica para EST F1 com fake timers.
+
+### 2026-07-10 · [REF] achado-novo (PDF duplicado) resolvido + PERF-T12 mudou de estado
+- **O que foi feito:** (1) o **achado-novo** registrado no planejamento (`RecentBudgets.tsx` duplicando o `handleOpenPdf` legado de `Budgets.tsx`) foi **resolvido** pela trilha EST (F4.3): os dois passaram a chamar `openBudgetPdf()` — duplicação eliminada. (2) **PERF-T12:** o card "Valor Total" do `Home.tsx` foi **removido** (não implementado), então `kpiData.totalValue` e `kpiData.maxBudget` viraram reduces O(N) mortos — anotado como remoção pendente (dono UI U0.1).
+- **Por que foi feito:** registrar que mudanças ad-hoc na `main` (refator do PDF + limpeza do Home) tocaram itens já mapeados, mantendo o roadmap fiel ao código.
+- **Medição (antes → depois):** PDF — 1 função compartilhada em vez de 2 blocos `document.write` duplicados. kpiData — 2 reduces O(N) por render de dashboard hoje sem consumidor (candidatos a remoção).
+- **Verificação:** `npm run build` verde. Detalhe do PDF em `PLANO_EXECUCAO_ESTRUTURA.md` (F4.3, 2026-07-10).
 
 <!--
 ### AAAA-MM-DD · Px.y · <título curto>

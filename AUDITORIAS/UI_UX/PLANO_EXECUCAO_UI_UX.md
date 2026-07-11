@@ -3,7 +3,7 @@
 **Projeto:** ADS Representações (React + TypeScript + Vite + MUI 5 + Firebase)
 **Origem:** consolida o §5 de [`REPORTE_UI_UX.md`](./REPORTE_UI_UX.md) (specs técnicas nos §3/§4 do reporte)
 **Sequenciamento global:** [Plano Diretor](../SUMARIO_CONSOLIDADO.md)
-**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-09
+**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-10
 
 ---
 
@@ -43,11 +43,12 @@ SEG S1.3 (Login: comportamento) ──► U2.3 (Login: só visual)
 
 ## Fase U0 — Quick fixes (não dependem de tema)
 
-### U0.1 — KPI "Valor Total" real (UI-18/UI-19; resolve PERF-10) ⬜
-Verificado: `Home.tsx:37-43` calcula `totalValue` e `maxBudget`; o card exibe `R$ ---,--` "(Em desenvolvimento)".
-- [ ] Exibir `kpiData.totalValue` com `brMoneyMask` no card (spec §4.2-5 do reporte); remover o subtítulo "(Em desenvolvimento)".
-- [ ] Decidir `maxBudget`: usar em um KPI/subtitle ou **remover o cálculo** (não deixar reduce morto).
-- **Aceite:** dashboard sem placeholder; nenhum cálculo O(N) sem consumidor em `kpiData`.
+### U0.1 — KPI "Valor Total" (UI-18/UI-19; resolve PERF-10) 🟡 mudou de direção (2026-07-10)
+**Decisão de produto (2026-07-10):** em vez de exibir o valor, o card `R$ ---,--` "(Em desenvolvimento)" foi **removido** do `Home.tsx` (grid rebalanceado `md=3`→`md=4`). Isso resolve o achado UI-18 (placeholder morto na cara do usuário), mas **inverte** o plano original (que era exibir o valor real).
+- [x] Placeholder "(Em desenvolvimento)" fora da tela do usuário — card removido.
+- [ ] **Ainda pendente (PERF-10/T12):** `kpiData.totalValue` **e** `kpiData.maxBudget` continuam sendo reduces O(N) calculados e **sem consumidor** → remover os dois cálculos de `Home.tsx`.
+- [ ] Se voltarem a querer exibir "Valor Total", vira feature nova → melhor entregar como **hero KPI em U3.1** (não como card simples).
+- **Aceite (revisado):** dashboard sem placeholder ✔; **falta** eliminar os cálculos O(N) sem consumidor em `kpiData`.
 
 ### U0.2 — Bug responsivo dos filtros (UI-24) ⬜
 Verificado: `Budgets.css:283-287` — `.search-input,.filter-select { min-width: 500px }` dentro de `@media (max-width: 900px)`.
@@ -106,7 +107,7 @@ Hierarquia proposta no §3.3 do reporte.
 - **Aceite:** loading/empty/error consistentes nas 5 telas; nenhuma falha silenciosa de CRUD para o usuário.
 
 ### U2.4 — Responsividade intermediária (UI-27) ⬜
-- [ ] Revisar breakpoints 900–1200px dos KPIs (`md=3` → rebalancear) e altura fluida do `DataTable`.
+- [ ] Revisar breakpoints 900–1200px dos KPIs (agora `md=4` após remover 1 card em 2026-07-10 — eram 5 KPIs em `md=3`; rebalancear para a nova contagem) e altura fluida do `DataTable`.
 - **Aceite:** sem desperdício/corte de espaço em tablet; sem overflow.
 
 ---
@@ -146,7 +147,7 @@ Hierarquia proposta no §3.3 do reporte.
 |---|---|---|
 | UI-28/UI-29 (`value` sem memo / ISP) | EST F0.5 + EST F2.2 | `PLANO_EXECUCAO_ESTRUTURA.md` |
 | UI-32/UI-35 (lazy rotas/DataGrid) | PERF P0.2 | `PLANO_EXECUCAO_PERFORMANCE.md` |
-| UI-33 (PDF legado, 2 call sites) | EST F4.3 | `PLANO_EXECUCAO_ESTRUTURA.md` |
+| UI-33 (PDF legado, 2 call sites) | EST F4.3 — ✅ **Resolvido (2026-07-10)** via `openBudgetPdf()` (abre no visualizador nativo; fim da aba em branco) | `PLANO_EXECUCAO_ESTRUTURA.md` |
 | UI-04 (God Components) | EST F3.1/F3.2 | `PLANO_EXECUCAO_ESTRUTURA.md` |
 | UI-34 (lista sem virtualização/paginação) | PERF P1.2 | `PLANO_EXECUCAO_PERFORMANCE.md` |
 | UI-30 (widgets sem loading próprio / N reads p/ 5) | PERF P0.3 | `PLANO_EXECUCAO_PERFORMANCE.md` |
@@ -166,6 +167,12 @@ Hierarquia proposta no §3.3 do reporte.
   - **Decisões de coesão:** UIX-T12/T13/T14 delegados aos donos PERF/EST (não duplicar); Login dividido — comportamento (SEG S1.3) vs. visual (U2.2/U2.3); **EST F4.7 absorvido por U2.1** (a tokenização dos estilos de modal acontece quando a biblioteca atômica nasce, evitando tokenizar `modalStyles.ts` duas vezes); U0 desenhado para rodar antes do tema (valor imediato sem bloquear na fundação).
 - **Por que foi feito:** transformar o backlog em plano sequenciado (quick fixes → fundação → biblioteca → modernização) com dono único por item entre as 4 trilhas, garantindo que a migração de 104 hex/288 `sx` só comece quando existir um alvo canônico (tema + átomos).
 - **Verificação:** documentos revisados; **nenhuma** alteração em código de produção nesta etapa. Fases U0–U3 `⬜ Pendente`.
+
+### 2026-07-10 · U0.1 (parcial) + UI-33 · Ajustes ad-hoc na main reconciliados
+- **O que foi feito:** (1) **UI-18** — o card "Valor Total (Em desenvolvimento)" foi **removido** do `Home.tsx` (grid `md=3`→`md=4`), tirando o placeholder da tela. Diverge do plano (era exibir o valor); marcado 🟡: **falta** remover os reduces `totalValue`/`maxBudget` mortos (PERF-10/T12) e, se quiserem o valor de volta, entregar como hero KPI em U3.1. (2) **UI-33** — PDF legado resolvido por EST F4.3 (`openBudgetPdf`); acaba a aba `about:blank` em branco. (3) **U2.4** — anotado que os KPIs agora são `md=4` (uma coluna a menos).
+- **Por que foi feito:** mudanças ad-hoc na `main` (limpeza do Home + refator do PDF) tocaram itens mapeados; roadmap reconciliado para não planejar o que já foi feito nem perder o rastro do que ficou pela metade.
+- **Arquivos:** `src/pages/Home/Home.tsx`, `src/components/Dashboard/RecentBudgets.tsx` (código); docs desta trilha.
+- **Verificação:** `npm run build` verde. PDF detalhado em `PLANO_EXECUCAO_ESTRUTURA.md` (F4.3, 2026-07-10).
 
 <!--
 ### AAAA-MM-DD · Ux.y · <título curto>
