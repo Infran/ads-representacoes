@@ -6,6 +6,7 @@ import {
   PDFViewer,
   Image,
   Font,
+  pdf,
 } from "@react-pdf/renderer";
 import { IBudget } from "../../interfaces/ibudget";
 
@@ -331,6 +332,7 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
         <div style={styles.budgetFooterInfoContainer2}>
           <Text>ALEXANDRE DIAS</Text>
           <Text>alexandredias.representacoes@gmail.com</Text>
+          <Text>Depto. Técnico e Comercial</Text>
         </div>
       </Page>
     </Document>
@@ -346,4 +348,51 @@ export const BudgetPdfPage = ({ budget }: { budget: IBudget }) => {
       <BudgetTemplate budget={budget} />
     </PDFViewer>
   );
+};
+
+/**
+ * Gera o PDF do orçamento como Blob e o abre em uma nova aba usando o
+ * visualizador nativo de PDF do navegador.
+ *
+ * Substitui a abordagem anterior de renderizar o <PDFViewer /> em outra
+ * janela via ReactDOM.render, que resultava em uma aba about:blank em branco
+ * (o blob/iframe ficava vinculado à janela original, não à nova aba).
+ *
+ * A aba é aberta de forma síncrona (dentro do gesto de clique) para evitar
+ * bloqueio de pop-up; a navegação para o PDF acontece quando o blob fica pronto.
+ */
+export const openBudgetPdf = async (budget: IBudget): Promise<void> => {
+  const newTab = window.open("", "_blank");
+
+  // Mensagem provisória enquanto o PDF é gerado
+  if (newTab) {
+    newTab.document.write(
+      "<title>Gerando PDF...</title><p style='font-family:sans-serif;padding:16px'>Gerando PDF...</p>"
+    );
+    newTab.document.close();
+  }
+
+  try {
+    const blob = await pdf(<BudgetTemplate budget={budget} />).toBlob();
+    const url = URL.createObjectURL(blob);
+
+    if (newTab) {
+      newTab.location.href = url;
+    } else {
+      // Pop-up bloqueado: força o download como fallback
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `orcamento-${budget?.id || "rascunho"}.pdf`;
+      link.click();
+    }
+
+    // Libera o objeto URL depois que a aba teve tempo de carregá-lo
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (error) {
+    console.error("Erro ao gerar PDF do orçamento:", error);
+    if (newTab) {
+      newTab.document.body.innerText =
+        "Não foi possível gerar o PDF. Tente novamente.";
+    }
+  }
 };

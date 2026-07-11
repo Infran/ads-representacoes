@@ -18,6 +18,7 @@ const columns: GridColDef[] = [
     sortable: true,
     filterable: true,
     editable: false,
+    sortComparator: (v1, v2) => Number(v1) - Number(v2),
   },
   {
     field: "name",
@@ -94,6 +95,11 @@ export const ProductTable: FC<ProductTableProps> = ({ rows, onDelete }) => {
         columns={columns}
         onEdit={handleEdit} // Passa a função de edição
         onDelete={onDelete}
+        initialState={{
+          pagination: { paginationModel: { page: 0, pageSize: 10 } },
+          sorting: { sortModel: [{ field: "id", sort: "desc" }] },
+          filter: { filterModel: { items: [] } },
+        }}
       />
   
       {/* Modal de edição */}

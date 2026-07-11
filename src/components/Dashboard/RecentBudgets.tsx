@@ -19,8 +19,7 @@ import { Add, Visibility, Edit, PictureAsPdf } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { IBudget } from "../../interfaces/ibudget";
 import { brMoneyMask } from "../../utils/Masks";
-import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
-import ReactDOM from "react-dom";
+import { openBudgetPdf } from "../../utils/PDFGenerator/BudgetPdf";
 
 interface RecentBudgetsProps {
   budgets: IBudget[];
@@ -39,27 +38,7 @@ const RecentBudgets: React.FC<RecentBudgetsProps> = ({
   };
 
   const handleOpenPdf = (budget: IBudget) => {
-    const newTab = window.open("", "_blank");
-    if (newTab) {
-      newTab.document.write(`
-        <html>
-          <head>
-            <style>
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
-              #react-root { margin: 0; padding: 0; width: 100%; height: 100%; }
-            </style>
-          </head>
-          <body>
-            <div id="react-root"></div>
-          </body>
-        </html>
-      `);
-      newTab.document.close();
-      ReactDOM.render(
-        <BudgetPdfPage budget={budget} />,
-        newTab.document.getElementById("react-root")
-      );
-    }
+    openBudgetPdf(budget);
   };
 
   // Pegar apenas os 5 mais recentes

@@ -23,8 +23,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useData } from "../../context/DataContext";
 import { IBudget } from "../../interfaces/ibudget";
-import { BudgetPdfPage } from "../../utils/PDFGenerator/BudgetPdf";
-import ReactDOM from "react-dom";
+import { openBudgetPdf } from "../../utils/PDFGenerator/BudgetPdf";
 import { brMoneyMask } from "../../utils/Masks";
 import DeleteBudgetModal from "../../components/Modal/Delete/DeleteBudgetModal";
 import useDebounce from "../../hooks/useDebounce";
@@ -153,27 +152,7 @@ const Budgets = () => {
   };
 
   const handleOpenPdf = (budget: IBudget) => {
-    const newTab = window.open("", "_blank");
-    if (newTab) {
-      newTab.document.write(`
-        <html>
-          <head>
-            <style>
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
-              #react-root { margin: 0; padding: 0; width: 100%; height: 100%; }
-            </style>
-          </head>
-          <body>
-            <div id="react-root"></div>
-          </body>
-        </html>
-      `);
-      newTab.document.close();
-      ReactDOM.render(
-        <BudgetPdfPage budget={budget} />,
-        newTab.document.getElementById("react-root")
-      );
-    }
+    openBudgetPdf(budget);
   };
 
   const clearFilters = () => {

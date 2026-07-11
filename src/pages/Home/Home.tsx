@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { Box, Typography, Grid, Divider } from "@mui/material";
 import {
   Description,
-  AttachMoney,
   Inventory2,
   Business,
   Badge,
@@ -115,7 +114,7 @@ export const Home = () => {
 
       {/* KPI Cards */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <KPICard
             title="Orçamentos"
             value={kpiData.totalBudgets}
@@ -132,16 +131,7 @@ export const Home = () => {
             loading={loading}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Valor Total em Orçamentos"
-            value={`R$ ---,--`}
-            subtitle="(Em desenvolvimento)"
-            icon={AttachMoney}
-            loading={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <KPICard
             title="Produtos Cadastrados"
             value={kpiData.totalProducts}
@@ -161,7 +151,7 @@ export const Home = () => {
             loading={loading}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <KPICard
             title="Clientes"
             value={kpiData.totalClients}
