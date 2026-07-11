@@ -6,7 +6,6 @@ import EditRepresentativeModal from '../../Modal/Edit/EditRepresentativeModal/Ed
 
 interface RepresentativeTableProps {
   rows: IRepresentative[];
-  onEdit: (id: string) => void;
   onDelete: (representative: IRepresentative) => void
 }
 

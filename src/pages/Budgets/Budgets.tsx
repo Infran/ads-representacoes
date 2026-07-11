@@ -11,12 +11,13 @@ import DeleteBudgetModal from "../../components/Modal/Delete/DeleteBudgetModal";
 import { useBudgetFilters } from "./useBudgetFilters";
 import BudgetFilters from "./BudgetFilters";
 import BudgetListItem from "./BudgetListItem";
+import { ListSkeleton } from "../../ui";
 
 const Budgets = () => {
   const navigate = useNavigate();
 
   // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
-  const { budgets: budgetList, removeBudgetFromCache } = useData();
+  const { budgets: budgetList, loading, removeBudgetFromCache } = useData();
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
@@ -67,7 +68,11 @@ const Budgets = () => {
         </Box>
 
         {/* List Items */}
-        {filters.filteredBudgets.length > 0 ? (
+        {loading ? (
+          <Box sx={{ p: 2 }}>
+            <ListSkeleton rows={6} />
+          </Box>
+        ) : filters.filteredBudgets.length > 0 ? (
           filters.filteredBudgets.map((budget) => (
             <BudgetListItem
               key={budget.id}

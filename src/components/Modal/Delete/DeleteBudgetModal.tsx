@@ -3,6 +3,7 @@ import { Modal, Box, Paper, Typography, Button } from "@mui/material";
 import { deleteBudget } from "../../../services/budgetServices";
 import { IBudget } from "../../../interfaces/ibudget";
 import { brMoneyMask } from "../../../utils/Masks";
+import { notifyError } from "../../../ui";
 
 interface DeleteBudgetModalProps {
   open: boolean;
@@ -18,6 +19,10 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, on
       onDeleted();
     } catch (error) {
       console.error("Erro ao excluir orçamento:", error);
+      notifyError(
+        "Não foi possível excluir o orçamento",
+        "Tente novamente em instantes."
+      );
     }
   };
 

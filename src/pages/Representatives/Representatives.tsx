@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Box, CircularProgress } from "@mui/material";
+import { Box } from "@mui/material";
 import PageHeader from "./../../components/PageHeader/PageHeader";
 import CreateRepresentativeModal from "../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
 import { PersonAdd } from "@mui/icons-material";
@@ -9,6 +9,7 @@ import SearchBar from "../../components/SearchBar/SearchBar";
 import DeleteRepresentativeModal from "../../components/Modal/Delete/DeleteRepresentativeModal";
 import RepresentativeTable from "../../components/Tables/RepresentativeTable/RepresentativeTable";
 import { useData } from "../../context/DataContext";
+import { TableSkeleton, EmptyState, notifyError } from "../../ui";
 
 const Representatives = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -46,10 +47,6 @@ const Representatives = () => {
   const handleClose = () => setOpenModal(false);
   const handleCloseDeleteModal = () => setOpenDeleteModal(false);
 
-  const handleEdit = (id: string) => {
-    console.log("Editando representante com ID:", id);
-  };
-
   const handleDelete = (representative: IRepresentative) => {
     setSelectedRepresentative(representative);
     setOpenDeleteModal(true);
@@ -65,6 +62,10 @@ const Representatives = () => {
         setSelectedRepresentative(null);
       } catch (error) {
         console.error("Erro ao excluir representante:", error);
+        notifyError(
+          "Não foi possível excluir o representante",
+          "Tente novamente em instantes."
+        );
       }
     }
   };
@@ -73,6 +74,8 @@ const Representatives = () => {
     // A filtragem já é feita pelo useMemo, então não precisa fazer nada aqui
     // Mantido para compatibilidade com SearchBar
   };
+
+  const isEmpty = !loading && filteredRepresentativesList.length === 0;
 
   return (
     <>
@@ -90,18 +93,25 @@ const Representatives = () => {
           inputLabel="Digite o nome do representante"
         />
         {loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height={200}
-          >
-            Carregando... <CircularProgress />
-          </Box>
+          <TableSkeleton />
+        ) : isEmpty ? (
+          searchTerm ? (
+            <EmptyState
+              title="Nenhum representante encontrado"
+              description={`Nada corresponde a "${searchTerm}".`}
+            />
+          ) : (
+            <EmptyState
+              title="Nenhum representante cadastrado"
+              description="Comece cadastrando o primeiro representante."
+              icon={PersonAdd}
+              actionLabel="Cadastrar representante"
+              onAction={handleOpen}
+            />
+          )
         ) : (
           <RepresentativeTable
             rows={filteredRepresentativesList}
-            onEdit={handleEdit}
             onDelete={handleDelete}
           />
         )}

@@ -1,25 +1,39 @@
-import React, { useMemo } from "react";
-import { Box, Typography, Grid, Divider } from "@mui/material";
+import React, { Suspense, useMemo } from "react";
+import { Box, Typography, Grid, Divider, Skeleton } from "@mui/material";
 import {
   Description,
   Inventory2,
   Business,
   Badge,
+  Paid,
 } from "@mui/icons-material";
-import {
-  KPICard,
-  RecentBudgets,
-  QuickAccessCard,
-} from "../../components/Dashboard";
+import { RecentBudgets, QuickAccessCard } from "../../components/Dashboard";
+import { Card, StatCard, CardGridSkeleton } from "../../ui";
 import { useData } from "../../context/DataContext";
+import { brMoneyMask } from "../../utils/Masks";
+import {
+  computeTotalValue,
+  computeMonthlyTrend,
+  computeTopProducts,
+} from "./dashboardMetrics";
+
+// Charts pesados (@mui/x-charts) fora do bundle inicial — chunk `vendor-charts`
+// carregado sob demanda quando a dashboard monta (coordena com PERF P0.2).
+const TrendChart = React.lazy(
+  () => import("../../components/Dashboard/charts/TrendChart")
+);
+const TopProductsChart = React.lazy(
+  () => import("../../components/Dashboard/charts/TopProductsChart")
+);
+
+const CHART_HEIGHT = 300;
 
 export const Home = () => {
   // Usa o contexto de dados com cache - SEM chamadas diretas ao Firestore!
   const { budgets, clients, products, loading } = useData();
 
-  // Cálculos para KPIs (todos feitos localmente com dados do cache)
+  // Métricas escalares dos KPIs (cálculo local, dados do cache).
   const kpiData = useMemo(() => {
-    // Total de orçamentos
     const totalBudgets = budgets.length;
 
     // Orçamentos deste mês
@@ -27,53 +41,34 @@ export const Home = () => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const budgetsThisMonth = budgets.filter((b) => {
       if (!b.createdAt?.seconds) return false;
-      const budgetDate = new Date(b.createdAt.seconds * 1000);
-      return budgetDate >= startOfMonth;
+      return new Date(b.createdAt.seconds * 1000) >= startOfMonth;
     }).length;
 
-    // Produtos mais orçados
-    const productCount: Record<string, { name: string; count: number }> = {};
-    budgets.forEach((budget) => {
-      budget.selectedProducts?.forEach((item) => {
-        const productId = item.product?.id;
-        const productName = item.product?.name || "Sem nome";
-        if (productId) {
-          if (!productCount[productId]) {
-            productCount[productId] = { name: productName, count: 0 };
-          }
-          productCount[productId].count += item.quantity;
-        }
-      });
-    });
-    const topProducts = Object.values(productCount)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
     // Último cliente cadastrado
-    const sortedClients = [...clients].sort((a, b) => {
-      const aTime = a.createdAt?.seconds || 0;
-      const bTime = b.createdAt?.seconds || 0;
-      return bTime - aTime;
-    });
-    const lastClient = sortedClients[0]?.name || "-";
+    const lastClient =
+      [...clients].sort(
+        (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+      )[0]?.name || "-";
 
     return {
       totalBudgets,
       budgetsThisMonth,
-      topProducts,
       totalProducts: products.length,
       totalClients: clients.length,
       lastClient,
     };
   }, [budgets, clients, products]);
 
+  // Agregações para o hero KPI e os gráficos (funções puras testáveis).
+  const totalValueCents = useMemo(() => computeTotalValue(budgets), [budgets]);
+  const monthlyTrend = useMemo(() => computeMonthlyTrend(budgets), [budgets]);
+  const topProducts = useMemo(() => computeTopProducts(budgets), [budgets]);
+
   // Contagem de representantes únicos (calculado dos orçamentos)
   const uniqueRepresentativesCount = useMemo(() => {
     const repIds = new Set<string>();
     budgets.forEach((b) => {
-      if (b.representative?.id) {
-        repIds.add(String(b.representative.id));
-      }
+      if (b.representative?.id) repIds.add(String(b.representative.id));
     });
     return repIds.size;
   }, [budgets]);
@@ -96,62 +91,100 @@ export const Home = () => {
           sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}
         >
           Dashboard
-        </Typography>       
+        </Typography>
         <Divider sx={{ mt: 2 }} />
       </Box>
 
-      {/* KPI Cards */}
+      {/* KPIs — hero "Valor Total" + secundários */}
+      {loading ? (
+        <CardGridSkeleton count={4} />
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              label="Valor Total"
+              value={`R$ ${brMoneyMask(totalValueCents.toFixed(0))}`}
+              icon={Paid}
+              highlight
+              helperText={`${kpiData.totalBudgets} orçamento${
+                kpiData.totalBudgets === 1 ? "" : "s"
+              } acumulado${kpiData.totalBudgets === 1 ? "" : "s"}`}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              label="Orçamentos"
+              value={kpiData.totalBudgets}
+              icon={Description}
+              helperText={
+                kpiData.budgetsThisMonth > 0
+                  ? `+${kpiData.budgetsThisMonth} este mês`
+                  : "Nenhum este mês"
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              label="Produtos"
+              value={kpiData.totalProducts}
+              icon={Inventory2}
+              helperText="No catálogo"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              label="Clientes"
+              value={kpiData.totalClients}
+              icon={Business}
+              helperText={
+                kpiData.lastClient !== "-"
+                  ? `Último: ${kpiData.lastClient}`
+                  : "Nenhum cadastrado"
+              }
+            />
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Gráficos (lazy — chunk vendor-charts) */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={4}>
-          <KPICard
-            title="Orçamentos"
-            value={kpiData.totalBudgets}
-            subtitle="Orçamentos gerados"
-            extraChip={
-              kpiData.budgetsThisMonth > 0
-                ? {
-                    label: `+${kpiData.budgetsThisMonth} este mês`,
-                    color: "success",
-                  }
-                : undefined
-            }
-            icon={Description}
-            loading={loading}
-          />
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary" }}>
+              Evolução do valor orçado
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Últimos 12 meses
+            </Typography>
+            {loading ? (
+              <Skeleton variant="rounded" height={CHART_HEIGHT} />
+            ) : (
+              <Suspense
+                fallback={<Skeleton variant="rounded" height={CHART_HEIGHT} />}
+              >
+                <TrendChart data={monthlyTrend} height={CHART_HEIGHT} />
+              </Suspense>
+            )}
+          </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <KPICard
-            title="Produtos Cadastrados"
-            value={kpiData.totalProducts}
-            subtitle="Produtos no catálogo"
-            extraInfo={
-              kpiData.topProducts.length > 0 ? (
-                <Box component="span">
-                  Top:{" "}
-                  {kpiData.topProducts
-                    .slice(0, 2)
-                    .map((p) => p.name)
-                    .join(", ")}
-                </Box>
-              ) : undefined
-            }
-            icon={Inventory2}
-            loading={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <KPICard
-            title="Clientes"
-            value={kpiData.totalClients}
-            subtitle="Empresas cadastradas"
-            extraInfo={
-              kpiData.lastClient !== "-"
-                ? `Último: ${kpiData.lastClient}`
-                : undefined
-            }
-            icon={Business}
-            loading={loading}
-          />
+        <Grid item xs={12} md={6}>
+          <Card sx={{ height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary" }}>
+              Produtos mais orçados
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Por quantidade total
+            </Typography>
+            {loading ? (
+              <Skeleton variant="rounded" height={CHART_HEIGHT} />
+            ) : (
+              <Suspense
+                fallback={<Skeleton variant="rounded" height={CHART_HEIGHT} />}
+              >
+                <TopProductsChart data={topProducts} height={CHART_HEIGHT} />
+              </Suspense>
+            )}
+          </Card>
         </Grid>
       </Grid>
 

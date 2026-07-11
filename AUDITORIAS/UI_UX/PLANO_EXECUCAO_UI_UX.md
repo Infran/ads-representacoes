@@ -27,8 +27,8 @@
 |---|---|---|---|
 | **U0** | Quick fixes independentes de tema | 4 | ✅ Concluído (2026-07-11) |
 | **U1** | Fundação: tokens + tema + baseline | 2 | ✅ Concluído (2026-07-11) |
-| **U2** | Biblioteca atômica + consolidação | 4 | 🟨 U2.1 ✅ · U2.2 ✅ (2026-07-11) · U2.3/U2.4 ⬜ |
-| **U3** | Dashboard moderna, dark mode & governança | 6 | 🟨 U3.2 ✅ (2026-07-11) · U3.1/U3.3–U3.6 ⬜ |
+| **U2** | Biblioteca atômica + consolidação | 4 | ✅ U2.1/U2.2/U2.3/U2.4 (2026-07-11) |
+| **U3** | Dashboard moderna, dark mode & governança | 6 | 🟨 U3.1 ✅ · U3.2 ✅ (2026-07-11) · U3.3–U3.6 ⬜ |
 
 ### Grafo de dependências
 ```
@@ -106,23 +106,28 @@ Hierarquia proposta no §3.3 do reporte.
 - [x] Contagem: **113 → 43** hex. Os ~43 restantes são **legítimos/intencionais**: `tokens.ts`+`theme/index.ts` (fonte do tema, incl. a ponte `--ads-*`), `Login` (gradiente de marca, tela pré-auth), cores **categóricas** do `GlobalSearch`/`NotificationBell` (cliente/orçamento/produto/representante), `BudgetPdf` (cores do PDF), `Feedback.ts` (referencia tokens).
 - **Aceite:** ✔ telas principais + chrome sem paleta paralela; dashboard/lista de orçamentos/header/sidebar **adaptam ao dark mode**. Pendências de próxima iteração: tokenizar o gradiente do Login (se desejado) e promover as cores categóricas a tokens semânticos; regra `no-color-literals` (U3.5).
 
-### U2.3 — Estados padronizados nas telas (UI-21/22/23) ⛔ depende de U2.1 ⬜
-- [ ] Substituir `"Carregando..."`/spinners ad hoc por `Skeletons`; DataGrid com `EmptyState` com CTA ("criar primeiro registro"); erros de CRUD/exclusão exibidos via `ErrorState`/`Feedback` (hoje somem em `console.error`).
-- [ ] **[REF SEG]** Login já tem feedback funcional via SEG S1.3 — aqui apenas alinhar o visual aos tokens.
-- **Aceite:** loading/empty/error consistentes nas 5 telas; nenhuma falha silenciosa de CRUD para o usuário.
+### U2.3 — Estados padronizados nas telas (UI-21/22/23) ✅ (2026-07-11)
+- [x] **Loading:** as 3 telas de lista (`Clientes`/`Produtos`/`Representantes`) trocaram o ad hoc `Carregando... <CircularProgress/>` por `<TableSkeleton/>`; `Orçamentos` (lista manual) ganhou `<ListSkeleton/>` no boot (antes piscava "Nenhum orçamento" enquanto o cache carregava). `EditClientModal` já usava `ListSkeleton` (U2.1).
+- [x] **Empty com CTA:** `<EmptyState/>` nas 3 telas de lista — distingue **sem cadastro** (CTA "Cadastrar X" abre o modal de criação) de **busca sem resultado** (mensagem `Nada corresponde a "termo"`, sem CTA). `Orçamentos` mantém seu `.empty-state` tokenizado (`--ads-*`).
+- [x] **Erro visível (fim do `console.error` silencioso):** os `handleConfirmDelete` das 3 telas e o `DeleteBudgetModal` passam a chamar `notifyError(...)` (átomo `Feedback`) no `catch`, além do log — exclusão que falha agora é comunicada ao usuário.
+- [x] **Limpeza:** removido o `onEdit`/`handleEdit` morto (`console.log`) de `Clients.tsx`/`Representatives.tsx` **e** a prop `onEdit` das interfaces `ClientsTableProps`/`RepresentativeTableProps` — as tabelas têm edição interna própria (mesmo dead-code de ponta a ponta que U0.4 achou no `ProductTable`).
+- [x] **[REF SEG]** Login já tem feedback funcional via SEG S1.3 — não alterado aqui.
+- **Aceite:** ✔ loading/empty/error consistentes nas 4 telas de dados; nenhuma exclusão falha em silêncio. Smoke visual manual recomendado.
 
-### U2.4 — Responsividade intermediária (UI-27) ⬜
-- [ ] Revisar breakpoints 900–1200px dos KPIs (agora `md=4` após remover 1 card em 2026-07-10 — eram 5 KPIs em `md=3`; rebalancear para a nova contagem) e altura fluida do `DataTable`.
-- **Aceite:** sem desperdício/corte de espaço em tablet; sem overflow.
+### U2.4 — Responsividade intermediária (UI-27) ✅ (2026-07-11)
+- [x] **KPIs:** com U3.1 a linha virou **4 `StatCard` em `xs=12 sm=6 md=3`** (hero + 3) — grade cheia sem a "sobra" do 5º card antigo; gráficos em `md=6` (2/linha → empilham no mobile) e Acesso Rápido em `md=4`.
+- [x] **Altura fluida do `DataTable`:** o `height` fixo de 600px virou **opcional** — omitido (padrão dos 3 consumidores via `CustomTable`), a tabela usa `autoHeight` e cresce/encolhe com as linhas da página. Some o desperdício em listas curtas e o corte/overflow em telas menores; `height` explícito ainda é aceito para casos especiais.
+- **Aceite:** ✔ sem desperdício/corte em tablet; sem overflow horizontal. Smoke visual manual recomendado (tablet 900–1200px).
 
 ---
 
 ## Fase U3 — Dashboard moderna, dark mode & governança
 
-### U3.1 — Dashboard: hero KPI + gráficos (UI-19/20) ⛔ depende de U1/U2 ⬜
-- [ ] `KPICard` com `highlight`/`trend` (spec §4.2-4); "Valor Total" como métrica hero.
-- [ ] `@mui/x-charts` via `React.lazy`: `TrendChart` (12 meses) + `TopProductsChart` (consome `topProducts` já calculado). **Coordenação PERF:** o chunk de charts segue o padrão de `manualChunks` de PERF P0.2.
-- **Aceite:** dashboard com ≥2 visualizações reais; hierarquia visual clara (hero + secundários); charts fora do bundle inicial.
+### U3.1 — Dashboard: hero KPI + gráficos (UI-19/20) ✅ (2026-07-11)
+- [x] **Hero "Valor Total":** átomo `StatCard` com `highlight` (fundo de marca, `contrastText`) abrindo a linha de KPIs (`md=3` × 4). "Valor Total" = soma de `totalValue` (centavos) de todos os orçamentos, formatado por `brMoneyMask`. Os 3 KPIs secundários (Orçamentos/Produtos/Clientes) também migraram de `KPICard` → `StatCard` (uniformidade; `helperText` carrega "+N este mês"/"Último: X"). **`KPICard` ficou órfão e foi removido** (`git rm`; barrel `Dashboard/index.ts` atualizado). Loading → `CardGridSkeleton`.
+- [x] `@mui/x-charts@7.29.1` via `React.lazy`: **`TrendChart`** (LineChart com área — valor orçado em R$ nos últimos 12 meses) + **`TopProductsChart`** (BarChart horizontal — top 5 produtos por quantidade orçada, consome `computeTopProducts`). Ambos **presentacionais** (recebem dados agregados por props), tokenizados (cor da série = `theme.palette.primary.main`, sem hex), com fallback próprio de "sem dados". **Coordenação PERF:** novo chunk **`vendor-charts`** no `manualChunks` (`@mui/x-charts` + `@mui/x-charts-vendor`/d3), inserido **antes** da regra genérica `@mui` (senão cairia em `vendor-mui`, crítico). `Suspense` com fallback de `Skeleton` em cada gráfico.
+- [x] **Métricas extraídas para função pura testável:** `src/pages/Home/dashboardMetrics.ts` (`computeTotalValue`/`computeMonthlyTrend`/`computeTopProducts`) + `dashboardMetrics.test.ts` (7 testes; `now` injetável, janela contínua de 12 meses, centavos, top-N). `charts.smoke.test.tsx` (4 testes, polyfill de `ResizeObserver`) garante que os componentes montam sem lançar (SVG) + o branch de vazio.
+- **Aceite:** ✔ dashboard com **2 visualizações reais** + hero KPI com hierarquia clara (card colorido vs. neutros); **charts fora do bundle inicial** — build de prod: `vendor-charts` **188 kB (gzip 63,9 kB)** em chunk isolado, `TrendChart`/`TopProductsChart` ~1 kB cada; o entry do Login **não** os importa. Smoke visual manual recomendado (light **e** dark). **Nota:** habilita, mas **não** faz, o rewire do boot da Home p/ ler só 5 (P0.3/P1.2) — segue dependendo da coleção no cache para os agregados; migração para "budget summary" fica com PERF P2.1.
 
 ### U3.2 — Dark mode toggle (UI-15) ✅ (2026-07-11)
 > Antecipado junto com U2.2 (o chrome já estava sendo tokenizado). **Descoberta:** o `UserMenu` já tinha um toggle, mas ligado ao `LayoutContext.darkMode` (mecanismo morto que **não** trocava o tema) — o tema real é dirigido pelo `ColorModeContext` do `Root` (U1.1).
@@ -221,6 +226,29 @@ Hierarquia proposta no §3.3 do reporte.
 - **Por que foi feito:** o app rodava com 104+ hex e 4 paletas paralelas (UI-02/10/12/14); sem tokenizar o chrome, o dark mode (cujo toggle já existia na UI, mas desligado) mostraria telas quebradas. Tokenizar + religar o toggle entrega dark mode funcional nas telas principais.
 - **Arquivos:** `src/pages/Home/Home.tsx`, `src/components/Dashboard/{KPICard,QuickAccessCard,RecentBudgets}.tsx`, `src/pages/Budgets/Budgets.css`, `src/theme/index.ts` (ponte `--ads-*`), `src/components/Layout/AppHeader/{AppHeader,GlobalSearch,NotificationBell,UserMenu,Breadcrumbs}.tsx`, `src/components/Layout/Sidebar/{Sidebar,SidebarItem,SidebarHeader,SidebarGroup}.tsx`, `src/components/Layout/LayoutContext.tsx`, `src/Root.tsx`, `src/hooks/useBudgetActions.ts`, `src/components/Modal/Delete/DeleteBudgetModal.tsx`.
 - **Verificação:** `tsc --noEmit` verde; `npm run build` verde; `npm run lint` **7 problemas** (0 novos); **49 testes verdes**; hex **113 → 43**. **Smoke visual manual recomendado** em light **e** dark (toggle no menu do usuário) — não verificável headless.
+
+### 2026-07-11 · U3.1 · Dashboard: hero KPI "Valor Total" + gráficos lazy
+> Onda 4. Fecha o último item de dashboard da onda; desbloqueada por U1 (tema) + U2.1 (`StatCard`/`Card`/`CardGridSkeleton`) + PERF P0.2 (padrão de `manualChunks`).
+- **O que foi feito:**
+  - **Hero + KPIs:** `Home.tsx` reorganizada — linha de 4 `StatCard` (`md=3`), o primeiro com `highlight` = **"Valor Total"** (`computeTotalValue` em centavos → `brMoneyMask`). Os 3 KPIs seguintes (Orçamentos/Produtos/Clientes) migraram de `KPICard` para `StatCard` (uniforme; contexto em `helperText`). `KPICard.tsx` **removido** (órfão após a migração) e o barrel `components/Dashboard/index.ts` atualizado. Skeleton de carregamento via `CardGridSkeleton`.
+  - **Gráficos:** `@mui/x-charts@7.29.1` instalado. `src/components/Dashboard/charts/TrendChart.tsx` (LineChart área, valor orçado R$/mês, 12 meses) e `TopProductsChart.tsx` (BarChart horizontal, top 5 por quantidade). Presentacionais, tokenizados (série = `primary.main`), com fallback de vazio. Carregados por `React.lazy` + `Suspense` na Home.
+  - **Chunking (coord. PERF P0.2):** `vite.config.ts` ganhou o chunk **`vendor-charts`** (`@mui/x-charts`/`@mui/x-charts-vendor`/d3), posicionado **antes** da regra genérica `@mui` para não vazar para `vendor-mui` (crítico).
+  - **Testes:** `dashboardMetrics.ts` (funções puras) + `dashboardMetrics.test.ts` (7) e `charts.smoke.test.tsx` (4, com polyfill de `ResizeObserver`).
+- **Por que foi feito:** a dashboard não tinha visualização nem métrica hero (UI-19/20); o "Valor Total" que fora removido como card morto (U0.1) volta agora **como hero real** (a saída indicada no próprio U0.1). Extrair as agregações em funções puras dá cobertura de teste ao que antes era `useMemo` inline; isolar os charts em `vendor-charts` os mantém fora do caminho do Login.
+- **Arquivos (novos):** `src/pages/Home/dashboardMetrics.ts`(+`.test.ts`), `src/components/Dashboard/charts/{TrendChart,TopProductsChart}.tsx`, `src/components/Dashboard/charts/charts.smoke.test.tsx`. **(alterados):** `src/pages/Home/Home.tsx`, `src/components/Dashboard/index.ts`, `vite.config.ts`, `package.json`/lock. **(removido):** `src/components/Dashboard/KPICard.tsx`.
+- **Verificação:** `tsc --noEmit` verde; `npm run build:prod` verde (**`vendor-charts` 188 kB / gzip 63,9 kB** em chunk isolado; `TrendChart`/`TopProductsChart` ~1 kB; entry do Login não os puxa); `npm run test:run` **60/60 verdes** (+11); `npm run lint` nos **mesmos 7 problemas pré-existentes** (0 novos). **Smoke visual manual recomendado** em light e dark — não verificável headless (x-charts precisa de layout/ResizeObserver reais).
+
+### 2026-07-11 · U2.3 + U2.4 · Estados padronizados + responsividade (fecha Onda 4/UI)
+> Onda 4. Desbloqueadas por U2.1 (átomos `TableSkeleton`/`ListSkeleton`/`EmptyState`/`notifyError`) + U3.1 (nova grade de KPIs).
+- **O que foi feito:**
+  - **U2.3 — loading:** `Clientes`/`Produtos`/`Representantes` trocaram `Carregando... <CircularProgress/>` por `<TableSkeleton/>`; `Orçamentos` ganhou `<ListSkeleton rows={6}/>` no boot (usa `useData().loading`, antes piscava o empty-state).
+  - **U2.3 — empty com CTA:** `<EmptyState/>` nas 3 telas de lista, distinguindo "sem cadastro" (CTA que abre o modal de criação) de "busca sem resultado".
+  - **U2.3 — erro visível:** `notifyError(...)` no `catch` das exclusões (3 telas + `DeleteBudgetModal`) — fim do `console.error` mudo.
+  - **U2.3 — dead code:** removido `onEdit`/`handleEdit` (`console.log`) de `Clients`/`Representatives` e a prop `onEdit` das interfaces das duas tabelas (edição é interna — mesmo caso do `ProductTable` em U0.4).
+  - **U2.4 — DataTable:** `height` agora opcional; sem ele a tabela usa `autoHeight` (cresce com as linhas) em vez do container fixo de 600px. **U2.4 — KPIs:** grade de 4 (`md=3`) herdada de U3.1, já balanceada.
+- **Por que foi feito:** as telas de dados tinham loading/empty/erro inconsistentes e falhas de exclusão sumiam no console (UI-21/22/23); o DataGrid a 600px fixos desperdiçava/cortava espaço (UI-27). Reusar os átomos de U2.1 padroniza os 3 estados sem introduzir novo hex/estilo local.
+- **Arquivos:** `src/pages/{Clients,Products,Representatives}/*.tsx`, `src/pages/Budgets/Budgets.tsx`, `src/components/Modal/Delete/DeleteBudgetModal.tsx`, `src/components/Tables/{ClientsTable,RepresentativeTable}/*.tsx`, `src/ui/DataTable.tsx`.
+- **Verificação:** `tsc --noEmit` verde; `npm run build:prod` verde; `npm run test:run` **60/60 verdes** (inclui o teste de contrato do `DeleteBudgetModal`, intacto — `notifyError` só no catch, não exercido); `npm run lint` nos **mesmos 7 problemas pré-existentes** (0 novos). Smoke visual manual recomendado (loading/empty/erro em light e dark; tablet 900–1200px). **Nenhuma ação de infra/deploy.**
 
 <!--
 ### AAAA-MM-DD · Ux.y · <título curto>

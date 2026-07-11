@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Box, CircularProgress } from "@mui/material";
+import { Box } from "@mui/material";
 import PageHeader from "./../../components/PageHeader/PageHeader";
 import { ProductTable } from "../../components/Tables/ProductTable/ProductTable";
 import CreateProductModal from "../../components/Modal/Create/CreateProductModal/CreateProductModal";
@@ -9,6 +9,7 @@ import { deleteProduct } from "../../services/productServices";
 import SearchBar from "../../components/SearchBar/SearchBar";
 import DeleteProductModal from "../../components/Modal/Delete/DeleteProductModal";
 import { useData } from "../../context/DataContext";
+import { TableSkeleton, EmptyState, notifyError } from "../../ui";
 
 const Products = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -51,6 +52,10 @@ const Products = () => {
         setSelectedProduct(null);
       } catch (error) {
         console.error("Erro ao excluir produto:", error);
+        notifyError(
+          "Não foi possível excluir o produto",
+          "Tente novamente em instantes."
+        );
       }
     }
   };
@@ -59,6 +64,8 @@ const Products = () => {
     // A filtragem já é feita pelo useMemo, então não precisa fazer nada aqui
     // Mantido para compatibilidade com SearchBar
   };
+
+  const isEmpty = !loading && filteredProductsList.length === 0;
 
   return (
     <>
@@ -76,19 +83,24 @@ const Products = () => {
           inputLabel="Digite o nome do produto"
         />
         {loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height={200}
-          >
-            Carregando... <CircularProgress />
-          </Box>
+          <TableSkeleton />
+        ) : isEmpty ? (
+          searchTerm ? (
+            <EmptyState
+              title="Nenhum produto encontrado"
+              description={`Nada corresponde a "${searchTerm}".`}
+            />
+          ) : (
+            <EmptyState
+              title="Nenhum produto cadastrado"
+              description="Comece cadastrando o primeiro produto."
+              icon={Storefront}
+              actionLabel="Cadastrar produto"
+              onAction={handleOpen}
+            />
+          )
         ) : (
-          <ProductTable
-            rows={filteredProductsList}
-            onDelete={handleDelete}
-          />
+          <ProductTable rows={filteredProductsList} onDelete={handleDelete} />
         )}
       </Box>
 

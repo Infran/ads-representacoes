@@ -6,7 +6,6 @@ import EditClientModal from "../../Modal/Edit/EditClientModal/EditClientModal";
 
 interface ClientsTableProps {
   rows: IClient[];
-  onEdit: (id: string) => void;
   onDelete: (client: IClient) => void;
 }
 

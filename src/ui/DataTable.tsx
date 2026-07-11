@@ -15,7 +15,11 @@ export interface DataTableProps<T extends GridValidRowModel> {
   onDelete?: (row: T) => void;
   pageSizeOptions?: number[];
   initialState?: GridInitialState;
-  /** Altura do container (px). Padrão 600. */
+  /**
+   * Altura fixa do container (px). Se omitido (padrão), a tabela usa
+   * `autoHeight` — cresce/encolhe com as linhas da página, sem desperdício
+   * de espaço em listas curtas nem corte em telas menores (UI U2.4).
+   */
   height?: number;
   loading?: boolean;
 }
@@ -38,9 +42,10 @@ function DataTable<T extends GridValidRowModel>({
   onDelete,
   pageSizeOptions = [5, 10, 20],
   initialState = DEFAULT_INITIAL_STATE,
-  height = 600,
+  height,
   loading = false,
 }: DataTableProps<T>): ReactElement {
+  const autoHeight = height === undefined;
   const actionColumn: GridColDef<T> = {
     field: "actions",
     headerName: "",
@@ -77,7 +82,7 @@ function DataTable<T extends GridValidRowModel>({
   return (
     <Box
       sx={{
-        height,
+        ...(autoHeight ? {} : { height }),
         p: 2,
         bgcolor: "background.paper",
         borderRadius: 3,
@@ -90,6 +95,7 @@ function DataTable<T extends GridValidRowModel>({
         rows={rows}
         columns={finalColumns}
         loading={loading}
+        autoHeight={autoHeight}
         initialState={initialState}
         pageSizeOptions={pageSizeOptions}
         localeText={{

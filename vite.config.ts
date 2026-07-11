@@ -32,6 +32,18 @@ export default defineConfig(({ mode }) => ({
             id.includes('/idb/')
           )
             return 'vendor-firebase'
+          // Charts (U3.1): @mui/x-charts + o bundle d3 (@mui/x-charts-vendor) e
+          // as libs d3 avulsas. DEVE vir antes da regra genérica @mui, senão os
+          // charts cairiam em vendor-mui (crítico). Só é carregado sob demanda
+          // (React.lazy na dashboard), então fica fora do bundle inicial.
+          if (
+            id.includes('@mui/x-charts') ||
+            id.includes('/d3-') ||
+            id.includes('/internmap/') ||
+            id.includes('/delaunator/') ||
+            id.includes('/robust-predicates/')
+          )
+            return 'vendor-charts'
           if (
             id.includes('@mui/x-data-grid') ||
             id.includes('@mui/x-date-pickers')
