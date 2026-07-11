@@ -68,19 +68,19 @@
 | PERF P0 | P0.0–P0.3 | Baseline de medição, deps mortas, **code-splitting + drop console**, `getRecentBudgets(5)` |
 | UI U0 | U0.1–U0.4 | **KPI "Valor Total" real** (= PERF-T12), bug responsivo <500px, `lang="pt-BR"` + fonte real, código morto de UI |
 
-### 🧱 Onda 2 — Fundações (desbloqueiam tudo o que vem depois)
-| Trilha | Itens | Desbloqueia |
-|---|---|---|
-| EST F1 | Vitest + RTL + characterization tests | EST F2/F3, regressões de todas as trilhas |
-| UI U1 | Tokens + `getTheme(mode)` + `ThemeProvider`/`CssBaseline`; aposentar `index.css` | UI U2/U3, tokenização dos modais |
-| SEG S3.1 | Testes de `firestore.rules` no emulador + CI | Governança contínua do perímetro |
+### 🧱 Onda 2 — Fundações (desbloqueiam tudo o que vem depois) — ✅ Concluída no código (2026-07-11; ⚠️ gate de CI no deploy pendente de decisão)
+| Trilha | Itens | Desbloqueia | Status |
+|---|---|---|---|
+| EST F1 | Vitest + RTL + characterization tests | EST F2/F3, regressões de todas as trilhas | ✅ 33 testes verdes |
+| UI U1 | Tokens + `getTheme(mode)` + `ThemeProvider`/`CssBaseline`; aposentar `index.css` | UI U2/U3, tokenização dos modais | ✅ tema light/dark + `index.css` aposentado |
+| SEG S3.1 | Testes de `firestore.rules` no emulador + CI | Governança contínua do perímetro | ✅ 12 testes no emulador + `ci.yaml` aditivo (⚠️ gate no `deploy.yaml` = decisão do usuário) |
 
-### 🏗️ Onda 3 — Desduplicação estrutural & dados (exige Onda 2/EST F1)
-| Trilha | Itens | Observações de coesão |
+### 🏗️ Onda 3 — Desduplicação estrutural & dados (exige Onda 2/EST F1) — ✅ Concluída no código (2026-07-11; ⚠️ ressalva P1.2)
+| Trilha | Itens | Status |
 |---|---|---|
-| EST F2 | F2.1 factory de services (**incorpora SEG S2.1 — criação atômica**; preserva S1.1/S1.2 e `getRecentBudgets`), F2.2 store factory no `DataContext`, F2.3 `modalStyles.ts` centralizado | SEG valida a atomicidade |
-| PERF P1 | P1.1 modal único (**após EST F0.1**), P1.3 `localStorage` por chave, P1.4 debounce na `GlobalSearch`, P1.2 paginação (**após EST F2.1/F2.2**) | Paginação por último para migrar services 1× só |
-| SEG S2.2 | Validadores CNPJ/CPF + integração nos forms | Usa infra de testes de EST F1 |
+| EST F2 | F2.1 factory de services (**incorpora SEG S2.1 — criação atômica**; preserva S1.1/S1.2 e `getRecentBudgets`), F2.2 store factory no `DataContext`, F2.3 `modalStyles.ts` centralizado | ✅ services ~750→~400 linhas; `DataContext` 454→~300; 4 modais idênticos unificados |
+| PERF P1 | P1.1 modal único (após EST F0.1), P1.3 `localStorage` por chave, P1.4 debounce na `GlobalSearch`, P1.2 paginação (após EST F2.1/F2.2) | ✅ P1.1/P1.3/P1.4 · 🟡 P1.2 (capacidade `getBudgetsPage` pronta; rewire do boot deferido = mesmo bloqueio de P0.3) |
+| SEG S2.2 | Validadores CNPJ/CPF + integração nos forms | ✅ `validators.ts` (módulo-11) + guard no `validateClient` + mensagem nos modais de Cliente |
 
 ### 🎨 Onda 4 — God Components & UI moderna (exige Ondas 2–3)
 | Trilha | Itens | Observações de coesão |
@@ -156,11 +156,11 @@ ONDA 5  EST F4 (refino) ──► F4.6 (ADR) desbloqueia PERF P2.1 · F4.1 coord
 | Bundle inicial (gzip) | ✅ **Login ~302 kB gzip (era 1.123 kB, −73%)**; PDF/DataGrid/NCM em chunks lazy | PDF/DataGrid/charts lazy (~-40%) | PERF · Onda 1 ✅ (meta superada) |
 | Reads da home (widget recentes) | N docs (primitivo `getRecentBudgets(5)` pronto; rewire ⛔ depende de U3.1/P2.1) | 5 docs | PERF · Onda 1 🟡 → 4 |
 | Re-render por mudança de entidade | ✅ `value` memoizado (F0.5); split por entidade fica p/ F2.2 | local | EST F0.5/F2.2 · Ondas 1/3 |
-| Camada de services | ~750 linhas, 4× repetida, add não-atômico | ~250 linhas, factory, **add atômico** | EST+SEG · Onda 3 |
-| I/O de cache por CRUD | re-serializa 4 coleções | 1 coleção | PERF · Onda 3 |
-| `ThemeProvider`/tokens | 0 tema · 104 hex · 4 paletas | 1 tema light/dark · hex ≈ 0 fora de `tokens.ts` | UI · Ondas 2/4 |
+| Camada de services | ✅ **~400 linhas (factory + 4 configs), add atômico** (era ~750, 4× repetida, não-atômico) | ~250 linhas, factory, add atômico | EST+SEG · Onda 3 ✅ |
+| I/O de cache por CRUD | ✅ **1 coleção (chave por coleção — P1.3)** (era: re-serializa as 4) | 1 coleção | PERF · Onda 3 ✅ |
+| `ThemeProvider`/tokens | 🟡 **tema light/dark criado** (`src/theme` + `getTheme`); 104 hex ainda espalhados (migração = U2.2) | 1 tema light/dark · hex ≈ 0 fora de `tokens.ts` | UI · Ondas 2 ✅ (fundação) / 4 (migração) |
 | `console.*` em produção | 🟡 **drop no build de prod já ativo** (P0.2 — 0 `console.*` nos chunks); logger por env (F4.5) ainda pendente p/ dev | 0 (logger + drop) | EST+PERF · Ondas 1/5 |
-| Suíte de testes | inexistente | unit + characterization + rules | EST F1 + SEG S3.1 · Onda 2 |
+| Suíte de testes | ✅ **61 testes** (49 unit/characterization jsdom + 12 rules no emulador) | unit + characterization + rules | EST F1 + SEG S3.1 · Ondas 2–3 ✅ |
 | God Components | 501/498/421 linhas | < ~200 (orquestração) | EST F3 · Onda 4 |
 
 ---
@@ -182,10 +182,14 @@ ONDA 5  EST F4 (refino) ──► F4.6 (ADR) desbloqueia PERF P2.1 · F4.1 coord
 - **2026-07-11 (parte 2) — Onda 1 fechada: PERF P0.** Deps mortas removidas (`uuid`/`react-pdf`/`react-firebase-hooks`/`dayjs`/`dotenv`, 13 pacotes); code-splitting via `manualChunks` (vendor-react/mui/mui-x/firebase/pdf) + `React.lazy` nas 6 rotas + `Suspense`; `esbuild.drop` de `console`/`debugger` só em prod. **Resultado:** bundle crítico do Login **5.783 kB → ~1.096 kB** (gzip **1.123 → ~302 kB, ≈ −73%**); @react-pdf, DataGrid e `tabela_ncm.json` fora do caminho do Login; **0 `console.*`** em prod. **P0.3:** primitivo `getRecentBudgets(5)` (indexado) entregue; rewire do widget **deferido** — a Home ainda lê N para os KPIs, então "ler 5 e não N" é inatingível até U3.1/P2.1 (documentado). Build + `tsc` verdes; lint nos mesmos 10 pré-existentes. **Onda 1 concluída no código** → próximo é a Onda 2 (fundações: testes + tema + testes de regras).
 - **2026-07-11 — Onda 0 encerrada (Console) + Onda 1 avança (EST F0 · UI U0).** (1) **Onda 0 concluída de ponta a ponta:** `staff/{uid}` provisionado (2 dev + 2 prod, via API REST) e `firestore.rules` publicadas em dev→prod; deny-by-default validado (403 sem auth) nos dois projetos; S0.2 encerrado (conta-fantasma = risco residual aceito). Detalhes em `PLANO_EXECUCAO_SEGURANCA.md` (2026-07-11). (2) **EST F0 (F0.1–F0.7) concluída:** bugs A-01 (modal exclusão), A-04 (filtro em centavos), A-03 (`reload`→`reset`), A-06 (null-safety), A-07/PERF-06 (memo do `value`), M-01 (`Sidebar.old`), M-03 (`.gitignore`) + limpeza do código morto que travava o lint. (3) **UI U0 (U0.1–U0.4) concluída:** `kpiData` morto removido (fecha **PERF-10/T12**), bug responsivo <500px, `lang="pt-BR"`+Poppins+globais do `index.css`, `SectionCard`/`handleEdit` mortos. Cross-refs fechados nas duas pontas (**PERF-T04/T08/T12**). `npm run build` + `npx tsc --noEmit` verdes; lint global reduzido a 10 problemas pré-existentes de type-safety/arquitetura (donos: UI U2.1/PageHeader, EST F2.2/F3.3, SEG). **Nenhuma ação de infra/deploy nesta rodada.**
 
+- **2026-07-11 (parte 4) — Onda 2 concluída no código: Fundações (EST F1 · UI U1 · SEG S3.1).** (1) **EST F1:** Vitest + RTL + jsdom configurados (`vite.config.ts` com bloco `test`, `src/test/setup.ts`; `tsconfig` exclui testes do build; `.eslintrc` com globals do Vitest) + **29 characterization tests** em 5 arquivos travando o comportamento atual antes de F2/F3 — `cacheService` (TTL/mutations/localStorage), `useBudgetForm` (total com `customUnitValue`, `sectionValidation`, reset, filtro debounced) e **regressões de F0.1** (`DeleteBudgetModal`: cancelar≠excluir) e **F0.2** (filtro em centavos). (2) **UI U1:** `src/theme/{tokens,index,ColorModeContext}` com `getTheme(mode)` light/dark tokenizado + wiring em `src/Root.tsx` (`ThemeProvider`+`CssBaseline`+`ColorModeContext`); `index.css` **aposentado** (reset migrado para `MuiCssBaseline`) — sem regressão (o `body` bg nunca era visível); +4 testes de `getTheme`. (3) **SEG S3.1:** `@firebase/rules-unit-testing` + **12 testes das `firestore.rules` no emulador** (deny-by-default, allowlist `staff`, integridade de `budgets`, proteção de `staff`) espelhando o arquivo **publicado**; workflow `ci.yaml` **aditivo** (lint+unit+rules em push/PR) sem tocar o `deploy.yaml`. **Portões:** `npm run build` verde; `lint` nos mesmos 10 problemas pré-existentes; **45 testes verdes** (33 jsdom + 12 emulador). **Desvio de fonte:** tema usa Poppins (carregada) e não Inter. **⚠️ Pendência (decisão do usuário):** para o CI **bloquear** o deploy de fato falta ou `needs: ci` no `deploy.yaml` (arquivo sensível — SEG-09-rev) ou branch protection exigindo o check `ci`.
+
+- **2026-07-11 (parte 5) — Onda 3 concluída no código: Desduplicação estrutural & dados (EST F2 · PERF P1 · SEG S2).** (1) **EST F2:** factory `createCrudService` (`getAll/getById/getNextId/add/update/remove/getPage`) com `add` **atômico** (fecha SEG S2.1); 4 services viraram config + wrappers preservando a API pública (incl. `updateBudget(id,budget)`, `idPattern ^\d+$` de S1.2, `getRecentBudgets` de P0.3); `removeUndefinedFields` unificado; timestamp padronizado em `Timestamp.now()`. `useEntityStore` (hook) recompõe o `DataContext` (sumiram 12 handlers + 4 buscas + `fetchWithCache`; `value` memoizado com deps granulares preservando F0.5). `modalStyles.ts` compartilhado nos 4 modais idênticos (os 2 de Produto ficaram por terem estilo divergente — verificado no código). (2) **SEG S2:** S2.1 validada por teste de atomicidade; S2.2 `validators.ts` (CNPJ/CPF módulo-11) + guard no `validateClient` + mensagem nos modais de Cliente. (3) **PERF P1:** P1.1 modal único fora do `.map`; P1.3 `localStorage` por chave + `QuotaExceededError` + migração do blob legado; P1.4 debounce na `GlobalSearch`. **P1.2 🟡:** capacidade `getBudgetsPage` (cursor) pronta e testada, mas o **rewire do boot ficou deferido** — mesmo bloqueio de P0.3 (a `Home` lê a coleção inteira para os KPIs; paginar quebraria KPIs/busca/filtros até U3.1/P2.1). **Portões:** `npm run build` verde; lint nos mesmos 10 pré-existentes (0 novos); **61 testes verdes** (49 jsdom + 12 regras). **Nenhuma ação de infra/deploy.**
+
 ---
 
-**Status geral:** 🟢 **Onda 0 concluída** (código + Console). 🟢 **Onda 1 concluída** (código) — ✅ SEG S1, ✅ EST F0, ✅ UI U0, ✅ PERF P0 (⚠️ P0.3: primitivo `getRecentBudgets` entregue, rewire do widget deferido por bloqueio arquitetural). Ondas 2–5 pendentes.
-**Próximo passo:** **Onda 2 — Fundações:** `EST F1` (Vitest + RTL + characterization tests — desbloqueia F2/F3 e valida as correções da Onda 1), `UI U1` (tokens + `getTheme` + `ThemeProvider`/`CssBaseline` — desbloqueia U2/U3), `SEG S3.1` (testes de `firestore.rules` no emulador + CI). Detalhes nos `PLANO_EXECUCAO_*` respectivos. **Pendências carregadas da Onda 1:** rewire de `RecentBudgets` (acoplado a U3.1/P2.1) e `tabela_ncm.json` sob demanda (otimização futura de PERF).
+**Status geral:** 🟢 **Ondas 0–3 concluídas no código** (0 também no Console). Onda 3: ✅ EST F2 (factory + store + modalStyles), ✅ SEG S2 (atomicidade + validadores), ✅ PERF P1.1/P1.3/P1.4, 🟡 PERF P1.2 (capacidade pronta, rewire deferido). **61 testes verdes** (49 jsdom + 12 emulador). Ondas 4–5 pendentes.
+**Próximo passo:** **Onda 4 — God Components & UI moderna** (exige Ondas 2–3, agora prontas): `EST F3` (`F3.1` fatiar `BudgetFormPage`; `F3.2` fatiar `Budgets` **partindo do modal único de P1.1** + mapa de ordenação; `F3.3` `EntityForm` Create/Edit — consome os átomos de UI U2.1 se já existirem e os estilos de F2.3), `UI U2` (`U2.1` biblioteca atômica `src/ui` **absorvendo EST F4.7** — tokenização dos modais, incl. os 2 de Produto ainda com estilo próprio; `U2.2` varredura hex/sx → tokens; `U2.3` estados; `U2.4` responsividade), `UI U3.1/U3.2` (dashboard hero KPI + gráficos lazy + dark mode toggle). **Pendências carregadas:** rewire de `RecentBudgets` + **rewire de paginação do boot (P1.2)** — ambos acoplados a **U3.1/P2.1** (tirar a dependência da coleção inteira na Home); `tabela_ncm.json` sob demanda (PERF futuro); gate de CI no deploy (decisão do usuário).
 
 > **Deploy de produção:** perímetro **ativo** (regras publicadas), mas atenção ao achado **SEG-09-rev** — `deploy.yaml` tem as branches cruzadas com os ambientes reais; não fazer push para `development`/`main` sem alinhar com o usuário (ver `PLANO_EXECUCAO_SEGURANCA.md`).
 >

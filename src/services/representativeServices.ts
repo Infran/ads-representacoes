@@ -1,66 +1,57 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  setDoc,
-  deleteDoc,
-  serverTimestamp,
-  runTransaction,
-} from "firebase/firestore";
-import { db } from "../firebase";
 import { IRepresentative } from "../interfaces/irepresentative";
+import { createCrudService } from "./createCrudService";
+
+/**
+ * Valida os dados do representante antes de salvar.
+ * @throws Error se os dados forem inválidos
+ */
+const validateRepresentative = (
+  representative: Partial<IRepresentative>
+): void => {
+  if (!representative.name?.trim()) {
+    throw new Error("Nome do representante é obrigatório");
+  }
+};
+
+const representativeCrud = createCrudService<IRepresentative>({
+  collectionName: "representatives",
+  metaIdDoc: "lastRepresentativeId",
+  validate: validateRepresentative,
+});
 
 // ============================================================================
-// FUNÇÕES DE LEITURA
+// API PÚBLICA (preservada)
 // ============================================================================
 
 /**
  * Busca todos os representantes do Firestore.
- * NOTA: Prefira usar useData().representatives do DataContext para evitar chamadas desnecessárias.
- * Esta função é usada internamente pelo DataContext para popular o cache.
+ * NOTA: Prefira usar useData().representatives do DataContext.
  */
-export const getRepresentatives = async (): Promise<IRepresentative[]> => {
-  const representativesCollection = collection(db, "representatives");
-  const representativesSnapshot = await getDocs(representativesCollection);
+export const getRepresentatives = representativeCrud.getAll;
 
-  return representativesSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as IRepresentative[];
-};
+/** Busca um representante pelo ID. */
+export const getRepresentativeById = representativeCrud.getById;
+
+/** Gera o próximo ID de representante de forma atômica. */
+export const getNextRepresentativeId = representativeCrud.getNextId;
 
 /**
- * Busca um representante pelo ID.
- * @param id - ID do representante
- * @returns Representante encontrado ou null se não existir
+ * Adiciona um novo representante (criação atômica: contador + doc na mesma transação).
+ * @throws Error se a validação falhar
  */
-export const getRepresentativeById = async (
-  id: string
-): Promise<IRepresentative | null> => {
-  if (!id) {
-    console.warn("getRepresentativeById chamado com ID vazio");
-    return null;
-  }
+export const addRepresentative = representativeCrud.add;
 
-  try {
-    const representativeDoc = doc(db, "representatives", id);
-    const representativeSnap = await getDoc(representativeDoc);
+/**
+ * Atualiza um representante existente (recebe o objeto completo com `id`).
+ * @throws Error se o ID não for fornecido ou a validação falhar
+ */
+export const updateRepresentative = (
+  representative: IRepresentative
+): Promise<void> =>
+  representativeCrud.update(representative.id?.toString(), representative);
 
-    if (!representativeSnap.exists()) {
-      return null;
-    }
-
-    return {
-      id: representativeSnap.id,
-      ...representativeSnap.data(),
-    } as IRepresentative;
-  } catch (error) {
-    console.error("Erro ao buscar representante:", error);
-    throw error;
-  }
-};
+/** Exclui um representante pelo ID. */
+export const deleteRepresentative = representativeCrud.remove;
 
 /**
  * @deprecated Use useData().searchRepresentativesLocal() para busca com cache local.
@@ -86,109 +77,4 @@ export const searchRepresentatives = async (
       representative.email?.toLowerCase().includes(term) ||
       representative.client?.name?.toLowerCase().includes(term)
   );
-};
-
-// ============================================================================
-// FUNÇÕES DE ESCRITA
-// ============================================================================
-
-/**
- * Gera o próximo ID de representante de forma atômica usando transação.
- * Isso garante que dois requests simultâneos não gerem o mesmo ID.
- * @returns Próximo ID disponível
- */
-export const getNextRepresentativeId = async (): Promise<number> => {
-  const docRef = doc(db, "meta", "lastRepresentativeId");
-
-  return runTransaction(db, async (transaction) => {
-    const docSnap = await transaction.get(docRef);
-    const data = docSnap.data();
-    const nextId = docSnap.exists() && data ? data.id + 1 : 1;
-    transaction.set(docRef, { id: nextId });
-    return nextId;
-  });
-};
-
-/**
- * Valida os dados do representante antes de salvar.
- * @param representative - Representante a ser validado
- * @throws Error se os dados forem inválidos
- */
-const validateRepresentative = (
-  representative: Partial<IRepresentative>
-): void => {
-  if (!representative.name?.trim()) {
-    throw new Error("Nome do representante é obrigatório");
-  }
-};
-
-/**
- * Adiciona um novo representante ao Firestore.
- * @param representative - Dados do representante (sem ID, será gerado automaticamente)
- * @returns Representante criado com ID e timestamps
- * @throws Error se a validação falhar ou ocorrer erro no Firestore
- */
-export const addRepresentative = async (
-  representative: Omit<IRepresentative, "id" | "createdAt" | "updatedAt">
-): Promise<IRepresentative> => {
-  // Valida os dados
-  validateRepresentative(representative);
-
-  // Gera ID único de forma atômica
-  const id = await getNextRepresentativeId();
-  const createdAt = serverTimestamp();
-  const updatedAt = serverTimestamp();
-
-  const newRepresentative = {
-    ...representative,
-    id: id.toString(), // Converte para string para compatibilidade com a interface
-    createdAt,
-    updatedAt,
-  } as IRepresentative;
-
-  const docRef = doc(db, "representatives", id.toString());
-  await setDoc(docRef, newRepresentative);
-
-  return newRepresentative;
-};
-
-/**
- * Atualiza um representante existente.
- * Usa updateDoc para atualização parcial, preservando campos não enviados.
- * @param representative - Representante com dados atualizados (ID obrigatório)
- * @throws Error se o ID não for fornecido ou ocorrer erro no Firestore
- */
-export const updateRepresentative = async (
-  representative: IRepresentative
-): Promise<void> => {
-  if (!representative.id) {
-    throw new Error("ID do representante é obrigatório para atualização");
-  }
-
-  // Valida os dados
-  validateRepresentative(representative);
-
-  const docRef = doc(db, "representatives", representative.id.toString());
-  const updatedAt = serverTimestamp();
-
-  // Remove campos undefined antes de enviar
-  const cleanedRepresentative = Object.fromEntries(
-    Object.entries(representative).filter(([, value]) => value !== undefined)
-  );
-
-  await updateDoc(docRef, { ...cleanedRepresentative, updatedAt });
-};
-
-/**
- * Exclui um representante pelo ID.
- * @param id - ID do representante a ser excluído
- * @throws Error se ocorrer erro no Firestore
- */
-export const deleteRepresentative = async (id: string): Promise<void> => {
-  if (!id) {
-    throw new Error("ID do representante é obrigatório para exclusão");
-  }
-
-  const docRef = doc(db, "representatives", id);
-  await deleteDoc(docRef);
 };

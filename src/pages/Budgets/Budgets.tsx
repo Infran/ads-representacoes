@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./Budgets.css";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import {
@@ -175,6 +175,12 @@ const Budgets = () => {
     return new Date(timestamp.seconds * 1000).toLocaleDateString("pt-BR");
   };
 
+  // PERF P1.1: um único modal de exclusão (fora do .map). Busca no array
+  // completo (não no filtrado) — o item existe no cache até ser de fato excluído.
+  const budgetToDelete = deleteModalId
+    ? budgetList.find((b) => b.id === deleteModalId)
+    : undefined;
+
   return (
     <Box className="budgets-container">
       <PageHeader
@@ -309,12 +315,12 @@ const Budgets = () => {
         {/* List Items */}
         {filteredBudgets.length > 0 ? (
           filteredBudgets.map((budget) => (
-            <React.Fragment key={budget.id}>
-              <Box
-                className={`budget-list-item ${
-                  expandedId === budget.id ? "expanded" : ""
-                }`}
-              >
+            <Box
+              key={budget.id}
+              className={`budget-list-item ${
+                expandedId === budget.id ? "expanded" : ""
+              }`}
+            >
                 <Box
                   className="budget-row"
                   onClick={() => toggleExpand(budget.id)}
@@ -451,15 +457,7 @@ const Budgets = () => {
                     </Box>
                   </Box>
                 </Collapse>
-              </Box>
-
-              <DeleteBudgetModal
-                open={deleteModalId === budget.id}
-                onClose={() => setDeleteModalId(null)}
-                onDeleted={() => handleDeleteSuccess(budget.id)}
-                budget={budget}
-              />
-            </React.Fragment>
+            </Box>
           ))
         ) : (
           <Box className="empty-state">
@@ -469,6 +467,16 @@ const Budgets = () => {
           </Box>
         )}
       </Box>
+
+      {/* PERF P1.1: uma única instância do modal de exclusão para toda a lista */}
+      {budgetToDelete && (
+        <DeleteBudgetModal
+          open
+          onClose={() => setDeleteModalId(null)}
+          onDeleted={() => handleDeleteSuccess(budgetToDelete.id)}
+          budget={budgetToDelete}
+        />
+      )}
     </Box>
   );
 };

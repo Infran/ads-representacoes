@@ -2,14 +2,11 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Autocomplete,
   Box,
-  Button,
-  FormControl,
   Grid,
   Modal,
   TextField,
   Typography,
 } from "@mui/material";
-import { styled } from "@mui/system";
 import { IRepresentative } from "../../../../interfaces/irepresentative";
 import {
   getRepresentativeById,
@@ -17,56 +14,12 @@ import {
 } from "../../../../services/representativeServices";
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
-
-const modalStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 600,
-  maxHeight: "90vh",
-  bgcolor: "background.paper",
-  borderRadius: 4,
-  boxShadow: 24,
-  p: 4,
-  overflowY: "auto",
-  background: "linear-gradient(145deg, #f5f5f5, #ffffff)",
-  border: "1px solid #e0e0e0",
-};
-
-const FormControlStyled = styled(FormControl)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "16px", // Fixed gap value
-});
-
-const StyledButton = styled(Button)({
-  textTransform: "none",
-  fontWeight: "bold",
-  borderRadius: 4,
-  padding: "12px 24px", // Fixed padding
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-  },
-});
-
-const StyledTextField = styled(TextField)({
-  "& .MuiOutlinedInput-root": {
-    borderRadius: 8,
-    "& fieldset": {
-      borderColor: "#e0e0e0",
-    },
-    "&:hover fieldset": {
-      borderColor: "#1976d2", // Primary color
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "#1976d2", // Primary color
-      borderWidth: 2,
-    },
-  },
-});
+import {
+  modalStyle,
+  FormControlStyled,
+  StyledButton,
+  StyledTextField,
+} from "../../modalStyles";
 
 interface EditRepresentativeModalProps {
   open: boolean;

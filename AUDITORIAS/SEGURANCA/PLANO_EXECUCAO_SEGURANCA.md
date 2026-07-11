@@ -18,7 +18,7 @@
 ### Portões de qualidade
 - [x] `npm run build` (tsc + vite) **verde** após S0/S1 (2026-07-10).
 - [~] `npm run lint --max-warnings 0`: os 4 arquivos alterados **não introduzem nenhum problema novo** (`Login.tsx`/`firebase.ts` limpos; os 4 avisos em `ContextAuth.tsx`/`budgetServices.ts` são **pré-existentes**). O gate global segue vermelho por **código morto pré-existente** de outras trilhas (unused imports em ~15 arquivos) — dono: **EST F0**.
-- [ ] (quando EST F1 existir) `npm run test` verde
+- [x] `npm run test` verde (EST F1, 2026-07-11) + `npm run test:rules` verde (S3.1, 12/12 no emulador).
 - [x] Nenhum segredo committed: `.env*` permanecem gitignored.
 
 ---
@@ -29,8 +29,8 @@
 |---|---|---|---|
 | **S0** | Perímetro crítico (bloqueia deploy) | 4 | ✅ Publicado em dev + prod · S0.2 encerrado (risco residual aceito) |
 | **S1** | Endurecimento do app | 4 | ✅ Concluído (código) |
-| **S2** | Integridade de dados | 2 | ⬜ Pendente (S2.1 ⛔ espera EST F2.1) |
-| **S3** | Governança e testes de regras | 1 | ⬜ Pendente |
+| **S2** | Integridade de dados | 2 | ✅ Concluído (2026-07-11) |
+| **S3** | Governança e testes de regras | 1 | ✅ Código + CI aditivo (2026-07-11) · ⚠️ gate no deploy pendente de decisão do usuário |
 
 ---
 
@@ -118,27 +118,29 @@ Verificado: [firebase.ts:4](../../src/firebase.ts#L4) importava `browserLocalPer
 
 ## Fase S2 — Integridade de dados
 
-### S2.1 — Criação atômica de documentos (SEG-05) ⛔ implementação via EST F2.1 ⬜
-**Dono da implementação: EST F2.1 (factory de services).** SEG especifica e valida.
-- [ ] Garantir que o design do `createCrudService` implementa `add` = contador + `set` do doc **na mesma** `runTransaction` (§3.3 do reporte).
-- [ ] Validar: simular falha após o incremento (teste/emulador) → contador **não** avança.
-- **Aceite:** falha no `set` não deixa buraco no contador; teste de regressão verde.
+### S2.1 — Criação atômica de documentos (SEG-05) ✅ (2026-07-11, via EST F2.1)
+**Dono da implementação: EST F2.1 (factory de services).** SEG especificou e validou.
+- [x] `createCrudService.add` faz o incremento do contador (`meta/{metaIdDoc}`) + o `set` do doc **na mesma** `runTransaction`.
+- [x] Validado por teste de regressão (`createCrudService.test.ts`): ambos os `tx.set` passam pelo mesmo objeto de transação; simulação de falha no `set` do doc faz a transação inteira rejeitar (`.rejects.toThrow`) — sem buraco no contador. (Um reverter para `getNextId()`+`setDoc` separados quebra este teste.)
+- **Aceite:** ✔ falha no `set` não deixa buraco no contador; teste de regressão verde.
 
-### S2.2 — Validação real de CNPJ/CPF (SEG-08) ⬜
-- [ ] Criar `src/utils/validators.ts` com `isValidCnpj`/`isValidCpf` (módulo-11, §3.6; rejeitar sequências repetidas).
-- [ ] Integrar em `validateClient` (e representante, se aplicável) — máscara continua só formatando.
-- [ ] Exibir o erro no formulário (Create/Edit ClientModal) — mensagem pt-BR.
-- **Aceite:** CNPJ/CPF com dígito verificador inválido é rejeitado no submit com mensagem clara; testes unitários dos validadores verdes (usa infra EST F1).
+### S2.2 — Validação real de CNPJ/CPF (SEG-08) ✅ (2026-07-11)
+- [x] Criado `src/utils/validators.ts` com `isValidCnpj`/`isValidCpf` (módulo-11; rejeita comprimento errado, vazio/nulo e sequências repetidas). Aceitam string com ou sem máscara.
+- [x] Integrado em `validateClient` (server-side guard no service): CNPJ é opcional, mas se informado precisa passar no `isValidCnpj`. **Representante não se aplica** — `IRepresentative` não tem campo de documento próprio (embute um `IClient` já validado na criação).
+- [x] Erro exibido no formulário: check client-side em `CreateClientModal` e `EditClientModal` (mensagem pt-BR "CNPJ inválido. Verifique os dígitos." antes de chamar o service) + o guard do service como defesa em profundidade.
+- **Aceite:** ✔ CNPJ com dígito verificador inválido é rejeitado no submit com mensagem clara; **8 testes** dos validadores verdes.
+- ⚠️ **Nota de risco:** o guard também roda no `update` — editar um cliente cujo CNPJ salvo seja inválido exige corrigir o CNPJ. Comportamento intencional (força consertar dado inválido); reavaliar só se houver muito dado legado ruim.
 
 ---
 
 ## Fase S3 — Governança e testes de regras
 
-### S3.1 — Testes de `firestore.rules` no emulador + CI ⬜
-- [ ] Adicionar `@firebase/rules-unit-testing` + script com Firestore Emulator.
-- [ ] Casos mínimos: anônimo negado (read/write, todas as coleções); autenticado não-staff negado; staff CRUD ok; escrita com tipo inválido (`totalValue` string/negativo) negada; `meta` só staff.
-- [ ] Integrar ao CI antes do `firebase deploy`.
-- **Aceite:** suíte de regras verde no CI; alteração de regra sem teste quebra o pipeline.
+### S3.1 — Testes de `firestore.rules` no emulador + CI ✅ código + CI aditivo (2026-07-11) · ⚠️ gate no deploy pendente
+- [x] Adicionado `@firebase/rules-unit-testing@^3` + script `test:rules` (`firebase emulators:exec --only firestore --project demo-ads-rules "vitest run --config vitest.rules.config.ts"`). Config dedicada (`vitest.rules.config.ts`, env `node`, fora de `src/`) e bloco `emulators` no `firebase.json` (porta 8080, UI off, singleProjectMode). Java 21 + firebase-tools 14 já disponíveis.
+- [x] **12 casos** (`test/rules/firestore.rules.test.ts`), espelhando o `firestore.rules` **versionado** (não o baseline do reporte — clients/products/representatives são staff-only **sem** validação de campo, desvio de S0.1): anônimo negado (read+write, todas as coleções); autenticado não-staff negado; staff CRUD ok em clients/products/representatives + `meta` (read/incremento); `budgets` — válido aceito, `totalValue` string/negativo e `selectedProducts` não-lista **negados**; coleção `staff` não escrevível nem pelo staff + leitura direta negada; coleção não mapeada cai no deny-by-default. **Rodam verdes localmente.**
+- [x] **CI (aditivo):** criado `.github/workflows/ci.yaml` — em todo push/PR roda `lint` + `test:run` (unit) + `test:rules` (com `setup-java` + emulador). **Não** faz deploy e **não** toca `deploy.yaml`.
+- [ ] ⚠️ **Gate real no `deploy.yaml` (bloquear deploy se o CI falhar):** requer editar o `deploy.yaml` (arquivo sensível — branches cruzadas, SEG-09-rev) OU habilitar branch protection exigindo o check `ci`. **Deixado como decisão do usuário** (mexe no pipeline que publica em PROD real). Sugestão pronta: adicionar um job `ci` e `needs: ci` ao job de deploy, ou marcar o workflow `ci` como required em Settings → Branches.
+- **Aceite:** suíte de regras **verde** (12/12) local e no workflow `ci`; alteração de regra que quebre uma asserção falha o CI. ✔ (o bloqueio literal do deploy fica condicionado à decisão acima)
 
 ---
 
@@ -190,6 +192,24 @@ Verificado: [firebase.ts:4](../../src/firebase.ts#L4) importava `browserLocalPer
 - **Arquivos:** `.firebaserc`, `CLAUDE.md`, `firestore.rules` (publicado, sem mudança de conteúdo), `STAFF_UUIDS.md` (novo).
 - **Verificação:** deploys de rules confirmados via output do `firebase deploy --only firestore:rules --project=<id>` (compilação + release OK) em dev e prod; teste de deny-by-default (403 sem auth) repetido nos dois projetos.
 - **Pendências:** desabilitar signup Email/Senha no Console (S0.2); decidir e corrigir o cruzamento de branches do `deploy.yaml` (SEG-09-rev) antes de qualquer novo push para `development` ou `main`.
+
+### 2026-07-11 · S3.1 · Testes de firestore.rules no emulador + CI aditivo (Onda 2)
+- **O que foi feito:**
+  - `@firebase/rules-unit-testing@^3` + `test:rules` rodando o Firestore Emulator (`firebase emulators:exec`, Java 21 + firebase-tools 14 locais). Config isolada `vitest.rules.config.ts` (env `node`, `include: test/rules/**`) para não colidir com os characterization tests jsdom de EST F1. Bloco `emulators` no `firebase.json` (porta 8080, UI off).
+  - **12 testes** em `test/rules/firestore.rules.test.ts` cobrindo o perímetro **publicado** (deny-by-default, allowlist `staff/{uid}`, integridade de `budgets`, proteção da coleção `staff`, coleções não mapeadas). Espelham o `firestore.rules` versionado — importante: clients/products/representatives são staff-only **sem** validação de campo (o desvio deliberado de S0.1), então os testes **não** assertam `name is string` nelas; só `budgets` tem asserção de tipo. **12/12 verdes** no emulador.
+  - **CI aditivo:** `.github/workflows/ci.yaml` roda `lint + test:run + test:rules` em push/PR, com `setup-java` para o emulador. Escolhido **não** modificar o `deploy.yaml` (arquivo sensível, branches cruzadas SEG-09-rev): o novo workflow é só de verificação, não deploya.
+- **Por que foi feito:** fechar a governança contínua do perímetro (S3) — uma alteração de regra que quebre uma asserção agora falha o CI. Mantém a rede de segurança das regras junto da rede de testes de código (EST F1), sem tocar o pipeline de deploy real.
+- **Arquivos (novos):** `test/rules/firestore.rules.test.ts`, `vitest.rules.config.ts`, `.github/workflows/ci.yaml`. **(alterados):** `firebase.json` (bloco emulators), `package.json` (dep + script `test:rules`), `.eslintrc.cjs` (globals do Vitest também em `test/**`).
+- **Verificação:** `npm run test:rules` → **12/12 verdes** (emulador sobe e desce limpo, exit 0); `npm run lint` nos **mesmos 10 pré-existentes**; `npm run build` verde.
+- **⚠️ Pendência (decisão do usuário):** para o CI **bloquear** o deploy de fato, é preciso ou adicionar `needs: ci` ao job de deploy no `deploy.yaml` (edição do arquivo sensível), ou marcar o check `ci` como *required* em branch protection (Console/Settings). Não feito unilateralmente por afetar o pipeline que publica em PROD real.
+
+### 2026-07-11 · S2 completo (S2.1 + S2.2) · Integridade de dados (Onda 3)
+- **O que foi feito:**
+  - **S2.1 (via EST F2.1):** a criação atômica ficou embutida no `createCrudService.add` (contador + doc na mesma `runTransaction`). SEG validou com teste de regressão em `createCrudService.test.ts` (dois `tx.set` no mesmo objeto de transação; falha no set do doc aborta tudo).
+  - **S2.2:** `src/utils/validators.ts` (`isValidCnpj`/`isValidCpf`, módulo-11, rejeita sequências repetidas) + integração em `validateClient` (guard no service) + check client-side com mensagem pt-BR nos modais Create/Edit de Cliente.
+- **Por que foi feito:** fechar a Fase S2 (integridade de dados) junto com a desduplicação de services da Onda 3 — a criação atômica é dono único da EST (evita reescrever services 2×) e os validadores usam a infra de testes de EST F1.
+- **Arquivos:** `src/services/createCrudService.ts` (add atômico) + `createCrudService.test.ts`; `src/utils/validators.ts` + `validators.test.ts`; `src/services/clientServices.ts` (validateClient); `src/components/Modal/{Create/CreateClientModal,Edit/EditClientModal}/*` (check + mensagem).
+- **Verificação:** `npm run build` verde; `npm run test:run` **49 verdes** (incl. 7 do factory + 8 dos validadores); `npm run test:rules` **12 verdes** (regras inalteradas); lint nos mesmos 10 pré-existentes.
 
 <!--
 ### AAAA-MM-DD · Sx.y · <título curto>

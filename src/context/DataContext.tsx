@@ -3,6 +3,9 @@
  *
  * Este contexto carrega os dados uma única vez e os mantém em cache,
  * reduzindo drasticamente as chamadas ao Firestore.
+ *
+ * EST F2.2: o provider agora compõe 4 `useEntityStore` (um por coleção) em vez
+ * de repetir estado + refresh + searchLocal + handlers de cache 4×.
  */
 
 import React, {
@@ -18,16 +21,8 @@ import { IBudget } from "../interfaces/ibudget";
 import { IClient } from "../interfaces/iclient";
 import { IProduct } from "../interfaces/iproduct";
 import { IRepresentative } from "../interfaces/irepresentative";
-import {
-  getCache,
-  setCache,
-  invalidateCache,
-  addItemToCache,
-  updateItemInCache,
-  removeItemFromCache,
-  getCacheStats,
-  CacheKey,
-} from "../services/cacheService";
+import { getCacheStats, CacheKey } from "../services/cacheService";
+import { useEntityStore } from "./useEntityStore";
 
 // Imports dos services originais para buscar dados do Firestore
 import { getBudgets as fetchBudgetsFromFirestore } from "../services/budgetServices";
@@ -90,6 +85,12 @@ interface DataContextState {
 
 const DataContext = createContext<DataContextState | null>(null);
 
+// Campos filtráveis por `searchLocal` de cada coleção (aceita caminhos com ponto).
+const BUDGET_SEARCH_FIELDS = ["client.name", "representative.name", "id"];
+const CLIENT_SEARCH_FIELDS = ["name", "email", "phone", "cnpj"];
+const PRODUCT_SEARCH_FIELDS = ["name", "description", "ncm"];
+const REPRESENTATIVE_SEARCH_FIELDS = ["name", "email", "client.name"];
+
 // =====================================================
 // PROVIDER
 // =====================================================
@@ -99,85 +100,55 @@ interface DataProviderProps {
 }
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
-  // Estado dos dados
-  const [budgets, setBudgets] = useState<IBudget[]>([]);
-  const [clients, setClients] = useState<IClient[]>([]);
-  const [products, setProducts] = useState<IProduct[]>([]);
-  const [representatives, setRepresentatives] = useState<IRepresentative[]>([]);
-
-  // Estado de carregamento
-  const [loading, setLoading] = useState(true);
-  const [loadingEntities, setLoadingEntities] = useState<
-    Record<CacheKey, boolean>
-  >({
-    budgets: false,
-    clients: false,
-    products: false,
-    representatives: false,
-  });
-
-  // =====================================================
-  // FUNÇÕES DE FETCH COM CACHE
-  // =====================================================
-
-  const fetchWithCache = useCallback(
-    async <T,>(
-      key: CacheKey,
-      fetcher: () => Promise<T[]>,
-      setter: React.Dispatch<React.SetStateAction<T[]>>
-    ): Promise<void> => {
-      // Primeiro, tenta obter do cache
-      const cached = getCache<T[]>(key);
-      if (cached) {
-        setter(cached);
-        return;
-      }
-
-      // Se não tem cache válido, busca do Firestore
-      setLoadingEntities((prev) => ({ ...prev, [key]: true }));
-
-      try {
-        console.log(`[DataContext] Fetching ${key} from Firestore...`);
-        const data = await fetcher();
-        setter(data);
-        setCache(key, data);
-        console.log(`[DataContext] Fetched ${data.length} ${key}`);
-      } catch (error) {
-        console.error(`[DataContext] Error fetching ${key}:`, error);
-      } finally {
-        setLoadingEntities((prev) => ({ ...prev, [key]: false }));
-      }
-    },
-    []
+  // Um store por coleção (estado + refresh + searchLocal + handlers de cache).
+  const budgetStore = useEntityStore<IBudget>(
+    "budgets",
+    fetchBudgetsFromFirestore,
+    BUDGET_SEARCH_FIELDS
+  );
+  const clientStore = useEntityStore<IClient>(
+    "clients",
+    fetchClientsFromFirestore,
+    CLIENT_SEARCH_FIELDS
+  );
+  const productStore = useEntityStore<IProduct>(
+    "products",
+    fetchProductsFromFirestore,
+    PRODUCT_SEARCH_FIELDS
+  );
+  const representativeStore = useEntityStore<IRepresentative>(
+    "representatives",
+    fetchRepresentativesFromFirestore,
+    REPRESENTATIVE_SEARCH_FIELDS
   );
 
+  // Loading global (carregamento inicial / refreshAll).
+  const [loading, setLoading] = useState(true);
+
+  const { load: loadBudgets, refresh: refreshBudgets } = budgetStore;
+  const { load: loadClients, refresh: refreshClients } = clientStore;
+  const { load: loadProducts, refresh: refreshProducts } = productStore;
+  const { load: loadRepresentatives, refresh: refreshRepresentatives } =
+    representativeStore;
+
   // =====================================================
-  // FUNÇÕES DE REFRESH
+  // CARREGAMENTO INICIAL
   // =====================================================
 
-  const refreshBudgets = useCallback(async () => {
-    invalidateCache("budgets");
-    await fetchWithCache("budgets", fetchBudgetsFromFirestore, setBudgets);
-  }, [fetchWithCache]);
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      await Promise.all([
+        loadBudgets(),
+        loadClients(),
+        loadProducts(),
+        loadRepresentatives(),
+      ]);
+      setLoading(false);
+    };
 
-  const refreshClients = useCallback(async () => {
-    invalidateCache("clients");
-    await fetchWithCache("clients", fetchClientsFromFirestore, setClients);
-  }, [fetchWithCache]);
-
-  const refreshProducts = useCallback(async () => {
-    invalidateCache("products");
-    await fetchWithCache("products", fetchProductsFromFirestore, setProducts);
-  }, [fetchWithCache]);
-
-  const refreshRepresentatives = useCallback(async () => {
-    invalidateCache("representatives");
-    await fetchWithCache(
-      "representatives",
-      fetchRepresentativesFromFirestore,
-      setRepresentatives
-    );
-  }, [fetchWithCache]);
+    loadInitialData();
+  }, [loadBudgets, loadClients, loadProducts, loadRepresentatives]);
 
   const refreshAll = useCallback(async () => {
     setLoading(true);
@@ -190,169 +161,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setLoading(false);
   }, [refreshBudgets, refreshClients, refreshProducts, refreshRepresentatives]);
 
-  // =====================================================
-  // CARREGAMENTO INICIAL
-  // =====================================================
-
-  useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-
-      await Promise.all([
-        fetchWithCache("budgets", fetchBudgetsFromFirestore, setBudgets),
-        fetchWithCache("clients", fetchClientsFromFirestore, setClients),
-        fetchWithCache("products", fetchProductsFromFirestore, setProducts),
-        fetchWithCache(
-          "representatives",
-          fetchRepresentativesFromFirestore,
-          setRepresentatives
-        ),
-      ]);
-
-      setLoading(false);
-    };
-
-    loadInitialData();
-  }, [fetchWithCache]);
-
-  // =====================================================
-  // FUNÇÕES DE BUSCA LOCAL
-  // =====================================================
-
-  const searchBudgetsLocal = useCallback(
-    (term: string): IBudget[] => {
-      if (!term) return budgets;
-      const lowerTerm = term.toLowerCase();
-      return budgets.filter(
-        (b) =>
-          b.client?.name?.toLowerCase().includes(lowerTerm) ||
-          b.representative?.name?.toLowerCase().includes(lowerTerm) ||
-          b.id?.toString().includes(lowerTerm)
-      );
-    },
-    [budgets]
-  );
-
-  const searchClientsLocal = useCallback(
-    (term: string): IClient[] => {
-      if (!term) return clients;
-      const lowerTerm = term.toLowerCase();
-      return clients.filter(
-        (c) =>
-          c.name?.toLowerCase().includes(lowerTerm) ||
-          c.email?.toLowerCase().includes(lowerTerm) ||
-          c.phone?.toLowerCase().includes(lowerTerm) ||
-          c.cnpj?.toLowerCase().includes(lowerTerm)
-      );
-    },
-    [clients]
-  );
-
-  const searchProductsLocal = useCallback(
-    (term: string): IProduct[] => {
-      if (!term) return products;
-      const lowerTerm = term.toLowerCase();
-      return products.filter(
-        (p) =>
-          p.name?.toLowerCase().includes(lowerTerm) ||
-          p.description?.toLowerCase().includes(lowerTerm) ||
-          p.ncm?.toLowerCase().includes(lowerTerm)
-      );
-    },
-    [products]
-  );
-
-  const searchRepresentativesLocal = useCallback(
-    (term: string): IRepresentative[] => {
-      if (!term) return representatives;
-      const lowerTerm = term.toLowerCase();
-      return representatives.filter(
-        (r) =>
-          r.name?.toLowerCase().includes(lowerTerm) ||
-          r.email?.toLowerCase().includes(lowerTerm) ||
-          r.client?.name?.toLowerCase().includes(lowerTerm)
-      );
-    },
-    [representatives]
-  );
-
-  // =====================================================
-  // FUNÇÕES DE ATUALIZAÇÃO DO CACHE
-  // =====================================================
-
-  // Budgets
-  const addBudgetToCacheHandler = useCallback((budget: IBudget) => {
-    setBudgets((prev) => [...prev, budget]);
-    addItemToCache("budgets", budget);
-  }, []);
-
-  const updateBudgetInCacheHandler = useCallback((budget: IBudget) => {
-    setBudgets((prev) => prev.map((b) => (b.id === budget.id ? budget : b)));
-    updateItemInCache("budgets", budget);
-  }, []);
-
-  const removeBudgetFromCacheHandler = useCallback((id: string | number) => {
-    setBudgets((prev) => prev.filter((b) => b.id !== id));
-    removeItemFromCache("budgets", id);
-  }, []);
-
-  // Clients
-  const addClientToCacheHandler = useCallback((client: IClient) => {
-    setClients((prev) => [...prev, client]);
-    addItemToCache("clients", client);
-  }, []);
-
-  const updateClientInCacheHandler = useCallback((client: IClient) => {
-    setClients((prev) => prev.map((c) => (c.id === client.id ? client : c)));
-    updateItemInCache("clients", client);
-  }, []);
-
-  const removeClientFromCacheHandler = useCallback((id: string | number) => {
-    setClients((prev) => prev.filter((c) => c.id !== id));
-    removeItemFromCache("clients", id);
-  }, []);
-
-  // Products
-  const addProductToCacheHandler = useCallback((product: IProduct) => {
-    setProducts((prev) => [...prev, product]);
-    addItemToCache("products", product);
-  }, []);
-
-  const updateProductInCacheHandler = useCallback((product: IProduct) => {
-    setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
-    updateItemInCache("products", product);
-  }, []);
-
-  const removeProductFromCacheHandler = useCallback((id: string | number) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    removeItemFromCache("products", id);
-  }, []);
-
-  // Representatives
-  const addRepresentativeToCacheHandler = useCallback(
-    (representative: IRepresentative) => {
-      setRepresentatives((prev) => [...prev, representative]);
-      addItemToCache("representatives", representative);
-    },
-    []
-  );
-
-  const updateRepresentativeInCacheHandler = useCallback(
-    (representative: IRepresentative) => {
-      setRepresentatives((prev) =>
-        prev.map((r) => (r.id === representative.id ? representative : r))
-      );
-      updateItemInCache("representatives", representative);
-    },
-    []
-  );
-
-  const removeRepresentativeFromCacheHandler = useCallback(
-    (id: string | number) => {
-      setRepresentatives((prev) => prev.filter((r) => r.id !== id));
-      removeItemFromCache("representatives", id);
-    },
-    []
+  const loadingEntities = useMemo<Record<CacheKey, boolean>>(
+    () => ({
+      budgets: budgetStore.loading,
+      clients: clientStore.loading,
+      products: productStore.loading,
+      representatives: representativeStore.loading,
+    }),
+    [
+      budgetStore.loading,
+      clientStore.loading,
+      productStore.loading,
+      representativeStore.loading,
+    ]
   );
 
   // =====================================================
@@ -362,10 +183,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const value: DataContextState = useMemo(
     () => ({
       // Dados
-      budgets,
-      clients,
-      products,
-      representatives,
+      budgets: budgetStore.items,
+      clients: clientStore.items,
+      products: productStore.items,
+      representatives: representativeStore.items,
 
       // Estado de carregamento
       loading,
@@ -379,36 +200,40 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       refreshRepresentatives,
 
       // Funções de busca local
-      searchBudgetsLocal,
-      searchClientsLocal,
-      searchProductsLocal,
-      searchRepresentativesLocal,
+      searchBudgetsLocal: budgetStore.searchLocal,
+      searchClientsLocal: clientStore.searchLocal,
+      searchProductsLocal: productStore.searchLocal,
+      searchRepresentativesLocal: representativeStore.searchLocal,
 
       // Funções de atualização do cache
-      addBudgetToCache: addBudgetToCacheHandler,
-      updateBudgetInCache: updateBudgetInCacheHandler,
-      removeBudgetFromCache: removeBudgetFromCacheHandler,
+      addBudgetToCache: budgetStore.addToCache,
+      updateBudgetInCache: budgetStore.updateInCache,
+      removeBudgetFromCache: budgetStore.removeFromCache,
 
-      addClientToCache: addClientToCacheHandler,
-      updateClientInCache: updateClientInCacheHandler,
-      removeClientFromCache: removeClientFromCacheHandler,
+      addClientToCache: clientStore.addToCache,
+      updateClientInCache: clientStore.updateInCache,
+      removeClientFromCache: clientStore.removeFromCache,
 
-      addProductToCache: addProductToCacheHandler,
-      updateProductInCache: updateProductInCacheHandler,
-      removeProductFromCache: removeProductFromCacheHandler,
+      addProductToCache: productStore.addToCache,
+      updateProductInCache: productStore.updateInCache,
+      removeProductFromCache: productStore.removeFromCache,
 
-      addRepresentativeToCache: addRepresentativeToCacheHandler,
-      updateRepresentativeInCache: updateRepresentativeInCacheHandler,
-      removeRepresentativeFromCache: removeRepresentativeFromCacheHandler,
+      addRepresentativeToCache: representativeStore.addToCache,
+      updateRepresentativeInCache: representativeStore.updateInCache,
+      removeRepresentativeFromCache: representativeStore.removeFromCache,
 
       // Estatísticas
       getCacheStats,
     }),
+    // Deps granulares (não os objetos `*Store`, que trocam de identidade a cada
+    // render): preserva a memoização de F0.5 — `value` só muda quando `items`,
+    // `loading` ou `loadingEntities` mudam. As funções de cache/refresh e os
+    // `searchLocal` já são estáveis por `useCallback`.
     [
-      budgets,
-      clients,
-      products,
-      representatives,
+      budgetStore.items,
+      clientStore.items,
+      productStore.items,
+      representativeStore.items,
       loading,
       loadingEntities,
       refreshAll,
@@ -416,22 +241,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       refreshClients,
       refreshProducts,
       refreshRepresentatives,
-      searchBudgetsLocal,
-      searchClientsLocal,
-      searchProductsLocal,
-      searchRepresentativesLocal,
-      addBudgetToCacheHandler,
-      updateBudgetInCacheHandler,
-      removeBudgetFromCacheHandler,
-      addClientToCacheHandler,
-      updateClientInCacheHandler,
-      removeClientFromCacheHandler,
-      addProductToCacheHandler,
-      updateProductInCacheHandler,
-      removeProductFromCacheHandler,
-      addRepresentativeToCacheHandler,
-      updateRepresentativeInCacheHandler,
-      removeRepresentativeFromCacheHandler,
+      budgetStore.searchLocal,
+      clientStore.searchLocal,
+      productStore.searchLocal,
+      representativeStore.searchLocal,
+      budgetStore.addToCache,
+      budgetStore.updateInCache,
+      budgetStore.removeFromCache,
+      clientStore.addToCache,
+      clientStore.updateInCache,
+      clientStore.removeFromCache,
+      productStore.addToCache,
+      productStore.updateInCache,
+      productStore.removeFromCache,
+      representativeStore.addToCache,
+      representativeStore.updateInCache,
+      representativeStore.removeFromCache,
     ]
   );
 

@@ -21,7 +21,7 @@
 ### Portões de qualidade (aplicam-se a toda tarefa)
 - [x] `npm run build` sem erros (após F0 — 2026-07-11).
 - [~] `npm run lint` com `--max-warnings 0`: **todo o código morto que era dono da F0 foi eliminado** (unused imports/vars: 21 → 0, incl. os 4 `_` dos services e o `Sidebar.old.tsx`). Sobram **10 problemas pré-existentes** que **não são código morto** e têm dono em outras trilhas/ondas: `no-explicit-any` em `CustomTable` (→ UI U2.1), `EditClientModal` (→ EST F3.3), `ContextAuth` (→ SEG); `ban-types {}` em `PageHeader` (→ UI); `react-refresh/only-export-components` em `DataContext` (→ EST F2.2), `ContextAuth`/`LayoutContext`/`BudgetPdf` (arquitetural); `exhaustive-deps` em `ContextAuth` (→ SEG S0.3). **Exceção:** `brMoneyMask` morto em `Home.tsx` ficou de propósito para o dono **UI U0.1** (é morto por causa da remoção do card "Valor Total" e vem junto com a limpeza de `kpiData`).
-- [ ] (a partir da F1) `npm run test` verde
+- [x] (a partir da F1) `npm run test` verde — **49 testes** jsdom (2026-07-11; era 29 na F1 + 20 da Onda 3: factory, validadores, quota, getPage).
 - [x] Regra do `CLAUDE.md` respeitada: escrita via service + função de cache do `useData()`; `window.location.reload()` **removido** (F0.3).
 
 ---
@@ -31,8 +31,8 @@
 | Fase | Objetivo | Itens | Status |
 |---|---|---|---|
 | **F0** | Estabilização: bugs funcionais + limpeza | 7 | ✅ Concluído (2026-07-11) |
-| **F1** | Rede de segurança (testes) | 2 | ⬜ Pendente |
-| **F2** | Desduplicação estrutural | 3 | ⬜ Pendente |
+| **F1** | Rede de segurança (testes) | 2 | ✅ Concluído (2026-07-11) |
+| **F2** | Desduplicação estrutural | 3 | ✅ Concluído (2026-07-11) |
 | **F3** | Quebra de God Components | 3 | ⬜ Pendente |
 | **F4** | Refino & dívida técnica | 7 | 🟨 F4.3 ✅ (2026-07-10, fora de ordem) · demais ⬜ |
 
@@ -91,17 +91,19 @@ Confirmado: **0 imports** em `src/` (re-verificado via grep). Sidebar ativo é `
 
 **Meta:** criar a rede que protege as Fases 2–3. **Pré-requisito:** F0.
 
-### F1.1 — Instalar e configurar Vitest + RTL ⬜
-- [ ] Adicionar dev-deps: `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `jsdom`.
-- [ ] Configurar `test` no `vite.config.ts`/`vitest.config.ts` (`environment: 'jsdom'`, setup de `jest-dom`).
-- [ ] Adicionar script `"test": "vitest"` (e `"test:run": "vitest run"` para CI) ao `package.json`.
-- **Aceite:** `npm run test` roda um teste trivial verde.
+### F1.1 — Instalar e configurar Vitest + RTL ✅ (2026-07-11)
+- [x] Adicionadas dev-deps: `vitest@^1.6.1` (compat. Vite 5), `@testing-library/react@^14`, `@testing-library/jest-dom@^6`, `@testing-library/user-event`, `@testing-library/dom`, `jsdom@^24`.
+- [x] Bloco `test` no próprio `vite.config.ts` (import trocado para `vitest/config`): `environment: 'jsdom'`, `globals: true`, `setupFiles: './src/test/setup.ts'`, `css: false`, `include: ['src/**/*.{test,spec}.{ts,tsx}']`. Setup registra `@testing-library/jest-dom/vitest` + `cleanup()` no `afterEach`.
+- [x] Scripts `"test": "vitest"` e `"test:run": "vitest run"` no `package.json`.
+- [x] **Portões preservados:** `tsconfig.json` ganhou `exclude` dos arquivos de teste/setup (o `tsc` da produção não os type-checa → build fica verde); `.eslintrc.cjs` ganhou `overrides` com os globals do Vitest para os testes (lint segue nos mesmos 10 pré-existentes).
+- **Aceite:** `npm run test:run` roda verde (smoke test trivial + jsdom). ✔
 
-### F1.2 — Characterization tests do comportamento atual ⬜
-- [ ] `useBudgetForm`: `totalValue` usando `customUnitValue` quando presente; `sectionValidation` (representante/produtos/termos) nos estados completo/incompleto.
-- [ ] `cacheService`: TTL de 5 min (mock de tempo), `add/update/remove`, espelho em `localStorage`.
-- [ ] Regressão de F0.1 (onClose≠onDeleted) e F0.2 (filtro em centavos).
-- **Aceite:** testes verdes que **descrevem o comportamento correto atual**; base para F2/F3.
+### F1.2 — Characterization tests do comportamento atual ✅ (2026-07-11)
+- [x] `useBudgetForm` (`src/hooks/useBudgetForm.test.tsx`, 9 testes): `totalValue` usando `customUnitValue` quando presente (e preço base quando ausente); `sectionValidation` (representante/produtos/termos) nos estados completo/incompleto + mensagem de campos faltantes; `reset()` (usado por "Adicionar Outro"); filtro local de produtos por nome/ncm com debounce de 300ms (fake timers). Mock de `useData`/`sweetalert2`.
+- [x] `cacheService` (`src/services/cacheService.test.ts`, 12 testes): TTL de 5 min com fake timers (válido antes / expirado depois; TTL customizado), `add/update/remove/filter`, espelho em `localStorage` (chave `ads_representacoes_cache`), invalidação por chave e global.
+- [x] Regressão de F0.1 — `DeleteBudgetModal` (`.../DeleteBudgetModal.test.tsx`, 3 testes): **cancelar** chama `onClose` e **não** exclui nem chama `onDeleted`; **excluir** chama `deleteBudget(id)` e depois `onDeleted`, sem `onClose`.
+- [x] Regressão de F0.2 — filtro de valor em centavos (`src/pages/Budgets/Budgets.filter.test.tsx`, 3 testes): faixa 1000–2000 reais retorna só o orçamento de 150000 centavos; só-mínimo converte corretamente. Mock de `useData`/`openBudgetPdf`/`DeleteBudgetModal` + `MemoryRouter`.
+- **Aceite:** **29 testes verdes** em 5 arquivos, descrevendo o comportamento correto atual; base para F2/F3. ✔
 
 ---
 
@@ -109,25 +111,26 @@ Confirmado: **0 imports** em `src/` (re-verificado via grep). Sidebar ativo é `
 
 **Meta:** colapsar a repetição 4–6× em services, contexto e estilos. **Pré-requisito:** F1 (rede de testes).
 
-### F2.1 — Factory `createCrudService<T>` (D-02, D-03; incorpora SEG-05) ⬜
-- [ ] Criar `src/services/createCrudService.ts`: `createCrudService<T>({ collectionName, metaIdDoc, validate, timestamp })` com `getAll`, `getById`, `getNextId` (transação atômica), `add`, `update` (limpeza de `undefined` **unificada**) e `delete`.
-- [ ] **Requisito de segurança (SEG S2.1):** `add` **atômico** — incremento do contador + `set` do doc na **mesma** `runTransaction` (spec: §3.3 do reporte de Segurança). A trilha SEG valida com teste.
-- [ ] **Preservar** endurecimentos já aplicados por SEG: validação no `update` (S1.1) e sanitização `^\d+$` nos `get*ById` (S1.2); **preservar** também `getRecentBudgets(5)` adicionada por PERF P0.3.
-- [ ] Migrar `budgetServices`, `clientServices`, `productServices`, `representativeServices` para configuração, **preservando a API pública** que o `DataContext` consome.
-- [ ] Resolver o drift `removeUndefinedFields` (nomeado em budget, inline em representative) — passa a existir só no factory.
-- [ ] Decidir `Timestamp.now()` vs `serverTimestamp()` (há divergência entre services) e padronizar.
-- **Aceite:** mesma API pública; testes de F1 verdes; ~500 linhas a menos; getNextId em 1 lugar; criação atômica validada por SEG.
+### F2.1 — Factory `createCrudService<T>` (D-02, D-03; incorpora SEG-05) ✅ (2026-07-11)
+- [x] Criado `src/services/createCrudService.ts`: `createCrudService<T>({ collectionName, metaIdDoc, validate, idPattern })` com `getAll`, `getById`, `getNextId` (transação atômica), `add`, `update` (limpeza de `undefined` **unificada**), `remove` e `getPage` (cursor — PERF P1.2).
+- [x] **Requisito de segurança (SEG S2.1):** `add` **atômico** — incremento do contador + `set` do doc na **mesma** `runTransaction`. Validado por teste de regressão (`createCrudService.test.ts`: ambos os `tx.set` pelo mesmo objeto de transação; falha no set do doc aborta tudo).
+- [x] **Preservados** os endurecimentos de SEG: validação no `update` (S1.1, via `validate` passado por config) e sanitização `^\d+$` no `getBudgetById` (S1.2, via `idPattern`); `getRecentBudgets(5)` (PERF P0.3) mantida fora do factory em `budgetServices`.
+- [x] Migrados `budget/client/product/representativeServices` para configuração + wrappers finos que **preservam a API pública** (incl. `updateBudget(id, budget)` de 2 args vs. `updateClient(client)` de 1; `search*` @deprecated mantidas até F4.4).
+- [x] Drift do `removeUndefinedFields` resolvido — existe só no factory.
+- [x] Padronizado `Timestamp.now()` para todos (antes budget usava `Timestamp.now()`; os demais `serverTimestamp()`). Motivo: o cache otimista grava o objeto retornado direto no cache/localStorage — o sentinel de `serverTimestamp()` não serializa em JSON nem ordena por `createdAt`. Documentado no cabeçalho do factory.
+- **Aceite:** ✔ mesma API pública; 49 testes verdes (incl. +7 do factory); services caíram de ~750 → ~400 linhas (factory + 4 configs); getNextId em 1 lugar; criação atômica validada.
 
-### F2.2 — `createEntityStore<T>` no `DataContext` (D-04, D-05, S-05, E-03) ⬜
-- [ ] Criar `createEntityStore<T>(key, fetcher)` → `{ items, refresh, searchLocal, addToCache, updateInCache, removeFromCache }`.
-- [ ] Reescrever `DataContext` compondo 4 stores; remover os 12 handlers e as 4 buscas repetidas; revalidar deps do `useMemo` do `value` (F0.5).
-- [ ] `searchLocal` recebe os campos filtráveis por config (elimina D-05).
-- **Aceite:** superfície de `useData()` inalterada; testes de F1 verdes; contexto encolhe muito.
+### F2.2 — `createEntityStore<T>` no `DataContext` (D-04, D-05, S-05, E-03) ✅ (2026-07-11)
+- [x] Criado `src/context/useEntityStore.ts` → `{ items, loading, load, refresh, searchLocal, addToCache, updateInCache, removeFromCache }`. **Desvio de nome:** é um HOOK (`useEntityStore`), não uma função pura como `createEntityStore` — cada store é dono do seu `useState`/`useCallback`. Chamado 4× no topo do provider (número fixo, sem violar as regras dos hooks).
+- [x] `DataContext` reescrito compondo 4 stores; removidos os 12 handlers, as 4 buscas repetidas e o `fetchWithCache`. `useMemo` do `value` revalidado com **deps granulares** (não os objetos `*Store`, que trocam de identidade a cada render) — preserva a memoização de F0.5.
+- [x] `searchLocal` genérico por config (campos filtráveis com suporte a caminho com ponto, ex.: `client.name`) — elimina D-05.
+- **Aceite:** ✔ superfície de `useData()` inalterada (mesma interface `DataContextState`); 49 testes verdes; `DataContext` encolheu de 454 → ~300 linhas.
+- ⚠️ **Não resolvido aqui:** o warning `react-refresh/only-export-components` no `DataContext` (mapeado a esta fase) — separar `useData` num arquivo próprio implicaria trocar `import { useData }` em ~15 arquivos; deixado como um dos 10 pré-existentes para não rippar o app.
 
-### F2.3 — Centralizar styled-components dos modais (D-01, parte 1) ⬜
-- [ ] Criar `src/components/Modal/modalStyles.ts` com `modalStyle`, `FormControlStyled`, `StyledButton`, `StyledTextField` **uma vez**; cores como constantes nomeadas (ex.: `MODAL_PRIMARY = "#1976d2"`, `MODAL_PRIMARY_HOVER = "#1565c0"`). **Não** usar `theme.palette.*` ainda (sem `ThemeProvider` — ver F4.7).
-- [ ] Importar nos 6 modais (`Create{Client,Product,Representative}Modal`, `Edit{Client,Product,Representative}Modal`); remover as cópias locais.
-- **Aceite:** ~300 linhas removidas; aparência idêntica; 1 ponto de edição.
+### F2.3 — Centralizar styled-components dos modais (D-01, parte 1) ✅ (2026-07-11)
+- [x] Criado `src/components/Modal/modalStyles.ts` com `modalStyle`, `FormControlStyled`, `StyledButton`, `StyledTextField` **uma vez** + cores nomeadas (`MODAL_PRIMARY`, `MODAL_PRIMARY_HOVER`, `MODAL_BORDER`). Sem `theme.palette.*` (ver F4.7 → UI U2.1).
+- [x] Importado nos **4 modais idênticos** (`Create/Edit` de Client e Representative). **Desvio verificado contra o código:** os 2 modais de Produto **não** eram idênticos (usavam um `modalStyle` mais simples — sem gradiente/borda/maxHeight — e `Button`/`TextField` puros, não os styled). Migrá-los mudaria a aparência, violando "aparência idêntica" — ficaram intactos e serão unificados por UI U2.1.
+- **Aceite:** ✔ ~200 linhas duplicadas removidas (4×4 defs → 1 módulo); aparência idêntica nos 4 migrados; 1 ponto de edição para o estilo compartilhado.
 
 ---
 
@@ -256,6 +259,29 @@ Resolvido, porém **com mecanismo diferente do planejado**: em vez de uma rota R
 - **Por que foi feito:** a Onda 1 de Estrutura (F0) é bug-antes-de-refactor, risco ~nulo, sem depender de testes. F0.1 desbloqueia PERF P1.1; F0.3/F0.5 fecham achados de PERF por dono único.
 - **Arquivos (código):** `src/components/Modal/Delete/DeleteBudgetModal.tsx`, `src/pages/Budgets/Budgets.tsx`, `src/hooks/useBudgetForm.ts`, `src/pages/BudgetFormPage/BudgetFormPage.tsx`, `src/context/DataContext.tsx`, `.gitignore`, `src/components/Sidebar/Sidebar.old.tsx` (removido), `src/components/Budget/{BudgetSummaryPanel,ProductSelector,ProductList}.tsx`, `src/components/Modal/Create/{CreateClientModal,CreateRepresentativeModal}/*.tsx`, `src/layouts/DefaultLayout/index.tsx`, `src/pages/Clients/Clients.tsx`, `src/services/{budget,client,product,representative}Services.ts`.
 - **Verificação:** `npm run build` (tsc + vite) **verde**; `npx tsc --noEmit` exit 0. Lint: **código morto dono da F0 = 0**. Restam 10 problemas pré-existentes que **não são código morto** (`no-explicit-any`, `ban-types {}`, `react-refresh`, `exhaustive-deps`) com dono em UI (U2.1/PageHeader), EST (F2.2/F3.3) e SEG (ContextAuth) — detalhados nos Portões acima. **Exceção deliberada:** `brMoneyMask` morto em `Home.tsx` foi deixado para o dono **UI U0.1** (acoplado à remoção dos reduces `kpiData`). Validação de runtime dos bugs (F0.1/F0.2) pende da infra de testes de EST F1.
+
+### 2026-07-11 · F1 completo (F1.1–F1.2) · Rede de segurança (Vitest + RTL + characterization tests)
+> Início da Onda 2 (Fundações). F1 é pré-requisito de F2/F3 e valida as correções da Onda 1 (F0).
+- **O que foi feito:**
+  - **F1.1 (infra):** instaladas as dev-deps de teste (`vitest@1.6.1` — casado com Vite 5 —, `@testing-library/react@14`, `jest-dom@6`, `user-event`, `@testing-library/dom`, `jsdom@24`). Configuração no próprio `vite.config.ts` (import passou a `vitest/config`; bloco `test` com `jsdom`, `globals`, `setupFiles`, `css:false`, `include` só de `*.test`/`*.spec`). Setup em `src/test/setup.ts` (matchers do jest-dom + `cleanup`). Scripts `test`/`test:run`. Para não quebrar os portões: `tsconfig.json` passou a **excluir** testes/setup do `tsc` de produção; `.eslintrc.cjs` ganhou `overrides` com os globals do Vitest para os arquivos de teste.
+  - **F1.2 (characterization):** 29 testes em 5 arquivos, travando o comportamento atual antes de F2/F3:
+    - `cacheService.test.ts` (12): TTL 5 min (fake timers), TTL customizado, add/update/remove/filter, espelho em `localStorage`, invalidação por chave e global.
+    - `useBudgetForm.test.tsx` (9): `totalValue` com/sem `customUnitValue`, `sectionValidation` completo/incompleto + mensagem de faltantes, `reset()`, filtro local com debounce (fake timers). Mocks de `useData` e `sweetalert2`.
+    - `DeleteBudgetModal.test.tsx` (3): **regressão de F0.1** — cancelar ≠ excluir (contrato `onClose`/`onDeleted`).
+    - `Budgets.filter.test.tsx` (3): **regressão de F0.2** — filtro de valor converte reais→centavos (×100). Mocks de `useData`/`openBudgetPdf`/`DeleteBudgetModal` + `MemoryRouter`.
+    - `test/smoke.test.ts` (2): sanidade da infra/jsdom.
+- **Por que foi feito:** a Onda 2 precisa de rede de testes antes das refatorações grandes (F2 factory de services, F2.2 store no `DataContext`, F3 fatiar God Components). As regressões de F0.1/F0.2 garantem que a desduplicação não reintroduza os bugs corrigidos na Onda 1.
+- **Arquivos (novos):** `src/test/setup.ts`, `src/test/smoke.test.ts`, `src/services/cacheService.test.ts`, `src/hooks/useBudgetForm.test.tsx`, `src/components/Modal/Delete/DeleteBudgetModal.test.tsx`, `src/pages/Budgets/Budgets.filter.test.tsx`. **(config):** `vite.config.ts`, `tsconfig.json`, `.eslintrc.cjs`, `package.json`.
+- **Verificação:** `npm run test:run` → **29/29 verdes**; `npm run build` (tsc + vite) **verde** (testes fora do type-check de produção); `npm run lint` nos **mesmos 10 problemas pré-existentes** (zero novos — os globals do Vitest entraram via `overrides`).
+
+### 2026-07-11 · F2 completo (F2.1–F2.3) · Desduplicação estrutural (Onda 3)
+- **O que foi feito:**
+  - **F2.1 (factory):** `src/services/createCrudService.ts` genérico (`getAll/getById/getNextId/add/update/remove/getPage`). `add` **atômico** (contador + doc na mesma `runTransaction` — fecha SEG S2.1). Os 4 services viraram config + wrappers finos preservando a API pública exata (incl. `updateBudget(id, budget)` vs. `updateClient(client)`, `getBudgetById` com `idPattern: /^\d+$/`, `getRecentBudgets` intacta). `removeUndefinedFields` unificado; timestamp padronizado em `Timestamp.now()`.
+  - **F2.2 (store):** `src/context/useEntityStore.ts` (hook) + `DataContext` recomposto a partir de 4 stores — sumiram 12 handlers, 4 buscas e o `fetchWithCache`. `searchLocal` genérico por config (campos com caminho `client.name`). `value` memoizado com deps granulares (preserva F0.5).
+  - **F2.3 (estilos):** `src/components/Modal/modalStyles.ts` compartilhado; migrados os 4 modais idênticos (Client/Representative × Create/Edit). Modais de Produto **não** migrados (estilo divergente verificado no código — evitaria mudar aparência).
+- **Por que foi feito:** colapsar a repetição 4–6× (services/contexto/estilos) antes de fatiar os God Components (F3), com criação atômica embutida (dono único da SEG S2.1) e sem desfazer as correções de SEG/PERF anteriores.
+- **Arquivos (novos):** `src/services/createCrudService.ts` (+`.test.ts`), `src/context/useEntityStore.ts`, `src/components/Modal/modalStyles.ts`, `src/utils/validators.ts` (+`.test.ts`, SEG S2.2). **(reescritos):** `src/services/{budget,client,product,representative}Services.ts`, `src/context/DataContext.tsx`. **(migrados):** os 4 modais Create/Edit de Client/Representative + wiring de CNPJ nos 2 de Client.
+- **Verificação:** `npm run build` + `npx tsc --noEmit` **verdes**; `npm run lint` nos **mesmos 10 pré-existentes** (0 novos); **49 testes jsdom verdes** (+16: factory 7, validadores 8, quota 1) + **12 de regras**.
 
 <!--
 ### AAAA-MM-DD · Fx.y · <título curto>

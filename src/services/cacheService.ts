@@ -29,8 +29,32 @@ export interface CacheData {
 // TTL padrão de 5 minutos (em milliseconds)
 const DEFAULT_TTL = 5 * 60 * 1000;
 
-// Chave para localStorage
-const STORAGE_KEY = "ads_representacoes_cache";
+// Chave base do localStorage. P1.3: uma chave POR coleção
+// (`ads_representacoes_cache:budgets`, etc.) em vez de um único blob com as 4 —
+// mutar 1 coleção passa a re-serializar só ela, não as quatro.
+const STORAGE_PREFIX = "ads_representacoes_cache";
+const storageKeyFor = (key: CacheKey): string => `${STORAGE_PREFIX}:${key}`;
+// Blob único usado antes de P1.3; migrado para as chaves novas e removido na
+// primeira carga do módulo (ver migrateLegacyStorage).
+const LEGACY_STORAGE_KEY = STORAGE_PREFIX;
+
+const CACHE_KEYS: CacheKey[] = [
+  "budgets",
+  "clients",
+  "products",
+  "representatives",
+];
+
+/** Detecta QuotaExceededError entre browsers (nome ou código legado 22/1014). */
+const isQuotaExceeded = (error: unknown): boolean => {
+  if (!(error instanceof DOMException)) return false;
+  return (
+    error.name === "QuotaExceededError" ||
+    error.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    error.code === 22 ||
+    error.code === 1014
+  );
+};
 
 // Cache em memória
 let memoryCache: CacheData = {
@@ -106,12 +130,7 @@ export const invalidateCache = (key: CacheKey): void => {
   memoryCache[key] = null;
 
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      delete parsed[key];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-    }
+    localStorage.removeItem(storageKeyFor(key));
   } catch (error) {
     console.error(`[Cache] Error invalidating ${key}:`, error);
   }
@@ -131,7 +150,8 @@ export const invalidateAllCache = (): void => {
   };
 
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    CACHE_KEYS.forEach((key) => localStorage.removeItem(storageKeyFor(key)));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch (error) {
     console.error("[Cache] Error clearing all cache:", error);
   }
@@ -140,33 +160,71 @@ export const invalidateAllCache = (): void => {
 };
 
 /**
- * Persiste um item do cache no localStorage
+ * Persiste um item do cache no localStorage (chave própria da coleção — P1.3).
+ * Em QuotaExceededError, avisa e degrada para memória (não engole em silêncio):
+ * o cache em memória segue válido; só a persistência entre reloads é perdida.
  */
 const persistToStorage = <T>(key: CacheKey, entry: CacheEntry<T>): void => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : {};
-    parsed[key] = entry;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+    localStorage.setItem(storageKeyFor(key), JSON.stringify(entry));
   } catch (error) {
-    console.error(`[Cache] Error persisting ${key}:`, error);
+    if (isQuotaExceeded(error)) {
+      console.warn(
+        `[Cache] Quota do localStorage excedida ao persistir "${key}". ` +
+          "Seguindo apenas em memória."
+      );
+    } else {
+      console.error(`[Cache] Error persisting ${key}:`, error);
+    }
   }
 };
 
 /**
- * Carrega um item do localStorage
+ * Carrega um item do localStorage (chave própria da coleção — P1.3).
  */
 const loadFromStorage = <T>(key: CacheKey): CacheEntry<T> | null => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(storageKeyFor(key));
     if (!stored) return null;
-    const parsed = JSON.parse(stored);
-    return parsed[key] || null;
+    return (JSON.parse(stored) as CacheEntry<T>) || null;
   } catch (error) {
     console.error(`[Cache] Error loading ${key}:`, error);
     return null;
   }
 };
+
+/**
+ * Migração única do blob legado (pré-P1.3): se existir o blob com as 4 coleções
+ * sob a chave antiga, reescreve cada coleção na sua chave nova e remove o legado.
+ * A TTL do cache é de 5 min, então no pior caso perde-se um refetch — baixo risco.
+ */
+const migrateLegacyStorage = (): void => {
+  try {
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!legacy) return;
+
+    const parsed = JSON.parse(legacy) as Partial<
+      Record<CacheKey, CacheEntry<unknown>>
+    >;
+    CACHE_KEYS.forEach((key) => {
+      const entry = parsed?.[key];
+      if (entry && !localStorage.getItem(storageKeyFor(key))) {
+        persistToStorage(key, entry);
+      }
+    });
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    console.log("[Cache] Blob legado migrado para chaves por coleção.");
+  } catch (error) {
+    console.error("[Cache] Erro migrando blob legado:", error);
+  }
+};
+
+// Executa a migração uma vez ao importar o módulo (idempotente: some após migrar).
+try {
+  migrateLegacyStorage();
+} catch {
+  /* ambiente sem localStorage (ex.: SSR) — ignora */
+}
 
 /**
  * Obtém estatísticas do cache

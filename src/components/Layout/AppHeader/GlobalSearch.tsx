@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   Box,
   InputBase,
@@ -25,6 +25,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../../../context/DataContext";
+import useDebounce from "../../../hooks/useDebounce";
 
 interface SearchResult {
   id: string;
@@ -44,20 +45,19 @@ const typeConfig = {
 const GlobalSearch: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
   const anchorRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { clients, budgets, products } = useData();
 
-  // Busca nos dados quando a query muda
-  useEffect(() => {
-    if (query.length < 2) {
-      setResults([]);
-      return;
-    }
+  // PERF P1.4: filtra sobre o termo debounced (300ms) e memoiza — não varre as
+  // 3 coleções a cada tecla, e o cálculo sai do effect para um useMemo puro.
+  const debouncedQuery = useDebounce(query, 300);
 
-    const searchTerm = query.toLowerCase();
+  const results = useMemo<SearchResult[]>(() => {
+    if (debouncedQuery.length < 2) return [];
+
+    const searchTerm = debouncedQuery.toLowerCase();
     const newResults: SearchResult[] = [];
 
     // Buscar em clientes
@@ -106,8 +106,8 @@ const GlobalSearch: React.FC = () => {
         });
       });
 
-    setResults(newResults);
-  }, [query, clients, budgets, products]);
+    return newResults;
+  }, [debouncedQuery, clients, budgets, products]);
 
   const handleOpen = () => {
     setOpen(true);
@@ -117,7 +117,6 @@ const GlobalSearch: React.FC = () => {
   const handleClose = () => {
     setOpen(false);
     setQuery("");
-    setResults([]);
   };
 
   const handleSelect = (result: SearchResult) => {

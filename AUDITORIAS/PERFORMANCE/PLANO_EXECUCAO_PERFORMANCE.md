@@ -26,7 +26,7 @@
 | Fase | Objetivo | Itens | Status |
 |---|---|---|---|
 | **P0** | Quick wins de bundle e reads | 4 | ✅ Concluído (2026-07-11) · ⚠️ P0.3: primitivo entregue, rewire do widget **deferido** (bloqueio arquitetural documentado) |
-| **P1** | Dados & runtime | 4 | ⬜ Pendente (P1.1 ⛔ EST F0.1 · P1.2 ⛔ EST F2) |
+| **P1** | Dados & runtime | 4 | ✅ P1.1/P1.3/P1.4 (2026-07-11) · 🟡 P1.2 (capacidade pronta, rewire deferido) |
 | **P2** | Escala de longo prazo | 2 | ⬜ Pendente (⛔ EST F4.6 / F2.2) |
 
 ---
@@ -62,35 +62,33 @@ Verificado: `vite.config.ts` default nu; `Router.tsx` 100% eager.
 
 ## Fase P1 — Dados & runtime
 
-### P1.1 — Modal único de exclusão fora do `.map` (PERF-09) ⛔ depende de EST F0.1 ⬜
+### P1.1 — Modal único de exclusão fora do `.map` (PERF-09) ✅ (2026-07-11)
 **Pré-requisito:** EST F0.1 já separou `onDeleted` de `onClose` no `DeleteBudgetModal`.
-- [ ] Em `Budgets.tsx`: remover o `<DeleteBudgetModal>` de dentro do `.map` e renderizar **uma** instância após a lista, alimentada por `deleteModalId` (§3.4 do reporte).
-- [ ] Tratar `budget` possivelmente `undefined` (item filtrado enquanto o modal abre).
-- [ ] **Coordenação:** se EST F3.2 (extração de `BudgetListItem`) ainda não rodou, avisar no log — F3.2 deve partir deste estado.
-- **Aceite:** 1 Dialog montado em vez de N; excluir/cancelar preservam o comportamento de EST F0.1.
+- [x] Em `Budgets.tsx`: removido o `<DeleteBudgetModal>` de dentro do `.map` (`React.Fragment` eliminado, `key` movida para o `<Box>` do item) e renderizada **uma** instância após a lista, alimentada por `deleteModalId`.
+- [x] `budget` possivelmente `undefined` tratado: `budgetToDelete = budgetList.find(id === deleteModalId)` (busca o array **completo**, não o filtrado — o item existe até ser de fato excluído) e render condicional `{budgetToDelete && <DeleteBudgetModal .../>}`.
+- [x] **Coordenação:** EST F3.2 (extração de `BudgetListItem`) **ainda não rodou** — quando rodar, deve partir deste estado (modal único fora do item; `budgetToDelete` derivado de `deleteModalId`).
+- **Aceite:** ✔ 1 modal montado em vez de N; regressão de F0.1 verde (`DeleteBudgetModal.test.tsx` + `Budgets.filter.test.tsx`).
 
-### P1.2 — Paginação por cursor em Orçamentos (PERF-02) ⛔ depende de EST F2.1/F2.2 ⬜
-Executar **depois** do factory/store para não migrar os services duas vezes.
-> Nota (2026-07-10): o `ProductTable.tsx` ganhou paginação **local** do DataGrid (`initialState` pageSize 10) + `sortComparator` numérico no `id`. É melhoria pontual dessa tabela, **não** substitui este item — P1.2 é paginação por **cursor no Firestore** dos Orçamentos (boot O(página) em vez de O(N)); o DataGrid ainda carrega o array completo.
-- [ ] `getBudgetsPage(pageSize, cursor)` com `orderBy`+`limit`+`startAfter` (§3.2) — idealmente como capacidade do `createCrudService`.
-- [ ] Integração no `DataContext`/store: cache passa a ser por página; "carregar mais" anexa a próxima página.
-- [ ] Criar índice composto se o console sugerir.
-- [ ] Avaliar impacto nos filtros client-side de `Budgets.tsx` (filtro local só vê as páginas carregadas — decidir e documentar o comportamento no log).
-- **Aceite:** boot lê O(página) em vez de O(N); "carregar mais" funcional; filtros com comportamento documentado.
+### P1.2 — Paginação por cursor em Orçamentos (PERF-02) 🟡 capacidade pronta · rewire deferido (2026-07-11)
+Executado **depois** do factory/store (EST F2.1/F2.2) para não migrar os services duas vezes.
+> Nota (2026-07-10): o `ProductTable.tsx` ganhou paginação **local** do DataGrid. É melhoria pontual dessa tabela, **não** substitui este item.
+- [x] `getBudgetsPage(pageSize, cursor)` entregue como **capacidade do `createCrudService`** (`getPage` genérico: `orderBy('createdAt','desc')`+`limit`+`startAfter`, retorna `{ items, lastDoc, hasMore }`). Indexado por campo único (`createdAt` desc) → **não** exige índice composto. **2 testes** (`createCrudService.test.ts`: mapeamento + `hasMore` cheia/incompleta).
+- [ ] ⛔ **Rewire do boot deferido — mesmo bloqueio arquitetural de P0.3 (verificado no código):** o boot carrega TODOS os orçamentos via `DataContext` porque a `Home` calcula KPIs sobre a coleção inteira, e a `GlobalSearch` + os filtros de `Budgets.tsx` varrem o array completo. Paginar o boot reduziria os reads a O(página), MAS quebraria os KPIs (contariam só a 1ª página), a busca global e os filtros locais (só veriam as páginas carregadas). O ganho de "ler O(página)" só é seguro quando o hero KPI (U3.1) e a coleção-resumo (P2.1) tirarem a dependência da coleção inteira. Documentado no JSDoc de `getBudgetsPage`.
+- [~] Índice composto: **não necessário** (ordenação por campo único).
+- **Aceite (revisado):** capacidade de paginação por cursor pronta, testada e preservável ✔; rewire do boot + redução de reads **acoplados a U3.1/P2.1** (registrado para o dono retomar). Espelha a resolução de P0.3.
 
-### P1.3 — `localStorage` por chave + `QuotaExceededError` (PERF-11) ⬜
-Verificado: `persistToStorage` re-serializa o blob com as 4 coleções a cada mutação de 1 item.
-- [ ] `cacheService.ts`: uma chave por coleção (`ads_representacoes_cache:budgets`, etc. — §3.5); `persistToStorage`/`loadFromStorage` passam a operar só na coleção mutada.
-- [ ] Migração: ler o blob antigo se existir (1ª carga) e remover a chave legada.
-- [ ] Tratar `QuotaExceededError` explicitamente (avisar + degradar para memória, não engolir).
-- [ ] Manter a API pública do `cacheService` (o `DataContext`/EST F2.2 consome-a sem mudança).
-- **Aceite:** adicionar 1 orçamento serializa apenas `budgets`; quota excedida gera aviso e o app segue funcional.
+### P1.3 — `localStorage` por chave + `QuotaExceededError` (PERF-11) ✅ (2026-07-11)
+Verificado: `persistToStorage` re-serializava o blob com as 4 coleções a cada mutação de 1 item.
+- [x] `cacheService.ts`: uma chave por coleção (`ads_representacoes_cache:budgets`, etc., via `storageKeyFor`); `persistToStorage`/`loadFromStorage`/`invalidateCache` operam só na coleção mutada.
+- [x] Migração do blob legado (`migrateLegacyStorage`): na 1ª carga do módulo, se existir o blob antigo, reescreve cada coleção na chave nova e remove o legado. (TTL de 5 min ⇒ pior caso é 1 refetch — baixo risco.)
+- [x] `QuotaExceededError` tratado explicitamente (`isQuotaExceeded`): avisa (`console.warn`) e degrada para memória — não engole nem propaga. **Teste** simula quota estourada e confirma que `setCache` não lança e o cache em memória segue válido.
+- [x] API pública do `cacheService` inalterada (mesmas assinaturas; `DataContext`/store consomem sem mudança).
+- **Aceite:** ✔ adicionar 1 item serializa só a chave daquela coleção (teste confirma que as outras não são tocadas); quota excedida gera aviso e o app segue funcional. **Nota:** o characterization test do layout de storage (EST F1) foi atualizado para o layout por chave (P1.3 muda esse detalhe interno de propósito).
 
-### P1.4 — `useDebounce` na `GlobalSearch` (PERF-08) ⬜
-Verificado: `GlobalSearch.tsx:54` filtra 3 coleções a cada tecla.
-- [ ] Aplicar `useDebounce(query, 300)` (hook já existe) e usar o valor debounced no `useEffect`.
-- [ ] Converter o cálculo de resultados para `useMemo` sobre o termo debounced (remove o `setResults` em effect).
-- **Aceite:** digitação sem varredura por tecla; resultados idênticos; padrão igual ao resto do app.
+### P1.4 — `useDebounce` na `GlobalSearch` (PERF-08) ✅ (2026-07-11)
+Verificado: `GlobalSearch.tsx` filtrava 3 coleções a cada tecla, dentro de um `useEffect` com `setResults`.
+- [x] `useDebounce(query, 300)` (hook existente) aplicado; o cálculo de resultados virou um `useMemo` sobre `debouncedQuery` (removidos o estado `results` e o `useEffect`/`setResults`). As partes de UI imediatas (abrir dropdown, placeholder, botão limpar) seguem no `query` cru.
+- **Aceite:** ✔ digitação não varre as 3 coleções por tecla (só após 300ms parado); resultados idênticos; padrão igual ao `Budgets.tsx`.
 
 ---
 
@@ -167,6 +165,16 @@ Verificado: `GlobalSearch.tsx:54` filtra 3 coleções a cada tecla.
   | `console.*` em prod | presentes | **0** (grep em todos os chunks) |
 - **Verificação:** `npm run build` + `npx tsc --noEmit` verdes; grep confirmou 0 `console.*` nos chunks de prod; chunks por rota emitidos (Home/Budgets/Clients/Representatives) + vendors isolados. Lint: 10 problemas pré-existentes (nenhum novo). Smoke-test de navegação real (Suspense/fallback) recomendado no `preview`.
 - **Ressalva P0.3:** a Home continua lendo N orçamentos (KPIs dependem do array completo); a redução "5 em vez de N" fica acoplada a U3.1/P2.1. Primitivo pronto e preservável por EST F2.1.
+
+### 2026-07-11 · P1 (P1.1/P1.3/P1.4 ✅ · P1.2 🟡) · Dados & runtime (Onda 3)
+- **O que foi feito:**
+  - **P1.1:** um único `DeleteBudgetModal` fora do `.map` em `Budgets.tsx`, alimentado por `deleteModalId` (`budgetToDelete` derivado do array completo; render condicional trata `undefined`).
+  - **P1.3:** `cacheService` por chave (`ads_representacoes_cache:<coleção>`), migração do blob legado e `QuotaExceededError` tratado (aviso + degrada para memória).
+  - **P1.4:** `GlobalSearch` com `useDebounce(query, 300)` + resultados via `useMemo` (fim do `useEffect`/`setResults` por tecla).
+  - **P1.2:** capacidade `getBudgetsPage`/`getPage` (cursor) entregue no factory e testada; **rewire do boot deferido** (mesmo bloqueio de P0.3: a Home lê a coleção inteira p/ KPIs).
+- **Por que foi feito:** ganhos de runtime/I-O de risco baixo, agora que EST F2.1/F2.2 destravaram a paginação e o modal único (após EST F0.1). P1.2 fica na mesma situação de P0.3 — capacidade pronta, redução real de reads acoplada a U3.1/P2.1.
+- **Medição (antes → depois):** P1.1 — N modais montados → 1. P1.3 — mutar 1 coleção re-serializa 1 chave em vez do blob das 4. P1.4 — 3 varreduras/tecla → 1 varredura por termo debounced (300ms). P1.2 — boot inalterado (O(N)); capacidade O(página) disponível para quando o boot for reescrito.
+- **Verificação:** `npm run build` verde; **49 testes jsdom** (incl. +1 de quota do cache, +2 de `getPage`, +7 do factory) + **12 de regras**; lint nos mesmos 10 pré-existentes.
 
 <!--
 ### AAAA-MM-DD · Px.y · <título curto>

@@ -1,14 +1,5 @@
 import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  FormControl,
-  Grid,
-  Modal,
-  TextField,
-  Typography,
-} from "@mui/material";
-import { styled } from "@mui/system";
+import { Box, Grid, Modal, Typography } from "@mui/material";
 import { IClient } from "../../../../interfaces/iclient";
 import { addClient } from "../../../../services/clientServices";
 import { useData } from "../../../../context/DataContext";
@@ -17,56 +8,13 @@ import {
   cnpjMask,
   mobilePhoneMask,
 } from "../../../../utils/Masks";
-
-const modalStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 600,
-  maxHeight: "90vh",
-  bgcolor: "background.paper",
-  borderRadius: 4,
-  boxShadow: 24,
-  p: 4,
-  overflowY: "auto",
-  background: "linear-gradient(145deg, #f5f5f5, #ffffff)",
-  border: "1px solid #e0e0e0",
-};
-
-const FormControlStyled = styled(FormControl)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "16px", // Substituí theme.spacing(2) por um valor fixo
-});
-
-const StyledButton = styled(Button)({
-  textTransform: "none",
-  fontWeight: "bold",
-  borderRadius: 4,
-  padding: "12px 24px", // Substituí theme.spacing(1.5, 3) por valores fixos
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-  },
-});
-
-const StyledTextField = styled(TextField)({
-  "& .MuiOutlinedInput-root": {
-    borderRadius: 8,
-    "& fieldset": {
-      borderColor: "#e0e0e0",
-    },
-    "&:hover fieldset": {
-      borderColor: "#1976d2", // Cor primária do Material-UI
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "#1976d2", // Cor primária do Material-UI
-      borderWidth: 2,
-    },
-  },
-});
+import { isValidCnpj } from "../../../../utils/validators";
+import {
+  modalStyle,
+  FormControlStyled,
+  StyledButton,
+  StyledTextField,
+} from "../../modalStyles";
 
 interface CreateClientModalProps {
   open: boolean;
@@ -92,6 +40,16 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
     // Validação básica de campos obrigatórios
     if (!client.name || !client.cep) {
       setError("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    // CNPJ opcional; se informado, precisa ter dígitos verificadores válidos (SEG S2.2).
+    if (
+      client.cnpj &&
+      client.cnpj.replace(/\D/g, "").length > 0 &&
+      !isValidCnpj(client.cnpj)
+    ) {
+      setError("CNPJ inválido. Verifique os dígitos.");
       return;
     }
 
