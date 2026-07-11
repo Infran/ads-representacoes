@@ -1,5 +1,5 @@
 import React from "react";
-import { Autocomplete, Box, Paper, TextField, Typography } from "@mui/material";
+import { Autocomplete, Box, TextField } from "@mui/material";
 import { IProduct } from "../../interfaces/iproduct";
 
 interface ProductSelectorProps {

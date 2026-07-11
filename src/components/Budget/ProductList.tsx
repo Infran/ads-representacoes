@@ -6,7 +6,6 @@ import {
   Paper,
   TextField,
   Typography,
-  InputAdornment,
 } from "@mui/material";
 import { Remove, Add, Delete, Edit } from "@mui/icons-material";
 import { ISelectedProducts } from "../../interfaces/ibudget";

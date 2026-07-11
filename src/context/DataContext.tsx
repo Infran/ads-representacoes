@@ -11,6 +11,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   ReactNode,
 } from "react";
 import { IBudget } from "../interfaces/ibudget";
@@ -358,50 +359,81 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // VALOR DO CONTEXTO
   // =====================================================
 
-  const value: DataContextState = {
-    // Dados
-    budgets,
-    clients,
-    products,
-    representatives,
+  const value: DataContextState = useMemo(
+    () => ({
+      // Dados
+      budgets,
+      clients,
+      products,
+      representatives,
 
-    // Estado de carregamento
-    loading,
-    loadingEntities,
+      // Estado de carregamento
+      loading,
+      loadingEntities,
 
-    // Funções de refresh
-    refreshAll,
-    refreshBudgets,
-    refreshClients,
-    refreshProducts,
-    refreshRepresentatives,
+      // Funções de refresh
+      refreshAll,
+      refreshBudgets,
+      refreshClients,
+      refreshProducts,
+      refreshRepresentatives,
 
-    // Funções de busca local
-    searchBudgetsLocal,
-    searchClientsLocal,
-    searchProductsLocal,
-    searchRepresentativesLocal,
+      // Funções de busca local
+      searchBudgetsLocal,
+      searchClientsLocal,
+      searchProductsLocal,
+      searchRepresentativesLocal,
 
-    // Funções de atualização do cache
-    addBudgetToCache: addBudgetToCacheHandler,
-    updateBudgetInCache: updateBudgetInCacheHandler,
-    removeBudgetFromCache: removeBudgetFromCacheHandler,
+      // Funções de atualização do cache
+      addBudgetToCache: addBudgetToCacheHandler,
+      updateBudgetInCache: updateBudgetInCacheHandler,
+      removeBudgetFromCache: removeBudgetFromCacheHandler,
 
-    addClientToCache: addClientToCacheHandler,
-    updateClientInCache: updateClientInCacheHandler,
-    removeClientFromCache: removeClientFromCacheHandler,
+      addClientToCache: addClientToCacheHandler,
+      updateClientInCache: updateClientInCacheHandler,
+      removeClientFromCache: removeClientFromCacheHandler,
 
-    addProductToCache: addProductToCacheHandler,
-    updateProductInCache: updateProductInCacheHandler,
-    removeProductFromCache: removeProductFromCacheHandler,
+      addProductToCache: addProductToCacheHandler,
+      updateProductInCache: updateProductInCacheHandler,
+      removeProductFromCache: removeProductFromCacheHandler,
 
-    addRepresentativeToCache: addRepresentativeToCacheHandler,
-    updateRepresentativeInCache: updateRepresentativeInCacheHandler,
-    removeRepresentativeFromCache: removeRepresentativeFromCacheHandler,
+      addRepresentativeToCache: addRepresentativeToCacheHandler,
+      updateRepresentativeInCache: updateRepresentativeInCacheHandler,
+      removeRepresentativeFromCache: removeRepresentativeFromCacheHandler,
 
-    // Estatísticas
-    getCacheStats,
-  };
+      // Estatísticas
+      getCacheStats,
+    }),
+    [
+      budgets,
+      clients,
+      products,
+      representatives,
+      loading,
+      loadingEntities,
+      refreshAll,
+      refreshBudgets,
+      refreshClients,
+      refreshProducts,
+      refreshRepresentatives,
+      searchBudgetsLocal,
+      searchClientsLocal,
+      searchProductsLocal,
+      searchRepresentativesLocal,
+      addBudgetToCacheHandler,
+      updateBudgetInCacheHandler,
+      removeBudgetFromCacheHandler,
+      addClientToCacheHandler,
+      updateClientInCacheHandler,
+      removeClientFromCacheHandler,
+      addProductToCacheHandler,
+      updateProductInCacheHandler,
+      removeProductFromCacheHandler,
+      addRepresentativeToCacheHandler,
+      updateRepresentativeInCacheHandler,
+      removeRepresentativeFromCacheHandler,
+    ]
+  );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 };

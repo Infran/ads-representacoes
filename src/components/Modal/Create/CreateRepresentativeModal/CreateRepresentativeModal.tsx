@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { IRepresentative } from "../../../../interfaces/irepresentative";
-import { IClient } from "../../../../interfaces/iclient";
 import { addRepresentative } from "../../../../services/representativeServices";
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";

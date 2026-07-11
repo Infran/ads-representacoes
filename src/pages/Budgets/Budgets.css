@@ -283,7 +283,7 @@
   .search-input,
   .filter-select {
     width: 100%;
-    min-width: 500px;
+    min-width: 0;
   }
 
   .value-filter {

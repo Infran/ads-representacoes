@@ -10,14 +10,7 @@ import {
   TextField,
   Paper,
 } from "@mui/material";
-import {
-  Save,
-  Cancel,
-  Visibility,
-  Person,
-  Inventory2,
-  Description,
-} from "@mui/icons-material";
+import { Save, Cancel, Visibility } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -41,7 +34,6 @@ import {
   BudgetTermsForm,
 } from "../../components/Budget";
 import { AccordionSectionProps } from "../../components/Budget/BudgetAccordion";
-import { IRepresentative } from "../../interfaces/irepresentative";
 
 interface BudgetFormPageProps {
   mode: "create" | "edit";
@@ -146,7 +138,7 @@ const BudgetFormPage: React.FC<BudgetFormPageProps> = ({ mode }) => {
           if (result.isConfirmed) {
             navigate("/Orcamentos");
           } else {
-            window.location.reload();
+            form.reset();
           }
         });
       }

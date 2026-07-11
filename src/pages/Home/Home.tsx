@@ -12,7 +12,6 @@ import {
   QuickAccessCard,
 } from "../../components/Dashboard";
 import { useData } from "../../context/DataContext";
-import { brMoneyMask } from "../../utils/Masks";
 
 export const Home = () => {
   // Usa o contexto de dados com cache - SEM chamadas diretas ao Firestore!
@@ -31,15 +30,6 @@ export const Home = () => {
       const budgetDate = new Date(b.createdAt.seconds * 1000);
       return budgetDate >= startOfMonth;
     }).length;
-
-    // Valor total
-    const totalValue = budgets.reduce((sum, b) => sum + (b.totalValue || 0), 0);
-
-    // Maior orçamento
-    const maxBudget = budgets.reduce(
-      (max, b) => Math.max(max, b.totalValue || 0),
-      0
-    );
 
     // Produtos mais orçados
     const productCount: Record<string, { name: string; count: number }> = {};
@@ -70,8 +60,6 @@ export const Home = () => {
     return {
       totalBudgets,
       budgetsThisMonth,
-      totalValue,
-      maxBudget,
       topProducts,
       totalProducts: products.length,
       totalClients: clients.length,

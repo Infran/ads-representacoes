@@ -7,7 +7,6 @@ import { brMoneyMask } from "../../../utils/Masks";
 
 interface ProductTableProps {
   rows: IProduct[];
-  onEdit: (id: string) => void;
   onDelete: (product: IProduct) => void;
 }
 

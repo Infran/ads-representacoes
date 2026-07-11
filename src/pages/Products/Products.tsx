@@ -36,10 +36,6 @@ const Products = () => {
   const handleClose = () => setOpenModal(false);
   const handleCloseDeleteModal = () => setOpenDeleteModal(false);
 
-  const handleEdit = (id: string) => {
-    console.log("Editando produto com ID:", id);
-  };
-
   const handleDelete = (product: IProduct) => {
     setSelectedProduct(product);
     setOpenDeleteModal(true);
@@ -91,7 +87,6 @@ const Products = () => {
         ) : (
           <ProductTable
             rows={filteredProductsList}
-            onEdit={handleEdit}
             onDelete={handleDelete}
           />
         )}

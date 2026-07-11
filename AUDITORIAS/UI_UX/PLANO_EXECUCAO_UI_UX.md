@@ -3,7 +3,7 @@
 **Projeto:** ADS Representações (React + TypeScript + Vite + MUI 5 + Firebase)
 **Origem:** consolida o §5 de [`REPORTE_UI_UX.md`](./REPORTE_UI_UX.md) (specs técnicas nos §3/§4 do reporte)
 **Sequenciamento global:** [Plano Diretor](../SUMARIO_CONSOLIDADO.md)
-**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-10
+**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-11
 
 ---
 
@@ -25,7 +25,7 @@
 
 | Fase | Objetivo | Itens | Status |
 |---|---|---|---|
-| **U0** | Quick fixes independentes de tema | 4 | ⬜ Pendente |
+| **U0** | Quick fixes independentes de tema | 4 | ✅ Concluído (2026-07-11) |
 | **U1** | Fundação: tokens + tema + baseline | 2 | ⬜ Pendente |
 | **U2** | Biblioteca atômica + consolidação | 4 | ⬜ Pendente (⛔ U1; modais ⛔ EST F2.3) |
 | **U3** | Dashboard moderna, dark mode & governança | 6 | ⬜ Pendente (⛔ U1/U2) |
@@ -43,29 +43,29 @@ SEG S1.3 (Login: comportamento) ──► U2.3 (Login: só visual)
 
 ## Fase U0 — Quick fixes (não dependem de tema)
 
-### U0.1 — KPI "Valor Total" (UI-18/UI-19; resolve PERF-10) 🟡 mudou de direção (2026-07-10)
+### U0.1 — KPI "Valor Total" (UI-18/UI-19; resolve PERF-10) ✅ (2026-07-11)
 **Decisão de produto (2026-07-10):** em vez de exibir o valor, o card `R$ ---,--` "(Em desenvolvimento)" foi **removido** do `Home.tsx` (grid rebalanceado `md=3`→`md=4`). Isso resolve o achado UI-18 (placeholder morto na cara do usuário), mas **inverte** o plano original (que era exibir o valor real).
 - [x] Placeholder "(Em desenvolvimento)" fora da tela do usuário — card removido.
-- [ ] **Ainda pendente (PERF-10/T12):** `kpiData.totalValue` **e** `kpiData.maxBudget` continuam sendo reduces O(N) calculados e **sem consumidor** → remover os dois cálculos de `Home.tsx`.
+- [x] **PERF-10/T12 resolvido (2026-07-11):** removidos os reduces O(N) `kpiData.totalValue` **e** `kpiData.maxBudget` (calculados e sem consumidor) e o import morto `brMoneyMask` de `Home.tsx`.
 - [ ] Se voltarem a querer exibir "Valor Total", vira feature nova → melhor entregar como **hero KPI em U3.1** (não como card simples).
-- **Aceite (revisado):** dashboard sem placeholder ✔; **falta** eliminar os cálculos O(N) sem consumidor em `kpiData`.
+- **Aceite (revisado):** dashboard sem placeholder ✔; cálculos O(N) sem consumidor eliminados de `kpiData` ✔. **PERF-10/T12 marcado como resolvido** na trilha PERF.
 
-### U0.2 — Bug responsivo dos filtros (UI-24) ⬜
-Verificado: `Budgets.css:283-287` — `.search-input,.filter-select { min-width: 500px }` dentro de `@media (max-width: 900px)`.
-- [ ] Trocar por `min-width: 0` (ou remover a linha), mantendo `width: 100%`.
-- **Aceite:** sem scroll horizontal em viewport <500px; filtros usáveis no mobile.
+### U0.2 — Bug responsivo dos filtros (UI-24) ✅ (2026-07-11)
+Verificado: `Budgets.css` — `.search-input,.filter-select { min-width: 500px }` dentro de `@media (max-width: 900px)`.
+- [x] Trocado para `min-width: 0`, mantendo `width: 100%`.
+- **Aceite:** sem scroll horizontal em viewport <500px; filtros usáveis no mobile. ✔ (verificado por leitura da regra; smoke visual recomendado)
 
-### U0.3 — `lang`, fonte real e globais corrigidos (UI-17; UI-11 parcial) ⬜
+### U0.3 — `lang`, fonte real e globais corrigidos (UI-17; UI-11 parcial) ✅ (2026-07-11)
 Verificado: `index.html` com `lang="en"` e sem fonte; `index.css` com `--font-primary:#fff` e `body{color:#fff}` sobre fundo claro.
-- [ ] `index.html`: `lang="pt-BR"`; carregar a fonte escolhida (Inter ou Poppins) via `<link>` (preconnect + stylesheet).
-- [ ] `index.css`: corrigir os valores quebrados (`--font-primary` → família de fonte de verdade; `body{color}` → cor de texto escura legível). **Não** remover o arquivo ainda — a aposentadoria completa é U1.2 (depende do `CssBaseline`).
-- **Aceite:** fonte declarada renderiza de fato; texto legível; HTML com idioma correto.
+- [x] `index.html`: `lang="pt-BR"`; **Poppins** carregada via `<link>` (preconnect googleapis/gstatic + stylesheet `Poppins:wght@400;500;600;700`) — é a fonte que o `index.css` já declarava e que antes caía em fallback.
+- [x] `index.css`: `--font-primary` passou de `#fff` (cor) para `'Poppins', sans-serif` (família real) e o `body` agora usa `var(--font-primary)`; `body{color}` de `#fff` → `#2c3e50` (texto escuro legível sobre o fundo claro). **Não** removido o arquivo — a aposentadoria completa é U1.2 (depende do `CssBaseline`).
+- **Aceite:** fonte declarada renderiza de fato; texto legível; HTML com idioma correto. ✔ (build verde; smoke visual recomendado)
 
-### U0.4 — Código morto de UI (UI-01/UI-08) ⬜
-Verificado: `SectionCard.tsx` com 0 imports em `src/`.
-- [ ] Excluir `src/components/SectionCard/` inteiro.
-- [ ] Remover o `handleEdit` morto (`console.log`) de `Products.tsx:39-41`.
-- **Aceite:** build/lint verdes; nenhum import quebrado.
+### U0.4 — Código morto de UI (UI-01/UI-08) ✅ (2026-07-11)
+Verificado: `SectionCard.tsx` com 0 imports em `src/` (re-verificado via grep).
+- [x] Excluído `src/components/SectionCard/` inteiro (via `git rm`; pasta sumiu).
+- [x] Removido o `handleEdit` morto (`console.log`) de `Products.tsx`. **Descoberta na verificação:** o `onEdit` era passado ao `ProductTable`, mas o `ProductTable` **nunca consome** essa prop (usa um `handleEdit` interno próprio → `EditProductModal`). Então também foi removida a prop `onEdit` da interface `ProductTableProps` e do call site — dead code de ponta a ponta, sem quebrar a edição real (que já vinha do `ProductTable`).
+- **Aceite:** build/tsc verdes; nenhum import quebrado. ✔
 
 ---
 
@@ -173,6 +173,17 @@ Hierarquia proposta no §3.3 do reporte.
 - **Por que foi feito:** mudanças ad-hoc na `main` (limpeza do Home + refator do PDF) tocaram itens mapeados; roadmap reconciliado para não planejar o que já foi feito nem perder o rastro do que ficou pela metade.
 - **Arquivos:** `src/pages/Home/Home.tsx`, `src/components/Dashboard/RecentBudgets.tsx` (código); docs desta trilha.
 - **Verificação:** `npm run build` verde. PDF detalhado em `PLANO_EXECUCAO_ESTRUTURA.md` (F4.3, 2026-07-10).
+
+### 2026-07-11 · U0 completo (U0.1–U0.4) · Quick fixes independentes de tema
+> Executado junto com a Onda 1 de Estrutura (EST F0). U0 não depende do tema (U1), então rodou já.
+- **O que foi feito:**
+  - **U0.1 (UI-18/19 = PERF-10/T12):** removidos de `Home.tsx` os reduces O(N) mortos `kpiData.totalValue` e `kpiData.maxBudget` (calculados, retornados, nunca consumidos na JSX) e o import morto `brMoneyMask`. Fecha o resíduo que a remoção do card "Valor Total" (2026-07-10) tinha deixado.
+  - **U0.2 (UI-24):** `Budgets.css`, dentro de `@media (max-width: 900px)`, `.search-input,.filter-select` passou de `min-width: 500px` para `min-width: 0` (mantendo `width: 100%`) — some o overflow horizontal abaixo de 500px.
+  - **U0.3 (UI-17 / UI-11 parcial):** `index.html` com `lang="pt-BR"` + carregamento real da **Poppins** (preconnect + stylesheet Google Fonts) — a fonte que o `index.css` já declarava e caía em fallback. `index.css`: `--font-primary` deixou de ser `#fff` (cor) e virou `'Poppins', sans-serif` (com o `body` consumindo `var(--font-primary)`); `body{color}` de `#fff` (ilegível no fundo claro `#d2e7f5`) → `#2c3e50`. Arquivo **não** removido (isso é U1.2, pós-`CssBaseline`).
+  - **U0.4 (UI-01/UI-08):** excluído `src/components/SectionCard/` (0 imports); removido o `handleEdit` (`console.log`) morto de `Products.tsx`. Na verificação, descobriu-se que o `ProductTable` **ignora** a prop `onEdit` (tem edição própria interna → `EditProductModal`), então a prop foi removida também da interface `ProductTableProps` e do call site — dead code de ponta a ponta.
+- **Por que foi feito:** U0 é o lote de correções visíveis de risco ~nulo que não bloqueia na fundação de tema; entrega valor imediato (mobile utilizável, idioma/fonte corretos, dashboard sem cálculo morto) antes de U1.
+- **Arquivos:** `src/pages/Home/Home.tsx`, `src/pages/Budgets/Budgets.css`, `index.html`, `src/index.css`, `src/pages/Products/Products.tsx`, `src/components/Tables/ProductTable/ProductTable.tsx`, `src/components/SectionCard/SectionCard.tsx` (removido).
+- **Verificação:** `npm run build` (tsc + vite) **verde**. Lint global caiu para **10 problemas**, todos pré-existentes de **type-safety/arquitetura** (`no-explicit-any`, `ban-types {}`, `react-refresh`, `exhaustive-deps`) com dono em outras trilhas/ondas — **zero código morto/unused-vars** restante após EST F0 + UI U0. Smoke visual (mobile <500px, fonte Poppins, legibilidade) recomendado.
 
 <!--
 ### AAAA-MM-DD · Ux.y · <título curto>

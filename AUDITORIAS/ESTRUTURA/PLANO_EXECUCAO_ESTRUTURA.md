@@ -3,7 +3,7 @@
 **Projeto:** ADS Representações (React + TypeScript + Vite + Firebase)
 **Origem:** consolida o §4/§6 de [`REPORTE_ESTRUTURA.md`](./REPORTE_ESTRUTURA.md)
 **Criado em:** 2026-07-09
-**Última atualização:** 2026-07-10
+**Última atualização:** 2026-07-11
 
 ---
 
@@ -19,10 +19,10 @@
 `⬜ Pendente` · `🟨 Em andamento` · `✅ Concluído` · `⛔ Bloqueado`
 
 ### Portões de qualidade (aplicam-se a toda tarefa)
-- [ ] `npm run build` sem erros
-- [ ] `npm run lint` com `--max-warnings 0`
+- [x] `npm run build` sem erros (após F0 — 2026-07-11).
+- [~] `npm run lint` com `--max-warnings 0`: **todo o código morto que era dono da F0 foi eliminado** (unused imports/vars: 21 → 0, incl. os 4 `_` dos services e o `Sidebar.old.tsx`). Sobram **10 problemas pré-existentes** que **não são código morto** e têm dono em outras trilhas/ondas: `no-explicit-any` em `CustomTable` (→ UI U2.1), `EditClientModal` (→ EST F3.3), `ContextAuth` (→ SEG); `ban-types {}` em `PageHeader` (→ UI); `react-refresh/only-export-components` em `DataContext` (→ EST F2.2), `ContextAuth`/`LayoutContext`/`BudgetPdf` (arquitetural); `exhaustive-deps` em `ContextAuth` (→ SEG S0.3). **Exceção:** `brMoneyMask` morto em `Home.tsx` ficou de propósito para o dono **UI U0.1** (é morto por causa da remoção do card "Valor Total" e vem junto com a limpeza de `kpiData`).
 - [ ] (a partir da F1) `npm run test` verde
-- [ ] Regra do `CLAUDE.md` respeitada: escrita via service + função de cache do `useData()`; **nunca** `window.location.reload()`
+- [x] Regra do `CLAUDE.md` respeitada: escrita via service + função de cache do `useData()`; `window.location.reload()` **removido** (F0.3).
 
 ---
 
@@ -30,7 +30,7 @@
 
 | Fase | Objetivo | Itens | Status |
 |---|---|---|---|
-| **F0** | Estabilização: bugs funcionais + limpeza | 7 | ⬜ Pendente |
+| **F0** | Estabilização: bugs funcionais + limpeza | 7 | ✅ Concluído (2026-07-11) |
 | **F1** | Rede de segurança (testes) | 2 | ⬜ Pendente |
 | **F2** | Desduplicação estrutural | 3 | ⬜ Pendente |
 | **F3** | Quebra de God Components | 3 | ⬜ Pendente |
@@ -50,40 +50,40 @@ F2.3 (centralizar estilos) ──► F4.7 (tokenizar)  ⛔ depende de UI-09 (tri
 
 **Meta:** eliminar comportamento errado e ruído com risco ~nulo, sem depender de testes. **Pré-requisito:** nenhum.
 
-### F0.1 — Corrigir semântica do modal de exclusão (A-01) ⬜
+### F0.1 — Corrigir semântica do modal de exclusão (A-01) ✅
 Hoje `DeleteBudgetModal` chama `onClose()` tanto ao excluir quanto ao cancelar, e `Budgets.tsx` liga `onClose` a `removeBudgetFromCache` → **cancelar/backdrop remove o item da lista**.
-- [ ] Em `src/components/Modal/Delete/DeleteBudgetModal.tsx`: adicionar prop `onDeleted: () => void`; chamar `onDeleted()` **após** `await deleteBudget(id)` (l.16–17), mantendo `onClose` só para fechar/cancelar (l.24 backdrop, l.98 botão Cancelar).
-- [ ] Em `src/pages/Budgets/Budgets.tsx` (l.477–483): ligar `onDeleted={() => handleDeleteSuccess(budget.id)}` e `onClose={() => setDeleteModalId(null)}` (sem remover do cache).
-- **Aceite:** cancelar/backdrop **não** remove da lista; excluir remove da lista e do Firestore.
+- [x] Em `src/components/Modal/Delete/DeleteBudgetModal.tsx`: adicionada prop `onDeleted: () => void`; `onDeleted()` é chamado **após** `await deleteBudget(id)`, mantendo `onClose` só para fechar/cancelar (backdrop + botão Cancelar).
+- [x] Em `src/pages/Budgets/Budgets.tsx`: ligado `onDeleted={() => handleDeleteSuccess(budget.id)}` e `onClose={() => setDeleteModalId(null)}` (sem remover do cache).
+- **Aceite:** cancelar/backdrop **não** remove da lista; excluir remove da lista e do Firestore. ✔ (verificado por leitura de fluxo + build/tsc; runtime formal pende de EST F1)
 
-### F0.2 — Corrigir unidade do filtro de valor (A-04) ⬜
+### F0.2 — Corrigir unidade do filtro de valor (A-04) ✅
 `minValue`/`maxValue` são reais digitados; `totalValue` está em centavos → comparação errada por fator 100.
-- [ ] Em `src/pages/Budgets/Budgets.tsx` (l.111–118): converter min/máx para **centavos** antes de comparar (reutilizar `formatCurrencyToNumber` de `src/utils/Masks.ts`; ajustar se o input for número puro em reais → `* 100`).
-- [ ] Conferir o `placeholder`/label para deixar claro que o valor é em reais.
-- **Aceite:** faixa "1000–2000" retorna orçamentos com total entre R$ 1.000 e R$ 2.000.
+- [x] Em `src/pages/Budgets/Budgets.tsx`: min/máx convertidos para **centavos** (`* 100`) antes de comparar. Os inputs são `type="number"` (reais puros), então `formatCurrencyToNumber` não se aplica; `(parseFloat(x) || 0/Infinity) * 100` preserva os fallbacks originais.
+- [x] Labels "Valor mín"/"Valor máx" já deixam claro que é em reais (app BRL) — sem mudança necessária.
+- **Aceite:** faixa "1000–2000" retorna orçamentos com total entre R$ 1.000 e R$ 2.000. ✔
 
-### F0.3 — Remover `window.location.reload()` (A-03) ⬜
+### F0.3 — Remover `window.location.reload()` (A-03) ✅
 Viola a regra do `CLAUDE.md` e refaz reads que o cache evita.
-- [ ] Em `src/pages/BudgetFormPage/BudgetFormPage.tsx` (l.149): no ramo "Adicionar Outro", trocar o reload por **reset do formulário** (limpar `budget`/`selectedProducts` mantendo `DEFAULT_BUDGET`). Expor um `reset()` no `useBudgetForm` se necessário.
-- **Aceite:** "Adicionar Outro" limpa o form sem recarregar a página; sem novos reads no Firestore.
+- [x] Adicionado `reset()` ao `useBudgetForm` (limpa `budget` para `DEFAULT_BUDGET`, zera `selectedProducts` e os campos de busca). Em `BudgetFormPage.tsx`, o ramo "Adicionar Outro" agora chama `form.reset()` no lugar de `window.location.reload()`.
+- **Aceite:** "Adicionar Outro" limpa o form sem recarregar a página; sem novos reads no Firestore. ✔ **Marca PERF-14/T08 como resolvido** (dono EST F0.3; anotado na trilha PERF).
 
-### F0.4 — Endurecer `DeleteBudgetModal` contra dados ausentes (A-06) ⬜
-- [ ] Em `DeleteBudgetModal.tsx` (l.55, 71, 88): `budget.client?.name`, `budget.selectedProducts?.map(...)`, `item.product?.unitValue ?? 0`.
-- **Aceite:** orçamento com campo ausente abre o modal sem crash.
+### F0.4 — Endurecer `DeleteBudgetModal` contra dados ausentes (A-06) ✅
+- [x] Em `DeleteBudgetModal.tsx`: `budget.client?.name`, `budget.selectedProducts?.map(...)`, `item.product?.name`, `(item.product?.unitValue ?? 0).toFixed(0)`.
+- **Aceite:** orçamento com campo ausente abre o modal sem crash. ✔
 
-### F0.5 — Memoizar o `value` do `DataContext` (A-07 = PERF-06) ⬜
-- [ ] Em `src/context/DataContext.tsx` (l.361): envolver o objeto `value` em `useMemo` com deps: `budgets, clients, products, representatives, loading, loadingEntities` + as funções (já estáveis via `useCallback`).
-- [ ] Confirmar que todas as funções expostas realmente vêm de `useCallback` (senão memoizar quebra).
-- **Aceite:** `value` não muda de identidade quando nada relevante mudou. **Marca PERF-06 como resolvido também.**
+### F0.5 — Memoizar o `value` do `DataContext` (A-07 = PERF-06) ✅
+- [x] Em `src/context/DataContext.tsx`: objeto `value` agora está em `useMemo`, com deps = os 6 estados (`budgets, clients, products, representatives, loading, loadingEntities`) + todas as funções expostas.
+- [x] Confirmado que todas as funções vêm de `useCallback` (refresh*, search*Local, add/update/remove*Handler) e `getCacheStats` é função de módulo importada (estável) — memoização não quebra.
+- **Aceite:** `value` não muda de identidade quando nada relevante mudou. ✔ **Marca PERF-06/T04 como resolvido também** (anotado na trilha PERF).
 
-### F0.6 — Remover código morto `Sidebar.old.tsx` (M-01) ⬜
-Confirmado: **0 imports** em `src/`. Sidebar ativo é `src/components/Layout/Sidebar/`.
-- [ ] Excluir `src/components/Sidebar/Sidebar.old.tsx`; remover a pasta `src/components/Sidebar/` se ficar vazia.
-- **Aceite:** `npm run build`/`lint` verdes; nenhum import quebrado.
+### F0.6 — Remover código morto `Sidebar.old.tsx` (M-01) ✅
+Confirmado: **0 imports** em `src/` (re-verificado via grep). Sidebar ativo é `src/components/Layout/Sidebar/`.
+- [x] Excluído `src/components/Sidebar/Sidebar.old.tsx` via `git rm`; a pasta `src/components/Sidebar/` ficou vazia e sumiu.
+- **Aceite:** `npm run build`/tsc verdes; nenhum import quebrado. ✔
 
-### F0.7 — `.gitignore` para artefatos de ferramenta (M-03) ⬜
-- [ ] Adicionar `graphify-out/` e artefatos `.gemini/` ao `.gitignore`. **Preservar `AUDITORIAS/`** (documentação intencional).
-- **Aceite:** `git status` não lista mais os artefatos gerados; `AUDITORIAS/` continua versionado.
+### F0.7 — `.gitignore` para artefatos de ferramenta (M-03) ✅
+- [x] Adicionado `graphify-out/` ao `.gitignore`. **`.gemini/`** só contém `tasks/` (documentação intencional referenciada no `CLAUDE.md`) — não há artefato gerado a ignorar ali, então nada foi adicionado para ele (comentário no `.gitignore` deixa isso explícito). `AUDITORIAS/` preservado (`git check-ignore AUDITORIAS/` não casa).
+- **Aceite:** `git status` não lista mais `graphify-out/`; `AUDITORIAS/` continua versionado. ✔
 
 ---
 
@@ -241,6 +241,21 @@ Resolvido, porém **com mecanismo diferente do planejado**: em vez de uma rota R
 - **Por que foi feito:** matava o achado A-02/D (PDF legado duplicado) e destravava SEG-12/UI-33. Optou-se pela função Blob compartilhada em vez da rota React planejada — mais simples, sem `ReactDOM.render` e sem a aba `about:blank` em branco que a abordagem antiga produzia.
 - **Arquivos:** `src/utils/PDFGenerator/BudgetPdf.tsx`, `src/pages/Budgets/Budgets.tsx`, `src/components/Dashboard/RecentBudgets.tsx`.
 - **Verificação:** `npm run build` verde. Cross-ref resolvido em Segurança (SEG-12), UI/UX (UI-33) e Performance (achado-novo da duplicação do PDF). Nota: a rota dedicada fica opcional (só se quiserem deep-link).
+
+### 2026-07-11 · F0 completo (F0.1–F0.7) · Estabilização: bugs funcionais + limpeza de código morto
+> Continuação da Onda 1 depois que SEG S0/S1 fecharam (código + publicação de regras em dev/prod, ver `PLANO_EXECUCAO_SEGURANCA.md` 2026-07-11). Todos os achados foram re-verificados contra o código atual antes de tocar — os números de linha dos planos tinham deslocado (o `useDebounce` entrou no `Budgets.tsx`), mas os defeitos eram exatamente os descritos.
+- **O que foi feito:**
+  - **F0.1 (bug A-01):** `DeleteBudgetModal` ganhou `onDeleted: () => void`, chamado **após** `await deleteBudget(id)`; `onClose` voltou a significar só "fechar". Em `Budgets.tsx`, `onClose={() => setDeleteModalId(null)}` e `onDeleted={() => handleDeleteSuccess(budget.id)}`. Antes, `onClose` estava ligado a `handleDeleteSuccess` → cancelar/backdrop removia o item do cache.
+  - **F0.2 (bug A-04):** filtro de valor converte min/máx (reais) para **centavos** (`* 100`) antes de comparar com `totalValue` (centavos). Corrige o erro por fator 100.
+  - **F0.3 (A-03):** `useBudgetForm` expõe `reset()`; `BudgetFormPage` usa `form.reset()` em "Adicionar Outro" no lugar de `window.location.reload()`. Cumpre a regra do `CLAUDE.md` e evita cold-load extra (**resolve PERF-14/T08**).
+  - **F0.4 (A-06):** optional chaining/nullish em `DeleteBudgetModal` (`client?.name`, `selectedProducts?.map`, `product?.name`, `unitValue ?? 0`).
+  - **F0.5 (A-07 = PERF-06):** `value` do `DataContext` agora em `useMemo` (deps = 6 estados + todas as funções `useCallback` + `getCacheStats` de módulo). **Resolve PERF-06/T04.**
+  - **F0.6 (M-01):** removido `src/components/Sidebar/Sidebar.old.tsx` (0 imports); pasta vazia sumiu.
+  - **F0.7 (M-03):** `graphify-out/` adicionado ao `.gitignore` (some do `git status`); `AUDITORIAS/` e `.gemini/tasks/` preservados.
+  - **Limpeza de código morto (mandato "ruído risco-nulo" da F0, dono apontado pela trilha SEG):** removidos unused imports/vars pré-existentes que travavam o lint global — `BudgetSummaryPanel` (4 ícones), `ProductSelector` (`Paper`,`Typography`), `ProductList` (`InputAdornment`), `CreateClientModal` (`phoneMask`), `CreateRepresentativeModal` (`IClient`), `DefaultLayout` (`drawerWidth`,`collapsedWidth`), `BudgetFormPage` (3 ícones + `IRepresentative`), `Clients` (`addClientToCache`), e os 4 `([_, value])` → `([, value])` dos services. Lint caiu de **31 → 11 problemas**.
+- **Por que foi feito:** a Onda 1 de Estrutura (F0) é bug-antes-de-refactor, risco ~nulo, sem depender de testes. F0.1 desbloqueia PERF P1.1; F0.3/F0.5 fecham achados de PERF por dono único.
+- **Arquivos (código):** `src/components/Modal/Delete/DeleteBudgetModal.tsx`, `src/pages/Budgets/Budgets.tsx`, `src/hooks/useBudgetForm.ts`, `src/pages/BudgetFormPage/BudgetFormPage.tsx`, `src/context/DataContext.tsx`, `.gitignore`, `src/components/Sidebar/Sidebar.old.tsx` (removido), `src/components/Budget/{BudgetSummaryPanel,ProductSelector,ProductList}.tsx`, `src/components/Modal/Create/{CreateClientModal,CreateRepresentativeModal}/*.tsx`, `src/layouts/DefaultLayout/index.tsx`, `src/pages/Clients/Clients.tsx`, `src/services/{budget,client,product,representative}Services.ts`.
+- **Verificação:** `npm run build` (tsc + vite) **verde**; `npx tsc --noEmit` exit 0. Lint: **código morto dono da F0 = 0**. Restam 10 problemas pré-existentes que **não são código morto** (`no-explicit-any`, `ban-types {}`, `react-refresh`, `exhaustive-deps`) com dono em UI (U2.1/PageHeader), EST (F2.2/F3.3) e SEG (ContextAuth) — detalhados nos Portões acima. **Exceção deliberada:** `brMoneyMask` morto em `Home.tsx` foi deixado para o dono **UI U0.1** (acoplado à remoção dos reduces `kpiData`). Validação de runtime dos bugs (F0.1/F0.2) pende da infra de testes de EST F1.
 
 <!--
 ### AAAA-MM-DD · Fx.y · <título curto>

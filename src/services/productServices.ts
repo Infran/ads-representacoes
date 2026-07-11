@@ -170,7 +170,7 @@ export const updateProduct = async (product: IProduct): Promise<void> => {
 
   // Remove campos undefined antes de enviar
   const cleanedProduct = Object.fromEntries(
-    Object.entries(product).filter(([_, value]) => value !== undefined)
+    Object.entries(product).filter(([, value]) => value !== undefined)
   );
 
   await updateDoc(docRef, { ...cleanedProduct, updatedAt });

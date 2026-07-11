@@ -106,9 +106,9 @@ const Budgets = () => {
       result = result.filter((b) => b.client?.name === clientFilter);
     }
 
-    // Value range filter
-    const min = parseFloat(minValue) || 0;
-    const max = parseFloat(maxValue) || Infinity;
+    // Value range filter — inputs são em reais; totalValue é em centavos
+    const min = (parseFloat(minValue) || 0) * 100;
+    const max = (parseFloat(maxValue) || Infinity) * 100;
     if (minValue || maxValue) {
       result = result.filter((b) => {
         const value = b.totalValue || 0;
@@ -455,9 +455,8 @@ const Budgets = () => {
 
               <DeleteBudgetModal
                 open={deleteModalId === budget.id}
-                onClose={() => {
-                  handleDeleteSuccess(budget.id);
-                }}
+                onClose={() => setDeleteModalId(null)}
+                onDeleted={() => handleDeleteSuccess(budget.id)}
                 budget={budget}
               />
             </React.Fragment>

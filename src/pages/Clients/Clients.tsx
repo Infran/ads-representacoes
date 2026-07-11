@@ -21,7 +21,6 @@ const Clients = () => {
     clients: clientList,
     loading,
     removeClientFromCache,
-    addClientToCache,
   } = useData();
 
   // Filtragem local dos clientes

@@ -64,6 +64,9 @@ interface UseBudgetFormReturn {
   isValid: boolean;
   sectionValidation: SectionValidation;
   totalValue: number;
+
+  // Reset do formulário (ex.: "Adicionar Outro" sem recarregar a página)
+  reset: () => void;
 }
 
 export const useBudgetForm = (
@@ -281,6 +284,14 @@ export const useBudgetForm = (
     };
   }, [budget, selectedProducts]);
 
+  // Reset do formulário para o estado inicial (sem recarregar a página)
+  const reset = useCallback(() => {
+    setBudget({ ...DEFAULT_BUDGET } as IBudget);
+    setSelectedProducts([]);
+    setRepresentativeSearchInput("");
+    setProductSearchTerm("");
+  }, []);
+
   // Validação geral (todas as seções completas)
   const isValid = useMemo(() => {
     return (
@@ -309,6 +320,7 @@ export const useBudgetForm = (
     isValid,
     sectionValidation,
     totalValue,
+    reset,
   };
 };
 

@@ -166,7 +166,7 @@ export const updateClient = async (client: IClient): Promise<void> => {
 
   // Remove campos undefined antes de enviar
   const cleanedClient = Object.fromEntries(
-    Object.entries(client).filter(([_, value]) => value !== undefined)
+    Object.entries(client).filter(([, value]) => value !== undefined)
   );
 
   await updateDoc(docRef, { ...cleanedClient, updatedAt });

@@ -16,7 +16,6 @@ import {
   cepMask,
   cnpjMask,
   mobilePhoneMask,
-  phoneMask,
 } from "../../../../utils/Masks";
 
 const modalStyle = {

@@ -173,7 +173,7 @@ export const updateRepresentative = async (
 
   // Remove campos undefined antes de enviar
   const cleanedRepresentative = Object.fromEntries(
-    Object.entries(representative).filter(([_, value]) => value !== undefined)
+    Object.entries(representative).filter(([, value]) => value !== undefined)
   );
 
   await updateDoc(docRef, { ...cleanedRepresentative, updatedAt });

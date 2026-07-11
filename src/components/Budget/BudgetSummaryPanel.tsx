@@ -11,12 +11,8 @@ import {
   Chip,
 } from "@mui/material";
 import {
-  Person,
-  Inventory2,
-  Description,
   CheckCircle,
   RadioButtonUnchecked,
-  AttachMoney,
 } from "@mui/icons-material";
 import { IBudget } from "../../interfaces/ibudget";
 import { SectionValidation } from "../../hooks/useBudgetForm";

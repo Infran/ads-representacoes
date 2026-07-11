@@ -41,6 +41,9 @@ firebase-debug.log*
 .cache
 .firebase/hosting.ZGlzdA.cache
 
+# Artefatos de ferramenta (gerados) — AUDITORIAS/ e .gemini/tasks/ são documentação intencional e permanecem versionados
+graphify-out/
+
 # Markdown and JSON
 *.md
 *.json

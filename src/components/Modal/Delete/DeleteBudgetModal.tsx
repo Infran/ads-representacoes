@@ -7,14 +7,15 @@ import { brMoneyMask } from "../../../utils/Masks";
 interface DeleteBudgetModalProps {
   open: boolean;
   onClose: () => void;
+  onDeleted: () => void;
   budget: IBudget;
 }
 
-const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, budget }) => {
+const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, onDeleted, budget }) => {
   const handleDelete = async (id: string) => {
     try {
       await deleteBudget(id);
-      onClose();
+      onDeleted();
     } catch (error) {
       console.error("Erro ao excluir orçamento:", error);
     }
@@ -52,7 +53,7 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, bu
             }}
           >
             <Typography variant="body1" sx={{ fontWeight: 600 }}>
-              Cliente: {budget.client.name}
+              Cliente: {budget.client?.name}
             </Typography>
             <Typography variant="body2" sx={{ marginBottom: 1 }}>
               Produtos:
@@ -68,7 +69,7 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, bu
                 gap: 1,
               }}
             >
-              {budget.selectedProducts.map((item, index) => (
+              {budget.selectedProducts?.map((item, index) => (
                 <Box
                   key={index}
                   component="li"
@@ -82,10 +83,10 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, bu
                   }}
                 >
                   <Typography variant="body2" noWrap>
-                    {item.product.name}
+                    {item.product?.name}
                   </Typography>
                   <Typography variant="body2" noWrap>
-                    {item.quantity} x R$ {brMoneyMask(item.product.unitValue.toFixed(0))}
+                    {item.quantity} x R$ {brMoneyMask((item.product?.unitValue ?? 0).toFixed(0))}
                   </Typography>
                 </Box>
               ))}
