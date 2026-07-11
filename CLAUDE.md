@@ -22,11 +22,19 @@ There is no test suite/runner configured in this repo (no `test` script, no test
 
 ### Deploy
 
-CI (`.github/workflows/deploy.yaml`) deploys on push:
-- `development` branch → `npm run build:dev` → `firebase deploy --project=ads-representacoes-dev`
-- `main` branch → `npm run build:prod` → `firebase deploy --project=ads-representacoes`
+**⚠️ Project ID naming is counter-intuitive — confirmed 2026-07-10 via `.env.production`/`.env.development`:**
+- Real **production** Firestore/Auth = Project ID **`ads-representacoes-dev`** (display name "ads-representacoes-prod" in Firebase Console)
+- Real **development** Firestore/Auth = Project ID **`ads-representacoes`** (display name "ads-representacoes-new-dev" in Firebase Console)
 
-Firebase project aliases are in `.firebaserc`: `default`/`development` → `ads-representacoes-dev` (dev), `production` → `ads-representacoes` (prod). So `firebase use production` / `firebase deploy --project=production` targets the real production project. (These aliases were previously inverted — fixed in SEG S0.4.)
+Yes, the ID *without* `-dev` is the dev project, and the ID *with* `-dev` is prod. Don't trust the suffix — verify against `.env.production`'s `VITE_FIREBASE_PROJECT_ID` if in doubt.
+
+CI (`.github/workflows/deploy.yaml`) deploys on push (runs bare `firebase deploy`, no `--only`, so it deploys **everything** in `firebase.json` including `firestore.rules` once that section exists):
+- `development` branch → `npm run build:dev` → `firebase deploy --project=ads-representacoes-dev` — **this targets the real PROD project**
+- `main` branch → `npm run build:prod` → `firebase deploy --project=ads-representacoes` — **this targets the real DEV project**
+
+This means the CI branch names are effectively swapped relative to the real environments — a push to `development` deploys to what's actually production, and vice versa. This predates this session and is tracked as a new SEG finding; do not "fix" it unilaterally (it affects live Hosting URLs/custom domains) without confirming with the user first.
+
+Firebase project aliases in `.firebaserc` (corrected 2026-07-10 to match the real mapping above): `default`/`development` → `ads-representacoes` (dev), `production` → `ads-representacoes-dev` (prod). An earlier pass in this session (SEG S0.4) had these backwards — it assumed the project ID without `-dev` suffix was production, which turned out to be false. Always verify against the `.env.*` files, not the project ID suffix.
 
 ## Architecture
 

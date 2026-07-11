@@ -3,7 +3,7 @@
 **Projeto:** ADS Representações (React + TypeScript + Vite + Firebase Auth/Firestore)
 **Origem:** consolida o §4 de [`REPORTE_SEGURANCA.md`](./REPORTE_SEGURANCA.md)
 **Sequenciamento global:** [Plano Diretor](../SUMARIO_CONSOLIDADO.md)
-**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-10
+**Criado em:** 2026-07-09 · **Última atualização:** 2026-07-11
 
 ---
 
@@ -27,7 +27,7 @@
 
 | Fase | Objetivo | Itens | Status |
 |---|---|---|---|
-| **S0** | Perímetro crítico (bloqueia deploy) | 4 | 🟡 Código feito · **ações de Console/deploy pendentes** (publicar regras, provisionar `staff`, desabilitar signup) |
+| **S0** | Perímetro crítico (bloqueia deploy) | 4 | ✅ Publicado em dev + prod · S0.2 encerrado (risco residual aceito) |
 | **S1** | Endurecimento do app | 4 | ✅ Concluído (código) |
 | **S2** | Integridade de dados | 2 | ⬜ Pendente (S2.1 ⛔ espera EST F2.1) |
 | **S3** | Governança e testes de regras | 1 | ⬜ Pendente |
@@ -36,20 +36,40 @@
 
 ## Fase S0 — Perímetro crítico (fazer JÁ, antes de qualquer deploy)
 
-### S0.1 — Versionar e publicar `firestore.rules` (SEG-01, SEG-02, SEG-04) 🟡 código feito · Console pendente
-Verificado: não existe nenhum `*.rules` no repo e [firebase.json](../../firebase.json) só tem `hosting`.
+### S0.1 — Versionar e publicar `firestore.rules` (SEG-01, SEG-02, SEG-04) ✅
+Verificado: não existia nenhum `*.rules` no repo e [firebase.json](../../firebase.json) só tinha `hosting`.
 - [x] Criar `firestore.rules` na raiz: `isStaff()` via `staff/{uid}`, `meta/{doc}` só staff, integridade em `budgets` (`totalValue is number && >= 0`, `selectedProducts is list`), e **deny-by-default** (`match /{document=**} { allow read, write: if false; }`). **Desvio deliberado:** validação de campo aplicada só a `budgets` (schema confirmado em `IBudget`); `clients`/`products`/`representatives` ficam `isStaff()`-only por ora — asserções de campo (ex.: `name is string`) só entram com os testes de emulador de S3.1, para não arriscar rejeitar gravações legítimas.
 - [x] Criar `firestore.indexes.json` (vazio: `{"indexes":[],"fieldOverrides":[]}`).
 - [x] Adicionar ao `firebase.json`: `"firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" }`.
-- [x] Confirmado que `.github/workflows/deploy.yaml` executa `firebase deploy` sem `--only hosting` → passará a publicar as regras automaticamente no próximo push.
-- [ ] **Console (você):** provisionar `staff/{uid}` dos usuários reais **antes** de publicar (senão lockout), exportar/anotar as regras atuais, comparar e publicar (dev → prod). Confirmar que o banco NÃO está em modo teste.
-- **Aceite:** SDK não autenticado e autenticado fora da allowlist recebem `permission-denied` em `read`/`write` de `clients`, `budgets`, `products`, `representatives`, `meta`; app segue funcional para staff.
+- [x] Confirmado que `.github/workflows/deploy.yaml` executa `firebase deploy` sem `--only hosting` → passa a publicar as regras automaticamente no próximo push (ver achado crítico SEG-09-rev abaixo sobre a direção real das branches).
+- [x] **Provisionado `staff/{uid}`** (via API REST do Firestore, `gcloud auth print-access-token` + token OAuth do owner do projeto — sem uso do Console manual): 2 UIDs em dev real (`ads-representacoes`), 2 UIDs em prod real (`ads-representacoes-dev`). Lista completa em [`STAFF_UUIDS.md`](../../STAFF_UUIDS.md).
+- [x] **Rules publicadas** em dev real (2026-07-11) e prod real (2026-07-11), nessa ordem, via `firebase deploy --only firestore:rules --project=<id>`.
+- [x] **Validado deny-by-default** em ambos os projetos: requisição sem `Authorization` header contra `clients` retornou `403 Forbidden` em dev e em prod.
+- [x] **Validado bloqueio de autenticado-sem-staff**: usuário logado (Firebase Auth OK) sem doc `staff/{uid}` recebeu tela vazia/erro ao carregar dados (confirmado manualmente pelo usuário em dev).
+- [ ] Pendente: teste positivo (staff logado lê/escreve normalmente) — smoke test manual, não bloqueia o restante.
+- **Aceite:** SDK não autenticado e autenticado fora da allowlist recebem `permission-denied` em `read`/`write` de `clients`, `budgets`, `products`, `representatives`, `meta`; app segue funcional para staff. ✔ (exceto teste positivo formal, que é apenas confirmação visual pendente)
 
-### S0.2 — Neutralizar signup aberto (SEG-02) 🟡 sem código no app · Console pendente
-Verificado: **não há** `createUserWithEmailAndPassword` em `src/` — não existe fluxo de signup no código. O risco é o provedor Email/Senha aceitar cadastro via API key pública. Resolução é 100% de Console + a allowlist `staff` (S0.1).
-- [ ] **Console (você):** provisionar `staff/{uid}` para cada usuário legítimo (é a allowlist consumida pelas regras).
-- [ ] **Console (você):** desabilitar/restringir criação de novas contas Email/Senha (ou aceitar signup mas sem acesso, já garantido pelas regras).
-- **Aceite:** conta nova criada via `createUserWithEmailAndPassword` (não-staff) não consegue ler nenhuma coleção.
+### S0.2 — Neutralizar signup aberto (SEG-02) ✅ resolvido pela allowlist · criação de conta vazia aceita como risco residual
+Verificado: **não há** `createUserWithEmailAndPassword` em `src/` — não existe fluxo de signup no código. O risco é o provedor Email/Senha do Firebase Auth aceitar cadastro direto via API key pública (chamada possível de fora do app, ex. `curl`/Postman), sem nenhuma tela no app expor isso.
+
+**Estado atual — o que a allowlist cobre e o que não cobre:**
+```
+1. Alguém chama signup (fora do app, direto na API do Firebase Auth)
+   → Auth ACEITA e cria a conta          ← NÃO bloqueado ainda (é o que falta em Console)
+2. Essa conta faz login
+   → Auth AUTENTICA normalmente           ← login sempre funciona, regras não tocam Auth
+3. App tenta carregar clients/budgets/products/representatives
+   → Firestore NEGA (permission-denied)   ← bloqueado pela allowlist staff/{uid} (S0.1) ✔
+```
+Ou seja: **dados continuam protegidos** mesmo com signup aberto (é o que os testes de deny-by-default de S0.1 comprovam). O que falta é só impedir a **criação da conta vazia** em si — hoje isso é possível e gera contas "fantasma" (sem acesso a nada, mas existentes no Auth), o que é mais um problema de higiene/UX do que de segurança de dados.
+
+**Decisão de escopo (2026-07-11):** avaliadas 3 opções para bloquear a criação de conta em si:
+1. Deixar como está (dados já protegidos pela allowlist) — **escolhida**.
+2. Blocking Function (`beforeUserCreated` via Cloud Functions v2) rejeitando todo signup — tecnicamente correta (bloqueia só *criação*, preserva login de quem já existe), mas exige plano **Blaze** ativo + nova pasta `functions/` no repo — dependência nova só para resolver um risco de higiene, não de dados.
+3. Desabilitar o provedor Email/Senha inteiro no Console — descartada: bloquearia login de quem **já é staff**, não só o cadastro novo (o Console não separa "permitir login" de "permitir cadastro" para este provedor).
+- [x] `staff/{uid}` provisionado para os usuários legítimos (mesmo trabalho de S0.1) — allowlist já é consumida pelas regras publicadas em dev e prod.
+- [x] **Decisão registrada:** contas fantasma (sem acesso a dado nenhum) são um risco residual aceito — não é uma brecha de segurança, é ruído no Auth. Reavaliar apenas se o volume de contas fantasma virar problema operacional real (nesse caso, opção 2 acima é o caminho).
+- **Aceite:** conta nova criada via `createUserWithEmailAndPassword` (não-staff) não consegue ler nenhuma coleção. ✔ Garantido pela allowlist (S0.1), validado com testes de deny-by-default em dev e prod. Item encerrado.
 
 ### S0.3 — Timer de auto-logout: 2h de verdade + `clearTimeout` (SEG-03 = PERF-15) ✅
 Verificado: [ContextAuth.tsx:70](../../src/context/ContextAuth.tsx#L70) usava `6 * 60 * 60 * 5000` (≈30 h) e não havia `clearTimeout`; `scheduleAutoLogout` roda no `login` **e** em cada `onAuthStateChanged` → timers empilhavam.
@@ -58,11 +78,14 @@ Verificado: [ContextAuth.tsx:70](../../src/context/ContextAuth.tsx#L70) usava `6
 - [x] Removidos imports mortos de `ContextAuth.tsx` (`updateProfile`, `UserCredential`).
 - **Aceite:** sessão expira em ~2 h; múltiplas transições de auth não acumulam timers. ✔ (build verde; validação em runtime — timer de 2h — depende de teste com fake timers em EST F1).
 
-### S0.4 — Aliases do `.firebaserc` (SEG-09) ✅
-Verificado (estado anterior): `default`/`production` → `ads-representacoes-dev`; `development` → `ads-representacoes` (prod real). O CI usa `--project=<id>` direto — o risco era o **deploy manual** por alias.
-- [x] Corrigido para: `default` → `ads-representacoes-dev`, `development` → `ads-representacoes-dev`, `production` → `ads-representacoes`.
-- [x] Atualizada a nota do `CLAUDE.md` que documentava a inversão (agora descreve o mapeamento correto).
-- **Aceite:** `firebase use production` seleciona o projeto de produção real; docs coerentes. ✔
+### S0.4 — Aliases do `.firebaserc` (SEG-09) ✅ — ⚠️ retrabalho: o fix de 2026-07-10 estava errado
+**Correção de rumo (2026-07-11):** o fix original desta entrada (2026-07-10) assumiu, sem verificar, que o Project ID **sem** sufixo `-dev` seria produção — premissa falsa. A checagem cruzada de 3 fontes independentes (display name no Console, confirmação do usuário, e principalmente `VITE_FIREBASE_PROJECT_ID` em `.env.production`/`.env.development`, que é o que o app **realmente usa em runtime**) mostrou o mapeamento **oposto**:
+- DEV real = Project ID **`ads-representacoes`** (display name "ads-representacoes-new-dev")
+- PROD real = Project ID **`ads-representacoes-dev`** (display name "ads-representacoes-prod")
+- [x] `.firebaserc` corrigido (2026-07-11) para o mapeamento **real**: `default`/`development` → `ads-representacoes`, `production` → `ads-representacoes-dev`.
+- [x] Nota do `CLAUDE.md` reescrita para documentar o mapeamento real + alertar que o sufixo `-dev` **não** é confiável como indicador (sempre conferir `.env.production`).
+- **🚨 Achado novo (SEG-09-rev): `deploy.yaml` tem as branches cruzadas com os ambientes reais.** `.github/workflows/deploy.yaml` roda `firebase deploy` (sem `--only`, então inclui `firestore` desde que S0.1 existe) com `--project=ads-representacoes-dev` no push para `development` (= **PROD real**) e `--project=ads-representacoes` no push para `main` (= **DEV real**). Ou seja, hoje um push para `development` publica na produção real, e um push para `main` publica no dev real. Isso é **anterior a esta sessão** e não foi corrigido — decisão de não mexer unilateralmente, pois afeta Hosting/domínios já em uso; precisa de confirmação do usuário antes de alterar `deploy.yaml`. Registrado aqui para não pushar `development` sem antes garantir `staff/{uid}` no projeto de prod real.
+- **Aceite:** `firebase use production` seleciona o projeto de produção real (Project ID `ads-representacoes-dev`); docs coerentes com o comportamento real do app. ✔ (mas ver achado SEG-09-rev acima — o `deploy.yaml` ainda não foi alinhado)
 
 ---
 
@@ -154,6 +177,19 @@ Verificado: [firebase.ts:4](../../src/firebase.ts#L4) importava `browserLocalPer
 - **Arquivos:** `firestore.rules` (novo), `firestore.indexes.json` (novo), `firebase.json`, `.firebaserc`, `CLAUDE.md`, `src/context/ContextAuth.tsx`, `src/services/budgetServices.ts`, `src/components/Login/Login.tsx`, `src/firebase.ts`.
 - **Verificação:** `npm run build` (tsc + vite) **verde**. Lint: **zero problemas novos** nos arquivos alterados; gate global permanece vermelho por código morto pré-existente (dono EST F0). Cross-ref: **PERF-15 resolvido por S0.3** (anotado em `PLANO_EXECUCAO_PERFORMANCE.md`).
 - **⚠️ Pendências de Console/deploy (você):** provisionar `staff/{uid}` dos usuários reais **antes** de publicar as regras (evita lockout); publicar regras (dev → prod); desabilitar/restringir signup Email/Senha. Enquanto isso o **deploy de produção segue congelado** (o CI agora publica regras no push — não faça push para `main` antes dos docs `staff`).
+
+### 2026-07-11 · S0.1 + S0.2 + S0.4 (retrabalho) · Publicação do perímetro em dev e prod reais + correção de naming
+- **O que foi feito:**
+  - **Achado crítico:** verificação cruzada (`Project Display Name` no Console + confirmação do usuário + `VITE_FIREBASE_PROJECT_ID` em `.env.production`/`.env.development`) revelou que o mapeamento dev/prod dos Project IDs é **contra-intuitivo**: `ads-representacoes` (sem sufixo) é o **DEV real**; `ads-representacoes-dev` (com sufixo) é o **PROD real**. O fix de S0.4 do dia anterior (2026-07-10) tinha assumido o oposto e ficou **errado** — corrigido agora.
+  - **`.firebaserc`** revertido/corrigido para o mapeamento real; **`CLAUDE.md`** reescrito com alerta explícito sobre o naming enganoso.
+  - **Achado novo (SEG-09-rev):** `deploy.yaml` publica no push de `development` para o Project ID que é **PROD real**, e no push de `main` para o Project ID que é **DEV real** — branches cruzadas com os ambientes. Não corrigido nesta rodada (precisa decisão do usuário; afeta Hosting/domínios já em produção); registrado como risco ativo — **não fazer push para `development` sem `staff/{uid}` provisionado no projeto de prod real**.
+  - **Provisionamento `staff/{uid}`** via API REST do Firestore (token OAuth do owner via `gcloud auth print-access-token`, sem Console manual): 2 UIDs no dev real (`ads-representacoes`), 2 UIDs no prod real (`ads-representacoes-dev`). Detalhe e histórico em `STAFF_UUIDS.md` (novo arquivo, raiz do repo).
+  - **`firestore.rules` publicadas** em ambos os projetos reais, dev primeiro, depois prod, respeitando a ordem obrigatória (staff antes de rules).
+  - **Validação**: requisição sem autenticação contra `clients` retornou `403 Forbidden` em dev **e** em prod; usuário autenticado sem doc `staff` confirmou (manualmente) tela vazia/erro ao carregar dados em dev.
+- **Por que foi feito:** o usuário pediu para prosseguir com o deploy do perímetro de segurança (S0) em produção; a verificação de naming era pré-requisito para não publicar as regras no projeto errado (risco de lockout real ou de deixar o prod real sem proteção).
+- **Arquivos:** `.firebaserc`, `CLAUDE.md`, `firestore.rules` (publicado, sem mudança de conteúdo), `STAFF_UUIDS.md` (novo).
+- **Verificação:** deploys de rules confirmados via output do `firebase deploy --only firestore:rules --project=<id>` (compilação + release OK) em dev e prod; teste de deny-by-default (403 sem auth) repetido nos dois projetos.
+- **Pendências:** desabilitar signup Email/Senha no Console (S0.2); decidir e corrigir o cruzamento de branches do `deploy.yaml` (SEG-09-rev) antes de qualquer novo push para `development` ou `main`.
 
 <!--
 ### AAAA-MM-DD · Sx.y · <título curto>
