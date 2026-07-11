@@ -4,3 +4,8 @@ export { default as BudgetTermsForm } from "./BudgetTermsForm";
 export { default as BudgetAccordion } from "./BudgetAccordion";
 export { default as BudgetSummaryPanel } from "./BudgetSummaryPanel";
 export { default as BudgetPreviewModal } from "./BudgetPreviewModal";
+export { default as EntityInfoCard } from "./EntityInfoCard";
+export { default as BudgetFormActions } from "./BudgetFormActions";
+export { default as RepresentativeSection } from "./RepresentativeSection";
+export { default as ProductsSection } from "./ProductsSection";
+export { default as TermsSection } from "./TermsSection";

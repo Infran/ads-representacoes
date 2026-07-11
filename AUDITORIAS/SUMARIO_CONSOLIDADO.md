@@ -15,6 +15,16 @@
 > | ⚡ Performance | [REPORTE_PERFORMANCE.md](PERFORMANCE/REPORTE_PERFORMANCE.md) | [PLANO_EXECUCAO_PERFORMANCE.md](PERFORMANCE/PLANO_EXECUCAO_PERFORMANCE.md) |
 > | 🎨 UI/UX | [REPORTE_UI_UX.md](UI_UX/REPORTE_UI_UX.md) | [PLANO_EXECUCAO_UI_UX.md](UI_UX/PLANO_EXECUCAO_UI_UX.md) |
 >
+> ### 📋 Planos de Code Review por Onda (A executar após todas as ondas)
+> | Onda | Objetivo do Plano de Code Review | Arquivo de Planejamento |
+> |---|---|---|
+> | 🚨 Onda 0 | Perímetro crítico de segurança (Regras, timeouts e deploy) | [PLANO_CODE_REVIEW_ONDA_0.md](CODE_REVIEWS/PLANO_CODE_REVIEW_ONDA_0.md) |
+> | 🔧 Onda 1 | Correções de UI/UX, code-splitting e limpeza de código | [PLANO_CODE_REVIEW_ONDA_1.md](CODE_REVIEWS/PLANO_CODE_REVIEW_ONDA_1.md) |
+> | 🧱 Onda 2 | Suítes de testes unitários/regras, MUI Theme e CI | [PLANO_CODE_REVIEW_ONDA_2.md](CODE_REVIEWS/PLANO_CODE_REVIEW_ONDA_2.md) |
+> | 🏗️ Onda 3 | Desduplicação de services/estado, validadores e caching | [PLANO_CODE_REVIEW_ONDA_3.md](CODE_REVIEWS/PLANO_CODE_REVIEW_ONDA_3.md) |
+> | 🎨 Onda 4 | Fatiamento de God Components, biblioteca de átomos e modo escuro | [PLANO_CODE_REVIEW_ONDA_4.md](CODE_REVIEWS/PLANO_CODE_REVIEW_ONDA_4.md) |
+> | 🧹 Onda 5 | Desacoplamentos, Logger por ambiente, Acessibilidade e summaries | [PLANO_CODE_REVIEW_ONDA_5.md](CODE_REVIEWS/PLANO_CODE_REVIEW_ONDA_5.md) |
+>
 > Todos os achados-chave foram **verificados contra o código-fonte** antes da consolidação (seções "§x.0 Verificação"
 > de cada reporte). Divergências encontradas mudaram o plano — não há item planejado "no escuro".
 
@@ -82,12 +92,12 @@
 | PERF P1 | P1.1 modal único (após EST F0.1), P1.3 `localStorage` por chave, P1.4 debounce na `GlobalSearch`, P1.2 paginação (após EST F2.1/F2.2) | ✅ P1.1/P1.3/P1.4 · 🟡 P1.2 (capacidade `getBudgetsPage` pronta; rewire do boot deferido = mesmo bloqueio de P0.3) |
 | SEG S2.2 | Validadores CNPJ/CPF + integração nos forms | ✅ `validators.ts` (módulo-11) + guard no `validateClient` + mensagem nos modais de Cliente |
 
-### 🎨 Onda 4 — God Components & UI moderna (exige Ondas 2–3)
-| Trilha | Itens | Observações de coesão |
+### 🎨 Onda 4 — God Components & UI moderna (exige Ondas 2–3) — 🟨 Em andamento (2026-07-11)
+| Trilha | Itens | Status |
 |---|---|---|
-| EST F3 | F3.1 fatiar `BudgetFormPage`, F3.2 fatiar `Budgets` (+ mapa de ordenação), F3.3 `EntityForm` Create/Edit | F3.3 consome os átomos de UI U2.1 se já existirem |
-| UI U2 | U2.1 biblioteca atômica `src/ui` (**absorve EST F4.7** — tokenização dos modais), U2.2 varredura hex/sx → tokens, U2.3 estados padronizados, U2.4 responsividade | U2.1 parte do `modalStyles.ts` de EST F2.3 |
-| UI U3.1/U3.2 | Dashboard com hero KPI + gráficos (`@mui/x-charts` lazy) + dark mode toggle | Chunks coordenados com PERF P0.2 |
+| EST F3 | F3.1 fatiar `BudgetFormPage`, F3.2 fatiar `Budgets` (+ mapa de ordenação), F3.3 `EntityForm` Create/Edit | ✅ **Concluída** — 501/498 linhas → 185/104; `EntityForm` por entidade consumindo os átomos de U2.1 |
+| UI U2 | U2.1 biblioteca atômica `src/ui` (**absorve EST F4.7**), U2.2 varredura hex/sx → tokens, U2.3 estados, U2.4 responsividade | ✅ U2.1 (`src/ui` + 6 modais + `DataTable`; `modalStyles.ts` removido) · ✅ U2.2 (telas principais + chrome; hex **113→43**, `--ads-*` no `Budgets.css`) · 🟡 U2.3/U2.4 |
+| UI U3.1/U3.2 | Dashboard hero KPI + gráficos (`@mui/x-charts` lazy) + dark mode toggle | ✅ **U3.2** (toggle real via `ColorModeContext` + persistência) · 🟡 **U3.1** (dashboard/charts) |
 
 ### 🧹 Onda 5 — Refino, governança & longo prazo
 | Trilha | Itens |
@@ -158,10 +168,10 @@ ONDA 5  EST F4 (refino) ──► F4.6 (ADR) desbloqueia PERF P2.1 · F4.1 coord
 | Re-render por mudança de entidade | ✅ `value` memoizado (F0.5); split por entidade fica p/ F2.2 | local | EST F0.5/F2.2 · Ondas 1/3 |
 | Camada de services | ✅ **~400 linhas (factory + 4 configs), add atômico** (era ~750, 4× repetida, não-atômico) | ~250 linhas, factory, add atômico | EST+SEG · Onda 3 ✅ |
 | I/O de cache por CRUD | ✅ **1 coleção (chave por coleção — P1.3)** (era: re-serializa as 4) | 1 coleção | PERF · Onda 3 ✅ |
-| `ThemeProvider`/tokens | 🟡 **tema light/dark criado** (`src/theme` + `getTheme`); 104 hex ainda espalhados (migração = U2.2) | 1 tema light/dark · hex ≈ 0 fora de `tokens.ts` | UI · Ondas 2 ✅ (fundação) / 4 (migração) |
+| `ThemeProvider`/tokens | ✅ **tema light/dark + biblioteca atômica `src/ui`** (U2.1); hex **113 → 43** (U2.2) — restante é fonte do tema/Login/categóricas/PDF; **dark mode ativo** (U3.2) | 1 tema light/dark · hex ≈ 0 fora de `tokens.ts` | UI · Ondas 2 ✅ / 4 ✅ (U2.1/U2.2/U3.2) |
 | `console.*` em produção | 🟡 **drop no build de prod já ativo** (P0.2 — 0 `console.*` nos chunks); logger por env (F4.5) ainda pendente p/ dev | 0 (logger + drop) | EST+PERF · Ondas 1/5 |
 | Suíte de testes | ✅ **61 testes** (49 unit/characterization jsdom + 12 rules no emulador) | unit + characterization + rules | EST F1 + SEG S3.1 · Ondas 2–3 ✅ |
-| God Components | 501/498/421 linhas | < ~200 (orquestração) | EST F3 · Onda 4 |
+| God Components | ✅ **`BudgetFormPage` 493→185 · `Budgets` 484→104** (orquestração + peças testáveis); `EntityForm` Create/Edit unificado (F3.3) | < ~200 (orquestração) | EST F3 · Onda 4 ✅ |
 
 ---
 
@@ -186,11 +196,13 @@ ONDA 5  EST F4 (refino) ──► F4.6 (ADR) desbloqueia PERF P2.1 · F4.1 coord
 
 - **2026-07-11 (parte 5) — Onda 3 concluída no código: Desduplicação estrutural & dados (EST F2 · PERF P1 · SEG S2).** (1) **EST F2:** factory `createCrudService` (`getAll/getById/getNextId/add/update/remove/getPage`) com `add` **atômico** (fecha SEG S2.1); 4 services viraram config + wrappers preservando a API pública (incl. `updateBudget(id,budget)`, `idPattern ^\d+$` de S1.2, `getRecentBudgets` de P0.3); `removeUndefinedFields` unificado; timestamp padronizado em `Timestamp.now()`. `useEntityStore` (hook) recompõe o `DataContext` (sumiram 12 handlers + 4 buscas + `fetchWithCache`; `value` memoizado com deps granulares preservando F0.5). `modalStyles.ts` compartilhado nos 4 modais idênticos (os 2 de Produto ficaram por terem estilo divergente — verificado no código). (2) **SEG S2:** S2.1 validada por teste de atomicidade; S2.2 `validators.ts` (CNPJ/CPF módulo-11) + guard no `validateClient` + mensagem nos modais de Cliente. (3) **PERF P1:** P1.1 modal único fora do `.map`; P1.3 `localStorage` por chave + `QuotaExceededError` + migração do blob legado; P1.4 debounce na `GlobalSearch`. **P1.2 🟡:** capacidade `getBudgetsPage` (cursor) pronta e testada, mas o **rewire do boot ficou deferido** — mesmo bloqueio de P0.3 (a `Home` lê a coleção inteira para os KPIs; paginar quebraria KPIs/busca/filtros até U3.1/P2.1). **Portões:** `npm run build` verde; lint nos mesmos 10 pré-existentes (0 novos); **61 testes verdes** (49 jsdom + 12 regras). **Nenhuma ação de infra/deploy.**
 
+- **2026-07-11 (parte 6) — Onda 4 avança: God Components + biblioteca atômica + hex→tokens + dark mode (EST F3 · UI U2.1/U2.2 · U3.2).** (1) **EST F3 concluída:** `BudgetFormPage` **493→185** linhas (seções `RepresentativeSection`/`ProductsSection`/`TermsSection` + `EntityInfoCard` + `BudgetFormActions` + hook `useBudgetActions`); `Budgets` **484→104** linhas (`useBudgetFilters` + `budgetComparators` mapa que mata o `switch`/S-02 + `BudgetListItem` + `BudgetFilters`); **F3.3** `EntityForm` por entidade (`Forms/{Client,Representative,Product}Form`) — fim do espelhamento Create/Edit (máscaras reconciliadas: Edit passa a mascarar como o Create, idempotente). (2) **UI U2.1:** biblioteca atômica `src/ui` (`Button`/`Field`/`Modal`/`Card`/`StatCard`/`EmptyState`/`ErrorState`/`Skeletons`/`Feedback`/`DataTable`); os **6 modais CRUD** migrados para os átomos, `modalStyles.ts` **removido** (fecha EST F4.7); `CustomTable`→wrapper de `DataTable` tipado (mata 3 erros de `any` no lint: **10→7**). (3) **UI U2.2:** hex **113→43** — dashboard + chrome autenticado (header/sidebar) tokenizados; `Budgets.css` via variáveis CSS `--ads-*` publicadas por `getTheme` (adaptam ao modo); restante são hex legítimos (fonte do tema, Login/gradiente, categóricas, PDF). (4) **UI U3.2:** dark mode toggle **religado** ao `ColorModeContext` real (o do `UserMenu` usava o morto `LayoutContext.darkMode`) + persistência em `localStorage`; `LayoutContext.darkMode` removido. **Portões:** `tsc`+`build` verdes; **lint 7** (0 novos); **49 testes jsdom verdes**. **Nenhuma ação de infra/deploy.** ⚠️ **Smoke visual manual recomendado** (light **e** dark) — não verificável headless. **Pendências da Onda 4:** U2.3 (estados loading/empty/error com os átomos), U2.4 (responsividade), **U3.1** (dashboard hero KPI + gráficos `@mui/x-charts` lazy).
+
 ---
 
-**Status geral:** 🟢 **Ondas 0–3 concluídas no código** (0 também no Console). Onda 3: ✅ EST F2 (factory + store + modalStyles), ✅ SEG S2 (atomicidade + validadores), ✅ PERF P1.1/P1.3/P1.4, 🟡 PERF P1.2 (capacidade pronta, rewire deferido). **61 testes verdes** (49 jsdom + 12 emulador). Ondas 4–5 pendentes.
-**Próximo passo:** **Onda 4 — God Components & UI moderna** (exige Ondas 2–3, agora prontas): `EST F3` (`F3.1` fatiar `BudgetFormPage`; `F3.2` fatiar `Budgets` **partindo do modal único de P1.1** + mapa de ordenação; `F3.3` `EntityForm` Create/Edit — consome os átomos de UI U2.1 se já existirem e os estilos de F2.3), `UI U2` (`U2.1` biblioteca atômica `src/ui` **absorvendo EST F4.7** — tokenização dos modais, incl. os 2 de Produto ainda com estilo próprio; `U2.2` varredura hex/sx → tokens; `U2.3` estados; `U2.4` responsividade), `UI U3.1/U3.2` (dashboard hero KPI + gráficos lazy + dark mode toggle). **Pendências carregadas:** rewire de `RecentBudgets` + **rewire de paginação do boot (P1.2)** — ambos acoplados a **U3.1/P2.1** (tirar a dependência da coleção inteira na Home); `tabela_ncm.json` sob demanda (PERF futuro); gate de CI no deploy (decisão do usuário).
+**Status geral:** 🟢 **Ondas 0–3 concluídas** + **Onda 4 majoritariamente feita** (2026-07-11): ✅ EST F3 (God Components fatiados), ✅ UI U2.1 (biblioteca atômica + 6 modais + `DataTable`), ✅ UI U2.2 (hex **113→43**, chrome/dashboard/Budgets tokenizados), ✅ UI U3.2 (dark mode toggle real + persistência). **Lint 10→7** (3 erros de `any` mortos). **49 testes jsdom verdes** (+12 emulador). Faltam da Onda 4: **U2.3** (estados), **U2.4** (responsividade), **U3.1** (dashboard hero + charts); Onda 5 pendente.
+**Próximo passo:** **U3.1 — Dashboard hero KPI + gráficos** (`@mui/x-charts` via `React.lazy`, coordenar chunk com PERF P0.2; usa `StatCard` com `highlight` já pronto) — é o item que também **destrava o rewire de `RecentBudgets` + paginação do boot (P1.2/P0.3)**, tirando a dependência da coleção inteira na Home. Depois **U2.3** (loading/empty/error com os átomos `Skeletons`/`EmptyState`/`ErrorState` já criados) e **U2.4** (responsividade dos KPIs `md=4` + altura fluida do `DataTable`). **Pendências carregadas:** `tabela_ncm.json` sob demanda (PERF futuro); gate de CI no deploy (decisão do usuário); tokenizar gradiente do Login + cores categóricas do search (fim do U2.2); regra `no-color-literals` (U3.5).
 
 > **Deploy de produção:** perímetro **ativo** (regras publicadas), mas atenção ao achado **SEG-09-rev** — `deploy.yaml` tem as branches cruzadas com os ambientes reais; não fazer push para `development`/`main` sem alinhar com o usuário (ver `PLANO_EXECUCAO_SEGURANCA.md`).
 >
-> **Lint global (10 problemas restantes):** não é código morto — são `no-explicit-any` (CustomTable→UI U2.1, EditClientModal→EST F3.3, ContextAuth→SEG), `ban-types {}` (PageHeader→UI), `react-refresh` (DataContext→EST F2.2; ContextAuth/LayoutContext/BudgetPdf arquitetural) e `exhaustive-deps` (ContextAuth→SEG S0.3). Cada um resolve na sua trilha/onda; o gate `--max-warnings 0` só fica verde quando esses donos rodarem.
+> **Lint global (7 problemas restantes; era 10):** a Onda 4 matou os 3 erros de `no-explicit-any` (CustomTable×2 → wrapper tipado de `DataTable` em U2.1; EditClientModal → reescrito em F3.3). Restam 2 erros — `ban-types {}` (PageHeader→UI) e `no-explicit-any` (ContextAuth→SEG) — e 5 warnings `react-refresh`/`exhaustive-deps` (DataContext, ContextAuth, LayoutContext, BudgetPdf; arquiteturais/SEG). O gate `--max-warnings 0` só fica verde quando esses donos rodarem.

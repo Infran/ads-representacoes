@@ -47,7 +47,7 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, on
             flexDirection="column"
             gap={2}
             sx={{
-              backgroundColor: "#e0f7fa",
+              backgroundColor: "action.selected",
               padding: 2,
               borderRadius: 2,
             }}
@@ -76,10 +76,10 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, on
                   display="flex"
                   justifyContent="space-between"
                   sx={{
-                    backgroundColor: "#ffffff",
+                    backgroundColor: "background.paper",
                     padding: "6px 12px",
                     borderRadius: 1,
-                    boxShadow: "0px 1px 3px rgba(0,0,0,0.2)",
+                    boxShadow: 1,
                   }}
                 >
                   <Typography variant="body2" noWrap>

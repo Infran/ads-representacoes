@@ -1,23 +1,11 @@
 import React, { useState, useMemo } from "react";
-import {
-  Autocomplete,
-  Box,
-  Grid,
-  Modal,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { IClient } from "../../../../interfaces/iclient";
 import { IRepresentative } from "../../../../interfaces/irepresentative";
 import { addRepresentative } from "../../../../services/representativeServices";
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
-import { cepMask, mobilePhoneMask, phoneMask } from "../../../../utils/Masks";
-import {
-  modalStyle,
-  FormControlStyled,
-  StyledButton,
-  StyledTextField,
-} from "../../modalStyles";
+import { Modal, Button } from "../../../../ui";
+import RepresentativeForm from "../../../Forms/RepresentativeForm";
 
 interface CreateRepresentativeModalProps {
   open: boolean;
@@ -53,6 +41,17 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
     setRepresentative({ ...representative, [name]: value });
   };
 
+  const handleSelectClient = (client: IClient | null) => {
+    setRepresentative({
+      ...representative,
+      client,
+      address: client?.address,
+      city: client?.city,
+      state: client?.state,
+      cep: client?.cep,
+    } as IRepresentative);
+  };
+
   const handleAddRepresentative = async () => {
     if (!representative.name) {
       setError("Por favor, preencha o nome do representante.");
@@ -85,223 +84,30 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
         handleClose();
         setRepresentative({} as IRepresentative);
       }}
+      title="Adicionar Representante"
+      error={error}
+      actions={
+        <>
+          <Button variant="outlined" color="inherit" onClick={handleClose}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddRepresentative}
+            disabled={!isFormValid}
+          >
+            Adicionar
+          </Button>
+        </>
+      }
     >
-      <Box sx={modalStyle}>
-        <Typography
-          variant="h6"
-          component="h1"
-          gutterBottom
-          sx={{
-            borderBottom: "2px solid",
-            borderColor: "#1976d2", // Primary color
-            pb: 1,
-            mb: 2,
-            fontWeight: "bold",
-            color: "#1976d2", // Primary color
-          }}
-        >
-          Adicionar Representante
-        </Typography>
-
-        {error && (
-          <Typography
-            color="error"
-            variant="body2"
-            sx={{ mb: 2, fontWeight: "bold" }}
-          >
-            {error}
-          </Typography>
-        )}
-
-        <FormControlStyled>
-          {/* Seção: Informações do Representante */}
-          <Typography
-            variant="subtitle1"
-            sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-          >
-            Selecione um cliente:
-          </Typography>
-          <Autocomplete
-            options={clientList}
-            getOptionLabel={(option) => option.name}
-            onInputChange={(_event, value) => setClientSearchTerm(value)}
-            onChange={(_event, value) =>
-              setRepresentative({
-                ...representative,
-                client: value,
-                address: value?.address,
-                city: value?.city,
-                state: value?.state,
-                cep: value?.cep,
-              })
-            }
-            noOptionsText="Digite o nome do Cliente."
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Cliente"
-                variant="outlined"
-                fullWidth
-              />
-            )}
-          />
-          <Typography
-            variant="subtitle1"
-            sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-          >
-            Informações:
-          </Typography>
-
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="name"
-                name="name"
-                label="Nome"
-                variant="outlined"
-                value={representative.name || ""}
-                onChange={handleChange}
-                fullWidth
-                inputProps={{ maxLength: 80 }}
-                required
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="role"
-                name="role"
-                label="Cargo"
-                variant="outlined"
-                value={representative.role || ""}
-                onChange={handleChange}
-                fullWidth
-                inputProps={{ maxLength: 50 }}
-              />
-            </Grid>
-          </Grid>
-
-          {/* Seção: Contato */}
-          <Typography
-            variant="subtitle1"
-            sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-          >
-            Contato:
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="email"
-                name="email"
-                label="Email"
-                type="email"
-                variant="outlined"
-                value={representative.email || ""}
-                onChange={handleChange}
-                fullWidth
-                inputProps={{ maxLength: 80 }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="phone"
-                name="phone"
-                label="Telefone"
-                variant="outlined"
-                value={phoneMask(representative?.phone) || ""}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="mobilePhone"
-                name="mobilePhone"
-                label="Celular"
-                variant="outlined"
-                value={mobilePhoneMask(representative.mobilePhone) || ""}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-          </Grid>
-
-          {/* Seção: Endereço */}
-          <Typography
-            variant="subtitle1"
-            sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-          >
-            Endereço:
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="cep"
-                name="cep"
-                label="CEP"
-                variant="outlined"
-                value={cepMask(representative.cep) || ""}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="address"
-                name="address"
-                label="Endereço"
-                variant="outlined"
-                value={representative.address || ""}
-                onChange={handleChange}
-                fullWidth
-                inputProps={{ maxLength: 80 }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="state"
-                name="state"
-                label="Estado"
-                variant="outlined"
-                value={representative.state || ""}
-                onChange={handleChange}
-                fullWidth
-                inputProps={{ maxLength: 2 }}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="city"
-                name="city"
-                label="Cidade"
-                variant="outlined"
-                value={representative.city || ""}
-                onChange={handleChange}
-                fullWidth
-                inputProps={{ maxLength: 50 }}
-              />
-            </Grid>
-          </Grid>
-
-          {/* Botões de Ação */}
-          <Grid container justifyContent="flex-end" gap={2} sx={{ mt: 4 }}>
-            <StyledButton
-              variant="contained"
-              sx={{ bgcolor: "grey", "&:hover": { bgcolor: "darkgrey" } }}
-              onClick={handleClose}
-            >
-              Cancelar
-            </StyledButton>
-            <StyledButton
-              variant="contained"
-              sx={{ bgcolor: "#1976d2", "&:hover": { bgcolor: "#1565c0" } }} // Primary color
-              onClick={handleAddRepresentative}
-              disabled={!isFormValid}
-            >
-              Adicionar
-            </StyledButton>
-          </Grid>
-        </FormControlStyled>
-      </Box>
+      <RepresentativeForm
+        representative={representative}
+        onChange={handleChange}
+        clientOptions={clientList}
+        onClientInputChange={setClientSearchTerm}
+        onSelectClient={handleSelectClient}
+      />
     </Modal>
   );
 };

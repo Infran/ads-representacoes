@@ -152,22 +152,23 @@ const GlobalSearch: React.FC = () => {
           px: 1.5,
           py: 0.75,
           borderRadius: 2,
-          backgroundColor: open ? "#fff" : "rgba(0, 0, 0, 0.04)",
-          border: open ? "1px solid #1976D2" : "1px solid transparent",
+          backgroundColor: open ? "background.paper" : "action.hover",
+          border: open ? "1px solid" : "1px solid transparent",
+          borderColor: open ? "primary.main" : "transparent",
           cursor: "pointer",
           transition: "all 0.2s ease",
           minWidth: open ? 300 : 180,
           "&:hover": {
-            backgroundColor: "rgba(0, 0, 0, 0.06)",
+            backgroundColor: "action.hover",
           },
         }}
       >
-        <Search sx={{ color: "rgba(0, 0, 0, 0.4)", fontSize: 20 }} />
+        <Search sx={{ color: "text.secondary", fontSize: 20 }} />
         {!open && (
           <>
             <Typography
               sx={{
-                color: "rgba(0, 0, 0, 0.4)",
+                color: "text.secondary",
                 fontSize: "0.875rem",
                 flex: 1,
               }}
@@ -180,7 +181,7 @@ const GlobalSearch: React.FC = () => {
               sx={{
                 height: 20,
                 fontSize: "0.65rem",
-                backgroundColor: "rgba(0,0,0,0.08)",
+                backgroundColor: "action.selected",
                 "& .MuiChip-label": { px: 1 },
               }}
             />

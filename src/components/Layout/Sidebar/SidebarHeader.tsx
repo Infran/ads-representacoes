@@ -19,7 +19,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ open, onClose }) => {
         justifyContent: open ? "space-between" : "center",
         padding: theme.spacing(0, 1),
         minHeight: 64,
-        borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+        borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
       {/* Logo/Brand */}
@@ -41,7 +41,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ open, onClose }) => {
             sx={{
               fontWeight: 400,
               fontSize: "0.75rem",
-              color: "rgba(0, 0, 0, 0.54)",
+              color: "text.secondary",
               lineHeight: 1.2,
             }}
           >
@@ -71,7 +71,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ open, onClose }) => {
           transition: "all 0.2s ease",
           ml: open ? 0 : -5,
           "&:hover": {
-            backgroundColor: "rgba(25, 118, 210, 0.08)",
+            backgroundColor: "action.hover",
           },
         }}
       >

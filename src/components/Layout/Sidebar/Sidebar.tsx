@@ -14,6 +14,7 @@ import {
 import { Logout } from "@mui/icons-material";
 import Swal from "sweetalert2";
 
+import { tokens } from "../../../theme/tokens";
 import { useLayout } from "../LayoutContext";
 import { useAuth } from "../../../context/ContextAuth";
 import SidebarHeader from "./SidebarHeader";
@@ -29,7 +30,7 @@ const openedMixin = (theme: Theme): CSSObject => ({
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: "hidden",
-  borderRight: "1px solid rgba(0, 0, 0, 0.08)",
+  borderRight: `1px solid ${theme.palette.divider}`,
   boxShadow: "none",
 });
 
@@ -43,7 +44,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
   [theme.breakpoints.up("sm")]: {
     width: `calc(${theme.spacing(9)} + 1px)`,
   },
-  borderRight: "1px solid rgba(0, 0, 0, 0.08)",
+  borderRight: `1px solid ${theme.palette.divider}`,
   boxShadow: "none",
 });
 
@@ -74,12 +75,10 @@ const Sidebar: React.FC = () => {
       text: "Você precisará fazer login novamente.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#1976D2",
+      confirmButtonColor: tokens.color.error,
+      cancelButtonColor: tokens.color.brand.main,
       confirmButtonText: "Sim, sair",
       cancelButtonText: "Cancelar",
-      background: "#fff",
-      color: "#333",
       customClass: {
         popup: "swal-popup-custom",
       },
@@ -113,7 +112,7 @@ const Sidebar: React.FC = () => {
             minWidth: 0,
             mr: sidebarOpen ? 2.5 : "auto",
             justifyContent: "center",
-            color: "#d32f2f",
+            color: "error.main",
           }}
         >
           <Logout />
@@ -124,7 +123,7 @@ const Sidebar: React.FC = () => {
             opacity: sidebarOpen ? 1 : 0,
             "& .MuiTypography-root": {
               fontWeight: 500,
-              color: "#d32f2f",
+              color: "error.main",
               fontSize: "0.875rem",
             },
           }}

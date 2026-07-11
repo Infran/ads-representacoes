@@ -85,7 +85,7 @@ export const Home = () => {
         display: "flex",
         flexDirection: "column",
         gap: 4,
-        backgroundColor: "#FAFAFA",
+        backgroundColor: "background.default",
         minHeight: "100vh",
       }}
     >
@@ -93,7 +93,7 @@ export const Home = () => {
       <Box>
         <Typography
           variant="h4"
-          sx={{ fontWeight: 700, color: "#2C3E50", mb: 1 }}
+          sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}
         >
           Dashboard
         </Typography>       
@@ -158,10 +158,10 @@ export const Home = () => {
       {/* Orçamentos Recentes */}
       <Box
         sx={{
-          backgroundColor: "#fff",
+          backgroundColor: "background.paper",
           borderRadius: 2,
           p: 3,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+          boxShadow: 1,
         }}
       >
         <RecentBudgets budgets={budgets} loading={loading} />
@@ -171,7 +171,7 @@ export const Home = () => {
       <Box>
         <Typography
           variant="h6"
-          sx={{ fontWeight: 600, color: "#2C3E50", mb: 2 }}
+          sx={{ fontWeight: 600, color: "text.primary", mb: 2 }}
         >
           Acesso Rápido
         </Typography>

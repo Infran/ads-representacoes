@@ -1,20 +1,10 @@
 import React, { useState } from "react";
-import { Box, Grid, Modal, Typography } from "@mui/material";
 import { IClient } from "../../../../interfaces/iclient";
 import { addClient } from "../../../../services/clientServices";
 import { useData } from "../../../../context/DataContext";
-import {
-  cepMask,
-  cnpjMask,
-  mobilePhoneMask,
-} from "../../../../utils/Masks";
 import { isValidCnpj } from "../../../../utils/validators";
-import {
-  modalStyle,
-  FormControlStyled,
-  StyledButton,
-  StyledTextField,
-} from "../../modalStyles";
+import { Modal, Button } from "../../../../ui";
+import ClientForm from "../../../Forms/ClientForm";
 
 interface CreateClientModalProps {
   open: boolean;
@@ -77,171 +67,24 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
         handleClose();
         setClient({} as IClient);
       }}
+      title="Adicionar Cliente"
+      error={error}
+      actions={
+        <>
+          <Button variant="outlined" color="inherit" onClick={handleClose}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddClient}
+            disabled={!isFormValid}
+          >
+            Adicionar
+          </Button>
+        </>
+      }
     >
-      <Box sx={modalStyle}>
-        <Typography
-          variant="h6"
-          component="h1"
-          gutterBottom
-          sx={{
-            borderBottom: "2px solid",
-            borderColor: "#1976d2", // Cor primária do Material-UI
-            pb: 1,
-            mb: 2,
-            fontWeight: "bold",
-            color: "#1976d2", // Cor primária do Material-UI
-          }}
-        >
-          Adicionar Cliente
-        </Typography>
-
-        {error && (
-          <Typography
-            color="error"
-            variant="body2"
-            sx={{ mb: 2, fontWeight: "bold" }}
-          >
-            {error}
-          </Typography>
-        )}
-
-        <FormControlStyled>
-          {/* Seção: Informações do Cliente */}
-          <Typography
-            variant="subtitle1"
-            sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-          >
-            Informações:
-          </Typography>
-
-          <StyledTextField
-            id="name"
-            name="name"
-            label="Nome"
-            variant="outlined"
-            value={client.name || ""}
-            onChange={handleChange}
-            required
-          />
-          <StyledTextField
-            id="cnpj"
-            name="cnpj"
-            label="CNPJ"
-            variant="outlined"
-            value={cnpjMask(client.cnpj || "")}
-            onChange={handleChange}
-            fullWidth
-            inputProps={{ maxLength: 18 }}
-          />
-
-          {/* Seção: Contato */}
-          <Typography
-            variant="subtitle1"
-            sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-          >
-            Contato:
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="phone"
-                name="phone"
-                label="Telefone"
-                variant="outlined"
-                value={mobilePhoneMask(client.phone || "")}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="email"
-                name="email"
-                label="Email"
-                type="email"
-                variant="outlined"
-                value={client.email || ""}
-                onChange={handleChange}
-                fullWidth
-                inputProps={{ maxLength: 50 }}
-              />
-            </Grid>
-          </Grid>
-
-          {/* Seção: Endereço */}
-          <Typography
-            variant="subtitle1"
-            sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-          >
-            Endereço:
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="cep"
-                name="cep"
-                label="CEP"
-                variant="outlined"
-                value={cepMask(client.cep || "")}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="address"
-                name="address"
-                label="Endereço"
-                variant="outlined"
-                value={client.address || ""}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="city"
-                name="city"
-                label="Cidade"
-                variant="outlined"
-                value={client.city || ""}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <StyledTextField
-                id="state"
-                name="state"
-                label="Estado"
-                variant="outlined"
-                value={client.state || ""}
-                onChange={handleChange}
-                fullWidth
-              />
-            </Grid>
-          </Grid>
-
-          {/* Botões de Ação */}
-          <Grid container justifyContent="flex-end" gap={2} sx={{ mt: 4 }}>
-            <StyledButton
-              variant="contained"
-              sx={{ bgcolor: "grey", "&:hover": { bgcolor: "darkgrey" } }}
-              onClick={handleClose}
-            >
-              Cancelar
-            </StyledButton>
-            <StyledButton
-              variant="contained"
-              sx={{ bgcolor: "#1976d2", "&:hover": { bgcolor: "#1565c0" } }} // Cores primárias do Material-UI
-              onClick={handleAddClient}
-              disabled={!isFormValid}
-            >
-              Adicionar
-            </StyledButton>
-          </Grid>
-        </FormControlStyled>
-      </Box>
+      <ClientForm client={client} onChange={handleChange} />
     </Modal>
   );
 };

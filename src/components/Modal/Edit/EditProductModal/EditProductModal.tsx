@@ -1,15 +1,4 @@
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  FormControl,
-  Grid,
-  Modal,
-  TextField,
-  Typography,
-  InputAdornment,
-} from "@mui/material";
-import { styled } from "@mui/system";
 import { IProduct } from "../../../../interfaces/iproduct";
 import {
   getProductById,
@@ -18,24 +7,8 @@ import {
 import { useData } from "../../../../context/DataContext";
 import ncmData from "../../../../tabela_ncm.json";
 import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
-
-const modalStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 600,
-  bgcolor: "background.paper",
-  borderRadius: 4,
-  boxShadow: 24,
-  p: 4,
-};
-
-const FormControlStyled = styled(FormControl)(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing(2),
-}));
+import { Modal, Button } from "../../../../ui";
+import ProductForm from "../../../Forms/ProductForm";
 
 interface EditProductModalProps {
   open: boolean;
@@ -147,115 +120,29 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         handleClose();
         setProduct({} as IProduct);
       }}
+      title="Editar Produto"
+      error={error}
+      actions={
+        <>
+          <Button variant="outlined" color="inherit" onClick={handleClose}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleEditProduct}
+            disabled={!isFormValid}
+          >
+            Salvar
+          </Button>
+        </>
+      }
     >
-      <Box sx={modalStyle}>
-        <Typography variant="h6" component="h1" gutterBottom>
-          Editar Produto
-        </Typography>
-        {error && (
-          <Typography color="error" variant="body2" sx={{ mb: 2 }}>
-            {error}
-          </Typography>
-        )}
-        <FormControlStyled>
-          <Grid container spacing={1}>
-            <Grid item xs={6}>
-              <TextField
-                id="ncm"
-                name="ncm"
-                label="NCM"
-                variant="outlined"
-                fullWidth
-                value={product.ncm || ""}
-                onChange={handleNcmChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                id="icms"
-                name="icms"
-                label="ICMS"
-                variant="outlined"
-                fullWidth
-                value={product.icms || ""}
-                onChange={handleChange}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">%</InputAdornment>
-                  ),
-                }}
-              />
-            </Grid>
-          </Grid>
-          <TextField
-            id="name"
-            name="name"
-            label="Nome do Produto"
-            variant="outlined"
-            value={product.name || ""}
-            onChange={handleChange}
-          />
-          <Grid container spacing={1}>
-            <Grid item xs={6}>
-              <TextField
-                id="quantity"
-                name="quantity"
-                label="Quantidade em Estoque"
-                variant="outlined"
-                fullWidth
-                value={"0"}
-                onChange={handleChange}
-                disabled
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                id="unitValue"
-                name="unitValue"
-                label="Valor (Unitário)"
-                variant="outlined"
-                fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">R$</InputAdornment>
-                  ),
-                }}
-                value={maskedUnitValue || ""}
-                onChange={handleChange}
-              />
-            </Grid>
-          </Grid>
-          <TextField
-            id="description"
-            name="description"
-            label="Descrição"
-            variant="outlined"
-            value={product.description || ""}
-            onChange={handleChange}
-          />
-
-          <Grid container justifyContent="flex-end" spacing={2} sx={{ mt: 2 }}>
-            <Grid item>
-              <Button
-                variant="contained"
-                sx={{ backgroundColor: "grey" }}
-                onClick={handleClose}
-              >
-                Cancelar
-              </Button>
-            </Grid>
-            <Grid item>
-              <Button
-                variant="contained"
-                onClick={handleEditProduct}
-                disabled={!isFormValid}
-              >
-                Salvar
-              </Button>
-            </Grid>
-          </Grid>
-        </FormControlStyled>
-      </Box>
+      <ProductForm
+        product={product}
+        maskedUnitValue={maskedUnitValue}
+        onChange={handleChange}
+        onNcmChange={handleNcmChange}
+      />
     </Modal>
   );
 };

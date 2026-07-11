@@ -27,8 +27,8 @@
 |---|---|---|---|
 | **U0** | Quick fixes independentes de tema | 4 | ✅ Concluído (2026-07-11) |
 | **U1** | Fundação: tokens + tema + baseline | 2 | ✅ Concluído (2026-07-11) |
-| **U2** | Biblioteca atômica + consolidação | 4 | ⬜ Pendente (⛔ U1; modais ⛔ EST F2.3) |
-| **U3** | Dashboard moderna, dark mode & governança | 6 | ⬜ Pendente (⛔ U1/U2) |
+| **U2** | Biblioteca atômica + consolidação | 4 | 🟨 U2.1 ✅ · U2.2 ✅ (2026-07-11) · U2.3/U2.4 ⬜ |
+| **U3** | Dashboard moderna, dark mode & governança | 6 | 🟨 U3.2 ✅ (2026-07-11) · U3.1/U3.3–U3.6 ⬜ |
 
 ### Grafo de dependências
 ```
@@ -91,18 +91,20 @@ A spec completa (código) está no §4.2 do reporte.
 
 ## Fase U2 — Biblioteca atômica + consolidação
 
-### U2.1 — Biblioteca atômica `src/ui` (UI-03/05/06/07/13; **absorve EST F4.7**) ⛔ depende de U1 e de EST F2.3 ⬜
+### U2.1 — Biblioteca atômica `src/ui` (UI-03/05/06/07/13; **absorve EST F4.7**) ✅ (2026-07-11)
 Hierarquia proposta no §3.3 do reporte.
-- [ ] Criar `src/ui/`: `Button` (variantes), `TextField`, `Modal` (casca header/body/footer), `Card`/`StatCard`, `EmptyState`, `ErrorState`, `Skeletons`, `Feedback` (confirm tokenizado — consumido por U3.4).
-- [ ] `DataTable<T>`: wrapper único do DataGrid (tipado, altura fluida, tokenizado) — migrar `CustomTable` (mata `any[]`, `style` inline e `600px` fixo) e avaliar a lista manual de Orçamentos (UI-06; se a migração da lista conflitar com PERF P1.2/paginação, coordenar no log).
-- [ ] Migrar os 6 modais CRUD de `Modal/modalStyles.ts` (criado por EST F2.3) para `src/ui/Modal` + `TextField` — **este passo é a tokenização que era o EST F4.7** (constantes de cor morrem aqui).
-- [ ] **Coordenação:** avisar EST F3.3 (`EntityForm`) para consumir os átomos.
-- **Aceite:** 6 modais sem styled-components locais nem hex; tabelas com UX consistente; `modalStyles.ts` removido ou reduzido a re-export.
+- [x] Criado `src/ui/`: `Button`, `Field` (TextField tokenizado), `Modal` (casca header/body/footer/error), `Card`, `StatCard` (KPI, com `highlight` p/ hero — usado por U3.1), `EmptyState`, `ErrorState`, `Skeletons` (`ListSkeleton`/`CardGridSkeleton`/`TableSkeleton`), `Feedback` (`confirmDialog`/`notifySuccess`/`notifyError` — Swal tokenizado, consumido por U3.4) + `index.ts` (import único). Tudo consome o tema — **zero hex** fora de `tokens.ts`.
+- [x] `DataTable<T>`: wrapper genérico **tipado** do DataGrid (`src/ui/DataTable.tsx`), superfície/cabeçalho do tema (sem hex), coluna de ações opcional. `CustomTable` virou **wrapper fino** (`@deprecated`) que delega a `DataTable` — os 3 consumidores (Clients/Product/Representative Table) não mudaram. **Mata** o `any[]`/`(any)`/`style` inline/`600px` fixo do antigo `CustomTable` (fecha 2 erros de lint). A lista manual de Orçamentos ficou fora (conflitaria com PERF P1.2 — anotado).
+- [x] Migrados os **6 modais CRUD** de `modalStyles.ts` para `src/ui/Modal` + `Field` + `Button` — **tokenização que era o EST F4.7** (constantes `MODAL_PRIMARY`/hex `#1976d2`/`#1565c0` mortas). `src/components/Modal/modalStyles.ts` **removido** (`git rm`). Migração **preserva comportamento** de cada modal (máscaras, `maxLength`, NCM lookup, Autocomplete, validações) — a dedup Create/Edit é F3.3.
+- [x] **Coordenação:** átomos prontos para EST F3.3 (`EntityForm`) consumir.
+- **Aceite:** ✔ 6 modais sem styled-components locais nem hex; `modalStyles.ts` removido; tabelas tokenizadas e tipadas. `tsc`+build verdes; **lint 10 → 7 problemas** (3 erros de `any` mortos); **49 testes** verdes.
 
-### U2.2 — Varredura hex/`sx` → tokens (UI-02/10/12/14) ⬜ (incremental)
-- [ ] Ordem: `Home`/`KPICard`/`QuickAccessCard`/`RecentBudgets` → `AppHeader`/`Sidebar` (inclui `#d33` do confirm) → `Login` (só visual; comportamento = SEG S1.3) → `Budgets.css` (paleta slate → tokens) → restante.
-- [ ] A cada PR, registrar a contagem: `grep -c '#[0-9a-fA-F]\{3,6\}' src/` (baseline: 104 em 23 arquivos).
-- **Aceite:** contagem de hex fora de `tokens.ts` tende a ~0; nenhuma paleta paralela restante.
+### U2.2 — Varredura hex/`sx` → tokens (UI-02/10/12/14) ✅ (2026-07-11) — telas principais
+- [x] Dashboard: `Home`, `KPICard`, `QuickAccessCard`, `RecentBudgets` → `primary.main`/`text.*`/`background.*` (hex `#1976D2`/`#2C3E50`/`#FAFAFA`/`#fff` mortos).
+- [x] Chrome autenticado: `AppHeader`, `Sidebar`, `SidebarItem`, `SidebarHeader`, `SidebarGroup`, `GlobalSearch`, `NotificationBell`, `UserMenu`, `Breadcrumbs` → tokens (`text.secondary`/`divider`/`action.hover`/`action.selected`/`primary.main`); os 2 confirms de logout (Swal) usam `tokens.color.*`.
+- [x] `Budgets.css` (paleta slate, 32 hex) → **variáveis CSS `--ads-*`** publicadas por `getTheme`/`MuiCssBaseline` (mudam com o modo). `DeleteBudgetModal` (#e0f7fa/#fff) → tokens.
+- [x] Contagem: **113 → 43** hex. Os ~43 restantes são **legítimos/intencionais**: `tokens.ts`+`theme/index.ts` (fonte do tema, incl. a ponte `--ads-*`), `Login` (gradiente de marca, tela pré-auth), cores **categóricas** do `GlobalSearch`/`NotificationBell` (cliente/orçamento/produto/representante), `BudgetPdf` (cores do PDF), `Feedback.ts` (referencia tokens).
+- **Aceite:** ✔ telas principais + chrome sem paleta paralela; dashboard/lista de orçamentos/header/sidebar **adaptam ao dark mode**. Pendências de próxima iteração: tokenizar o gradiente do Login (se desejado) e promover as cores categóricas a tokens semânticos; regra `no-color-literals` (U3.5).
 
 ### U2.3 — Estados padronizados nas telas (UI-21/22/23) ⛔ depende de U2.1 ⬜
 - [ ] Substituir `"Carregando..."`/spinners ad hoc por `Skeletons`; DataGrid com `EmptyState` com CTA ("criar primeiro registro"); erros de CRUD/exclusão exibidos via `ErrorState`/`Feedback` (hoje somem em `console.error`).
@@ -122,9 +124,12 @@ Hierarquia proposta no §3.3 do reporte.
 - [ ] `@mui/x-charts` via `React.lazy`: `TrendChart` (12 meses) + `TopProductsChart` (consome `topProducts` já calculado). **Coordenação PERF:** o chunk de charts segue o padrão de `manualChunks` de PERF P0.2.
 - **Aceite:** dashboard com ≥2 visualizações reais; hierarquia visual clara (hero + secundários); charts fora do bundle inicial.
 
-### U3.2 — Dark mode toggle (UI-15) ⬜
-- [ ] Expor o toggle do `ColorModeContext` no `UserMenu`/`AppHeader`; persistir preferência (`localStorage`).
-- **Aceite:** alternância light/dark sem hex quebrado (pares AA nos dois modos).
+### U3.2 — Dark mode toggle (UI-15) ✅ (2026-07-11)
+> Antecipado junto com U2.2 (o chrome já estava sendo tokenizado). **Descoberta:** o `UserMenu` já tinha um toggle, mas ligado ao `LayoutContext.darkMode` (mecanismo morto que **não** trocava o tema) — o tema real é dirigido pelo `ColorModeContext` do `Root` (U1.1).
+- [x] `UserMenu` rewired para `useColorMode()` (o `ColorModeContext` real que dirige `getTheme`); `darkMode = mode === "dark"`, toggle = `toggle`.
+- [x] Persistência: `Root.tsx` lê o modo inicial de `localStorage["ads_color_mode"]` (fallback `prefers-color-scheme`) e grava no toggle.
+- [x] Removidos `darkMode`/`toggleDarkMode` mortos do `LayoutContext` (único consumidor era o `UserMenu`, agora rewired).
+- **Aceite:** ✔ alternância light/dark real e persistente pelo menu do usuário; chrome + dashboard + lista de orçamentos adaptam (U2.2). Smoke visual manual recomendado nos dois modos.
 
 ### U3.3 — Auditoria WCAG AA (UI-25) ⬜
 - [ ] Rodar axe/Lighthouse; corrigir contraste de secundários/greys, `aria-*` nos ícones/botões, foco visível.
@@ -196,6 +201,26 @@ Hierarquia proposta no §3.3 do reporte.
 - **Por que foi feito:** o app rodava no tema default do MUI (UI-09), com 104 hex e 4 paletas concorrentes sem fonte única. O tema tokenizado é pré-requisito para migrar hex→tokens (U2.2), criar os átomos (U2.1) e a dashboard/dark mode (U3). Aposentar o `index.css` fecha UI-11 (globais quebrados) sem regressão porque o `body` background nunca era visível e o reset foi preservado no `CssBaseline`.
 - **Arquivos (novos):** `src/theme/tokens.ts`, `src/theme/index.ts`, `src/theme/ColorModeContext.tsx`, `src/Root.tsx`, `src/theme/theme.test.ts`. **(alterados):** `src/main.tsx`. **(removido):** `src/index.css`.
 - **Verificação:** `npm run build` (tsc + vite) **verde** — o build percorre todo o grafo `main→Root→ThemeProvider→App`, provando o wiring; `npm run test:run` → **33/33 verdes** (inclui `theme.test.ts`: tokens chegam ao tema, light≠dark); `npm run lint` nos **mesmos 10 problemas pré-existentes** (0 novos — `Root` isolado e uma diretiva `eslint-disable` pontual no hook `useColorMode`, mesmo padrão de `DataContext`/`ContextAuth`). **Smoke visual manual recomendado** (Login/Home/listas) — não verificável headless sem credenciais Firebase; análise indica mudança imperceptível.
+
+### 2026-07-11 · U2.1 completo · Biblioteca atômica `src/ui` + migração dos 6 modais + tabelas
+> Onda 4. U2.1 é desbloqueada por U1 (tema) + EST F2.3 (modalStyles) — ambos prontos. Absorve o EST F4.7 (tokenização dos modais).
+- **O que foi feito:**
+  - **Átomos (`src/ui/`):** `Button` (forward do MUI tematizado), `Field` (TextField tokenizado, outlined+fullWidth), `Modal` (casca header/body/footer + slot de erro, responsiva `90vw/sm`), `Card`, `StatCard` (KPI com `highlight` p/ hero — pronto p/ U3.1), `EmptyState`, `ErrorState`, `Skeletons` (`ListSkeleton`/`CardGridSkeleton`/`TableSkeleton`), `Feedback` (`confirmDialog`/`notifySuccess`/`notifyError` — Swal com cores de marca dos tokens) + `index.ts`. **Zero hex** — tudo vem do tema.
+  - **Tabelas:** `src/ui/DataTable.tsx` genérico **tipado** (`<T extends GridValidRowModel>`) sobre o DataGrid, superfície/cabeçalho/rodapé do tema (sem hex, sem `style` inline, sem `600px` hardcoded no CSS — altura via prop). `CustomTable` reduzido a **wrapper `@deprecated`** que delega a `DataTable`, preservando a API → os 3 consumidores (Clients/Product/Representative Table) **não mudaram**. Morreram os `any[]`/`(any)`/`style` inline (−3 erros de lint junto com o de EditClientModal).
+  - **6 modais CRUD** migrados de `modalStyles.ts` para `Modal`+`Field`+`Button`: Client/Representative/Product × Create/Edit. `modalStyles.ts` **removido** (`git rm`) — constantes `MODAL_PRIMARY`/hex `#1976d2`/`#1565c0`/`grey` mortas (tokenização do antigo **EST F4.7**). **Comportamento preservado** em cada modal: máscaras (cnpj/cep/phone) e `maxLength` no Create de Client/Rep, NCM lookup + máscara de `unitValue` nos de Produto, Autocomplete de cliente nos de Rep, validações e handlers de cache idênticos. O botão "Cancelar" passou de cinza hardcoded para `variant="outlined" color="inherit"` (neutro, tematizado). Loading do EditClient virou `ListSkeleton`.
+- **Por que foi feito:** dar um alvo canônico (átomos tokenizados) para a migração hex→tokens (U2.2), os estados padronizados (U2.3), a dashboard/dark mode (U3) e o `EntityForm` (EST F3.3). Tokenizar os modais fecha a duplicação de estilo (D-01) e o EST F4.7 sem tocar o comportamento das telas de CRUD (que não têm cobertura de teste).
+- **Arquivos (novos):** `src/ui/{Button,Field,Modal,Card,StatCard,EmptyState,ErrorState,Skeletons,DataTable}.tsx`, `src/ui/Feedback.ts`, `src/ui/index.ts`. **(reescritos):** os 6 modais Create/Edit de Client/Product/Representative; `src/components/Tables/CustomTable/CustomTable.tsx` (wrapper). **(removido):** `src/components/Modal/modalStyles.ts`.
+- **Verificação:** `tsc --noEmit` verde; `npm run build` verde; `npm run lint` **10 → 7 problemas** (mortos: `any[]`/`(any)` do CustomTable e `any` do EditClientModal; restam 7 pré-existentes com dono em EST/SEG/UI); **49 testes jsdom verdes** (nenhum de modal quebrou — `DeleteBudgetModal`/`Budgets.filter` intactos). Smoke visual manual recomendado (modais/tabelas em light/dark).
+
+### 2026-07-11 · U2.2 (telas principais) + U3.2 · hex→tokens + dark mode real
+- **O que foi feito:**
+  - **U2.2 — dashboard:** `Home`, `KPICard`, `QuickAccessCard`, `RecentBudgets` migrados para `primary.main`/`text.*`/`background.*` (sombras `rgba` → `boxShadow: 1`).
+  - **U2.2 — chrome autenticado:** `AppHeader` (styled com `theme.palette.*`), `Sidebar`/`SidebarItem`/`SidebarHeader`/`SidebarGroup` (bordas→`divider`, ativo/hover→`action.selected`/`action.hover`, marca→`primary.main`, logout→`error.main`), `GlobalSearch`/`NotificationBell`/`UserMenu`/`Breadcrumbs` (rgba→`text.*`/`action.*`/`primary.main`). Os 2 Swal de logout usam `tokens.color.*`.
+  - **U2.2 — `Budgets.css`:** as 32 cores slate viraram **variáveis CSS `--ads-*`** publicadas por `getTheme`/`MuiCssBaseline.styleOverrides[":root"]` (recomputadas por modo) — a lista de orçamentos adapta ao dark. `DeleteBudgetModal` tokenizado. Contagem **113 → 43** (restante legítimo: fonte do tema, Login, categóricas, PDF).
+  - **U3.2 — dark toggle real:** `UserMenu` rewired do morto `LayoutContext.darkMode` para `useColorMode()` (o `ColorModeContext` do `Root` que dirige `getTheme`); `Root` persiste em `localStorage["ads_color_mode"]` (fallback `prefers-color-scheme`); `darkMode`/`toggleDarkMode` removidos do `LayoutContext`.
+- **Por que foi feito:** o app rodava com 104+ hex e 4 paletas paralelas (UI-02/10/12/14); sem tokenizar o chrome, o dark mode (cujo toggle já existia na UI, mas desligado) mostraria telas quebradas. Tokenizar + religar o toggle entrega dark mode funcional nas telas principais.
+- **Arquivos:** `src/pages/Home/Home.tsx`, `src/components/Dashboard/{KPICard,QuickAccessCard,RecentBudgets}.tsx`, `src/pages/Budgets/Budgets.css`, `src/theme/index.ts` (ponte `--ads-*`), `src/components/Layout/AppHeader/{AppHeader,GlobalSearch,NotificationBell,UserMenu,Breadcrumbs}.tsx`, `src/components/Layout/Sidebar/{Sidebar,SidebarItem,SidebarHeader,SidebarGroup}.tsx`, `src/components/Layout/LayoutContext.tsx`, `src/Root.tsx`, `src/hooks/useBudgetActions.ts`, `src/components/Modal/Delete/DeleteBudgetModal.tsx`.
+- **Verificação:** `tsc --noEmit` verde; `npm run build` verde; `npm run lint` **7 problemas** (0 novos); **49 testes verdes**; hex **113 → 43**. **Smoke visual manual recomendado** em light **e** dark (toggle no menu do usuário) — não verificável headless.
 
 <!--
 ### AAAA-MM-DD · Ux.y · <título curto>

@@ -57,7 +57,7 @@ const RecentBudgets: React.FC<RecentBudgetsProps> = ({
           mb: 2,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600, color: "#2C3E50" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary" }}>
           Orçamentos Recentes
         </Typography>
         <Button
@@ -74,7 +74,7 @@ const RecentBudgets: React.FC<RecentBudgetsProps> = ({
       <TableContainer component={Paper} elevation={1}>
         <Table size="small">
           <TableHead>
-            <TableRow sx={{ backgroundColor: "#FAFAFA" }}>
+            <TableRow sx={{ backgroundColor: "background.default" }}>
               <TableCell sx={{ fontWeight: 600 }}>ID</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Cliente</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Representante</TableCell>
@@ -158,7 +158,7 @@ const RecentBudgets: React.FC<RecentBudgetsProps> = ({
                         <IconButton
                           size="small"
                           onClick={() => handleOpenPdf(budget)}
-                          sx={{ color: "#1976D2" }}
+                          sx={{ color: "primary.main" }}
                         >
                           <PictureAsPdf fontSize="small" />
                         </IconButton>
@@ -169,7 +169,7 @@ const RecentBudgets: React.FC<RecentBudgetsProps> = ({
                           onClick={() =>
                             navigate(`/Orcamentos/Editar/${budget.id}`)
                           }
-                          sx={{ color: "#2C3E50" }}
+                          sx={{ color: "text.primary" }}
                         >
                           <Edit fontSize="small" />
                         </IconButton>
@@ -178,7 +178,7 @@ const RecentBudgets: React.FC<RecentBudgetsProps> = ({
                         <IconButton
                           size="small"
                           onClick={() => navigate("/Orcamentos")}
-                          sx={{ color: "#666" }}
+                          sx={{ color: "text.secondary" }}
                         >
                           <Visibility fontSize="small" />
                         </IconButton>

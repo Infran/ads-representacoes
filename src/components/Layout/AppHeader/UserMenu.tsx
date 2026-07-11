@@ -18,13 +18,17 @@ import {
   LightMode,
 } from "@mui/icons-material";
 import { useAuth } from "../../../context/ContextAuth";
-import { useLayout } from "../LayoutContext";
+import { useColorMode } from "../../../theme/ColorModeContext";
+import { tokens } from "../../../theme/tokens";
 import Swal from "sweetalert2";
 
 const UserMenu: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { currentUser, logout } = useAuth();
-  const { darkMode, toggleDarkMode } = useLayout();
+  // U3.2: o toggle usa o ColorModeContext real (dirige getTheme + persiste),
+  // não mais o LayoutContext.darkMode (que não trocava o tema).
+  const { mode, toggle } = useColorMode();
+  const darkMode = mode === "dark";
   const open = Boolean(anchorEl);
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -42,8 +46,8 @@ const UserMenu: React.FC = () => {
       text: "Você precisará fazer login novamente.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#1976D2",
+      confirmButtonColor: tokens.color.error,
+      cancelButtonColor: tokens.color.brand.main,
       confirmButtonText: "Sim, sair",
       cancelButtonText: "Cancelar",
     }).then((result) => {
@@ -71,7 +75,7 @@ const UserMenu: React.FC = () => {
         sx={{
           p: 0.5,
           "&:hover": {
-            backgroundColor: "rgba(25, 118, 210, 0.08)",
+            backgroundColor: "action.hover",
           },
         }}
       >
@@ -81,7 +85,7 @@ const UserMenu: React.FC = () => {
           sx={{
             width: 38,
             height: 38,
-            backgroundColor: "#1976D2",
+            backgroundColor: "primary.main",
             fontSize: "0.875rem",
             fontWeight: 600,
             border: "2px solid rgba(25, 118, 210, 0.2)",
@@ -175,7 +179,7 @@ const UserMenu: React.FC = () => {
 
         {/* Dark mode toggle */}
         <MenuItem
-          onClick={toggleDarkMode}
+          onClick={toggle}
           sx={{
             py: 1.5,
             justifyContent: "space-between",
@@ -194,7 +198,7 @@ const UserMenu: React.FC = () => {
           <Switch
             size="small"
             checked={darkMode}
-            onChange={toggleDarkMode}
+            onChange={toggle}
             onClick={(e) => e.stopPropagation()}
           />
         </MenuItem>

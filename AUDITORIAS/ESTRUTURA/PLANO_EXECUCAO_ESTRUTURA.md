@@ -33,7 +33,7 @@
 | **F0** | Estabilização: bugs funcionais + limpeza | 7 | ✅ Concluído (2026-07-11) |
 | **F1** | Rede de segurança (testes) | 2 | ✅ Concluído (2026-07-11) |
 | **F2** | Desduplicação estrutural | 3 | ✅ Concluído (2026-07-11) |
-| **F3** | Quebra de God Components | 3 | ⬜ Pendente |
+| **F3** | Quebra de God Components | 3 | ✅ Concluído (2026-07-11) — F3.1/F3.2/F3.3 |
 | **F4** | Refino & dívida técnica | 7 | 🟨 F4.3 ✅ (2026-07-10, fora de ordem) · demais ⬜ |
 
 ### Grafo de dependências
@@ -138,23 +138,26 @@ Confirmado: **0 imports** em `src/` (re-verificado via grep). Sidebar ativo é `
 
 **Meta:** transformar os 3 God Components em orquestração enxuta + peças testáveis. **Pré-requisito:** F1 (idealmente F2).
 
-### F3.1 — Fatiar `BudgetFormPage` (E-01, S-04) ⬜
+### F3.1 — Fatiar `BudgetFormPage` (E-01, S-04) ✅ (2026-07-11)
 > Nota: `BudgetAccordion`, `BudgetSummaryPanel`, `ProductSelector`, `ProductList`, `BudgetTermsForm`, `BudgetPreviewModal` **já existem** — reaproveitar.
-- [ ] Extrair `accordionSections` (l.199–417) para `RepresentativeSection`, `ProductsSection`, `TermsSection` em `src/components/Budget/`.
-- [ ] Extrair os 2 cards Cliente/Representante (l.239–350) para `EntityInfoCard` reutilizável (também usável no `BudgetSummaryPanel`).
-- **Aceite:** `BudgetFormPage` abaixo de ~200 linhas; criar/editar idênticos; seções testáveis isoladas.
+- [x] Extraídas as 3 seções do `accordionSections` inline para `RepresentativeSection`, `ProductsSection`, `TermsSection` em `src/components/Budget/` (cada uma recebe `form: UseBudgetFormReturn` — tipo agora exportado do hook — e é testável isolada com um form-shaped mock).
+- [x] Extraídos os 2 cards Cliente/Representante para `EntityInfoCard` reutilizável (caption + Paper + title + children); usado 2× em `RepresentativeSection`. Deixei `BudgetSummaryPanel` intacto (seu bloco "Cliente" não é um Paper card — reusar mudaria a aparência).
+- [x] **Extra (orquestração enxuta):** `BudgetFormActions` (barra de botões, apresentacional) + hook `useBudgetActions` (handlers `handleSave`/`handleCancel` com Swal/navegação/cache) para tirar a lógica de persistência da página.
+- **Aceite:** ✔ `BudgetFormPage` **493 → 185 linhas**; create/edit idênticos (mesma API/props preservada); seções isoladas. Build+tsc+lint (mesmos 10 pré-existentes) + 49 testes verdes.
 
-### F3.2 — Fatiar `Budgets` (E-02, S-02) ⬜
-- [ ] Extrair `useBudgetFilters()` (estado + `useMemo` de filtro/ordenação, l.60–149).
-- [ ] Extrair `<BudgetListItem budget />` (l.334–474).
-- [ ] Trocar o `switch(sortBy)` (l.121–138) por `const comparators: Record<SortOption, (a,b)=>number>` (resolve S-02).
-- [x] `handleOpenPdf` já não tem lógica de PDF — delega a `openBudgetPdf()` (feito em F4.3, 2026-07-10). Ao fatiar, é só um handler fino.
-- **Aceite:** `Budgets.tsx` vira orquestração; item por componente; ordenação por mapa.
+### F3.2 — Fatiar `Budgets` (E-02, S-02) ✅ (2026-07-11)
+- [x] Extraído `useBudgetFilters(budgetList)` (`src/pages/Budgets/useBudgetFilters.ts`): estado dos 6 filtros + `debouncedSearch` + listas derivadas (representantes/clientes) + `filteredBudgets` (useMemo) + `clearFilters` + `hasActiveFilters`. Preserva a correção A-04/F0.2 (reais→centavos).
+- [x] Extraído `<BudgetListItem budget expanded onToggle onOpenPdf onEdit onDelete />` (`src/pages/Budgets/BudgetListItem.tsx`) — estrutura/classes de `Budgets.css` preservadas (o teste de caracterização que busca `#1/#2/#3` segue verde).
+- [x] Trocado o `switch(sortBy)` por `budgetComparators: Record<SortOption, (a,b)=>number>` (no `useBudgetFilters.ts`) — **resolve S-02**; novo critério = nova entrada no mapa.
+- [x] **Extra:** `BudgetFilters` (UI de filtros, apresentacional) para deixar a página só como orquestração.
+- [x] `handleOpenPdf` já não tem lógica de PDF — delega a `openBudgetPdf()` (F4.3). Ficou um handler fino.
+- **Aceite:** ✔ `Budgets.tsx` **484 → 104 linhas** (orquestração); item por componente; ordenação por mapa. Build+tsc+lint (mesmos 10) + 49 testes verdes.
 
-### F3.3 — `EntityForm` compartilhado Create/Edit (E-04, E-05) ⬜
-- [ ] Extrair `<EntityForm mode="create|edit" />` por entidade (Cliente, Produto, Representante), usando os estilos de F2.3.
-- [ ] Create e Edit passam a compor o mesmo form; preservar CRUD + função de cache do `useData()`.
-- **Aceite:** sem espelhamento Create/Edit; comportamento preservado.
+### F3.3 — `EntityForm` compartilhado Create/Edit (E-04, E-05) ✅ (2026-07-11)
+- [x] Extraídos `src/components/Forms/{ClientForm,RepresentativeForm,ProductForm}.tsx` — os campos repetidos de cada entidade, **apresentacionais**, construídos com os átomos de **U2.1** (`Field`) em vez dos estilos de F2.3 (que morreram na U2.1). `RepresentativeForm` recebe o autocomplete de cliente por props (busca debounced permanece no modal, dono do `useData`); `ProductForm` recebe `maskedUnitValue`/`onNcmChange` (lookup NCM + máscara de valor ficam no modal).
+- [x] Os 6 modais Create/Edit passaram a **compor o mesmo form** (`<Modal>` + `<XForm>`); CRUD + função de cache do `useData()` preservados exatamente (add/update + *ToCache/*InCache).
+- [x] **Reconciliação deliberada de máscaras:** o form compartilhado aplica máscaras (cnpj/cep/telefone/celular) e `maxLength` nos **dois** modos. Antes, só o Create mascarava e o Edit gravava cru — agora ambos seguem o Create. Seguro: as máscaras são idempotentes (`Masks.ts` faz `replace(/\D/g,"")` antes de formatar), então dados já salvos (mascarados ou crus) exibem consistente. Documentado no cabeçalho de `ClientForm`.
+- **Aceite:** ✔ sem espelhamento Create/Edit (≈150 linhas de JSX duplicado por entidade → 1 form); comportamento preservado (a divergência de máscara do Edit foi reconciliada para o comportamento correto do Create). `tsc`+lint verdes.
 
 ---
 
@@ -282,6 +285,15 @@ Resolvido, porém **com mecanismo diferente do planejado**: em vez de uma rota R
 - **Por que foi feito:** colapsar a repetição 4–6× (services/contexto/estilos) antes de fatiar os God Components (F3), com criação atômica embutida (dono único da SEG S2.1) e sem desfazer as correções de SEG/PERF anteriores.
 - **Arquivos (novos):** `src/services/createCrudService.ts` (+`.test.ts`), `src/context/useEntityStore.ts`, `src/components/Modal/modalStyles.ts`, `src/utils/validators.ts` (+`.test.ts`, SEG S2.2). **(reescritos):** `src/services/{budget,client,product,representative}Services.ts`, `src/context/DataContext.tsx`. **(migrados):** os 4 modais Create/Edit de Client/Representative + wiring de CNPJ nos 2 de Client.
 - **Verificação:** `npm run build` + `npx tsc --noEmit` **verdes**; `npm run lint` nos **mesmos 10 pré-existentes** (0 novos); **49 testes jsdom verdes** (+16: factory 7, validadores 8, quota 1) + **12 de regras**.
+
+### 2026-07-11 · F3 completo (F3.1–F3.3) · Quebra dos God Components (Onda 4)
+- **O que foi feito:**
+  - **F3.1 — `BudgetFormPage` 493 → 185 linhas.** As 3 seções do `accordionSections` inline viraram `RepresentativeSection`/`ProductsSection`/`TermsSection` (`src/components/Budget/`, recebem `form: UseBudgetFormReturn` — tipo agora exportado do hook). Os 2 cards Cliente/Representante viraram `EntityInfoCard` reutilizável. A barra de botões virou `BudgetFormActions` e os handlers de salvar/cancelar (Swal+navegação+cache) foram para o hook `useBudgetActions`. Página = orquestração.
+  - **F3.2 — `Budgets` 484 → 104 linhas.** `useBudgetFilters(budgetList)` (estado dos 6 filtros + derivados + `filteredBudgets`); `budgetComparators` (mapa `Record<SortOption,…>` — mata o `switch`, resolve **S-02**); `BudgetListItem` (linha+detalhes); `BudgetFilters` (UI de filtros). Estrutura/classes de `Budgets.css` preservadas (teste de caracterização segue verde).
+  - **F3.3 — fim do espelhamento Create/Edit.** `src/components/Forms/{ClientForm,RepresentativeForm,ProductForm}` concentram os campos (com os átomos `Field` de U2.1); os 6 modais compõem `<Modal>` + `<XForm>`. Reconciliação deliberada das máscaras (Edit passa a mascarar como o Create — idempotente).
+- **Por que foi feito:** transformar os 3 God Components (501/498/421 linhas originais) em orquestração enxuta + peças testáveis isoladas, sobre a rede de testes de F1 e os átomos de U2.1. F3.2 resolve S-02 (mapa no lugar do switch). F3.3 fecha E-04/E-05 (duplicação Create/Edit).
+- **Arquivos (novos):** `src/components/Budget/{EntityInfoCard,RepresentativeSection,ProductsSection,TermsSection,BudgetFormActions}.tsx`, `src/hooks/useBudgetActions.ts`, `src/pages/Budgets/{useBudgetFilters.ts,BudgetFilters.tsx,BudgetListItem.tsx}`, `src/components/Forms/{ClientForm,RepresentativeForm,ProductForm}.tsx`. **(reescritos):** `BudgetFormPage.tsx`, `Budgets.tsx`, os 6 modais Create/Edit; `useBudgetForm.ts` (export do tipo de retorno).
+- **Verificação:** `tsc --noEmit` verde; `npm run lint` **7 problemas** (0 novos); **49 testes jsdom verdes** (`Budgets.filter`/`DeleteBudgetModal` intactos); `npm run build` verde. Smoke visual manual recomendado (form de orçamento, lista de orçamentos, os 6 modais em light/dark).
 
 <!--
 ### AAAA-MM-DD · Fx.y · <título curto>

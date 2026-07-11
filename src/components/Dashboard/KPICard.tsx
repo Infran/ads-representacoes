@@ -72,7 +72,7 @@ const KPICard: React.FC<KPICardProps> = ({
           >
             {title}
           </Typography>
-          <Icon sx={{ color: "#1976D2", fontSize: 24, opacity: 0.8 }} />
+          <Icon sx={{ color: "primary.main", fontSize: 24, opacity: 0.8 }} />
         </Box>
 
         {/* Valor principal */}
@@ -83,7 +83,7 @@ const KPICard: React.FC<KPICardProps> = ({
             variant="h4"
             sx={{
               fontWeight: 700,
-              color: "#1976D2",
+              color: "primary.main",
               mb: 0.5,
               lineHeight: 1.2,
             }}

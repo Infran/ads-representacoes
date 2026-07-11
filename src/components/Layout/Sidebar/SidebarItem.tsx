@@ -7,6 +7,7 @@ import {
   Tooltip,
   Badge,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { MenuItem } from "./sidebarConfig";
 
@@ -18,6 +19,7 @@ interface SidebarItemProps {
 const SidebarItem: React.FC<SidebarItemProps> = ({ item, open }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
 
   // Verifica se a rota está ativa (exata ou início)
   const isActive =
@@ -41,15 +43,13 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ item, open }) => {
           mx: 1,
           my: 0.5,
           borderRadius: 2,
-          backgroundColor: isActive
-            ? "rgba(25, 118, 210, 0.12)"
-            : "transparent",
-          borderLeft: isActive ? "3px solid #1976D2" : "3px solid transparent",
+          backgroundColor: isActive ? "action.selected" : "transparent",
+          borderLeft: `3px solid ${
+            isActive ? theme.palette.primary.main : "transparent"
+          }`,
           transition: "all 0.2s ease-in-out",
           "&:hover": {
-            backgroundColor: isActive
-              ? "rgba(25, 118, 210, 0.18)"
-              : "rgba(0, 0, 0, 0.04)",
+            backgroundColor: "action.hover",
             transform: "translateX(2px)",
           },
         }}
@@ -59,7 +59,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ item, open }) => {
             minWidth: 0,
             mr: open ? 2.5 : "auto",
             justifyContent: "center",
-            color: isActive ? "#1976D2" : "rgba(0, 0, 0, 0.54)",
+            color: isActive ? "primary.main" : "text.secondary",
             transition: "color 0.2s ease",
           }}
         >
@@ -78,7 +78,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ item, open }) => {
             transition: "opacity 0.2s ease",
             "& .MuiTypography-root": {
               fontWeight: isActive ? 600 : 400,
-              color: isActive ? "#1976D2" : "rgba(0, 0, 0, 0.87)",
+              color: isActive ? "primary.main" : "text.primary",
               fontSize: "0.875rem",
             },
           }}

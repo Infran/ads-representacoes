@@ -17,7 +17,7 @@ const Breadcrumbs: React.FC = () => {
   return (
     <MuiBreadcrumbs
       separator={
-        <NavigateNext fontSize="small" sx={{ color: "rgba(0,0,0,0.3)" }} />
+        <NavigateNext fontSize="small" sx={{ color: "text.disabled" }} />
       }
       aria-label="breadcrumb"
       sx={{
@@ -35,10 +35,10 @@ const Breadcrumbs: React.FC = () => {
           display: "flex",
           alignItems: "center",
           cursor: "pointer",
-          color: "rgba(0, 0, 0, 0.54)",
+          color: "text.secondary",
           fontSize: "0.75rem",
           "&:hover": {
-            color: "#1976D2",
+            color: "primary.main",
           },
         }}
       >
@@ -55,10 +55,10 @@ const Breadcrumbs: React.FC = () => {
           onClick={() => navigate(crumb.path)}
           sx={{
             cursor: "pointer",
-            color: "rgba(0, 0, 0, 0.54)",
+            color: "text.secondary",
             fontSize: "0.75rem",
             "&:hover": {
-              color: "#1976D2",
+              color: "primary.main",
             },
           }}
         >
@@ -70,7 +70,7 @@ const Breadcrumbs: React.FC = () => {
       {breadcrumbs.length > 0 && (
         <Typography
           sx={{
-            color: "#1976D2",
+            color: "primary.main",
             fontWeight: 500,
             fontSize: "0.75rem",
           }}

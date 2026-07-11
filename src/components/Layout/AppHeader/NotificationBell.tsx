@@ -67,9 +67,9 @@ const NotificationBell: React.FC = () => {
       <IconButton
         onClick={handleOpen}
         sx={{
-          color: "rgba(0, 0, 0, 0.54)",
+          color: "text.secondary",
           "&:hover": {
-            backgroundColor: "rgba(25, 118, 210, 0.08)",
+            backgroundColor: "action.hover",
           },
         }}
       >
@@ -113,7 +113,8 @@ const NotificationBell: React.FC = () => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: "1px solid rgba(0,0,0,0.08)",
+            borderBottom: "1px solid",
+            borderColor: "divider",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -140,7 +141,7 @@ const NotificationBell: React.FC = () => {
         {notifications.length === 0 ? (
           <Box sx={{ p: 4, textAlign: "center" }}>
             <Notifications
-              sx={{ fontSize: 48, color: "rgba(0,0,0,0.1)", mb: 1 }}
+              sx={{ fontSize: 48, color: "action.disabled", mb: 1 }}
             />
             <Typography color="text.secondary" variant="body2">
               Nenhuma notificação
@@ -159,9 +160,9 @@ const NotificationBell: React.FC = () => {
                       px: 2,
                       backgroundColor: notification.read
                         ? "transparent"
-                        : "rgba(25, 118, 210, 0.04)",
+                        : "action.hover",
                       "&:hover": {
-                        backgroundColor: "rgba(0,0,0,0.04)",
+                        backgroundColor: "action.selected",
                       },
                     }}
                     secondaryAction={
@@ -200,7 +201,7 @@ const NotificationBell: React.FC = () => {
                           </Typography>
                           <Typography
                             variant="caption"
-                            sx={{ color: "rgba(0,0,0,0.4)" }}
+                            sx={{ color: "text.secondary" }}
                           >
                             {notification.time}
                           </Typography>

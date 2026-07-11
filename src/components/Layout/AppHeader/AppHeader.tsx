@@ -23,10 +23,10 @@ const StyledAppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== "open",
 })<AppBarProps>(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
-  backgroundColor: "#fff",
-  color: "#2C3E50",
-  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-  borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.text.primary,
+  boxShadow: "0 1px 3px rgba(16, 24, 40, 0.05)",
+  borderBottom: `1px solid ${theme.palette.divider}`,
   transition: theme.transitions.create(["width", "margin"], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -81,9 +81,9 @@ const AppHeader: React.FC = () => {
             onClick={toggleSidebar}
             edge="start"
             sx={{
-              color: "rgba(0, 0, 0, 0.54)",
+              color: "text.secondary",
               "&:hover": {
-                backgroundColor: "rgba(25, 118, 210, 0.08)",
+                backgroundColor: "action.hover",
               },
             }}
           >
@@ -99,7 +99,7 @@ const AppHeader: React.FC = () => {
               sx={{
                 fontWeight: 600,
                 fontSize: { xs: "1rem", sm: "1.125rem" },
-                color: "#2C3E50",
+                color: "text.primary",
                 lineHeight: 1.3,
               }}
             >

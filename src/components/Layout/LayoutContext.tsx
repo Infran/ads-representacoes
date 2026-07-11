@@ -11,9 +11,6 @@ interface LayoutContextType {
   toggleSidebar: () => void;
   openSidebar: () => void;
   closeSidebar: () => void;
-  // Para dark mode futuro
-  darkMode: boolean;
-  toggleDarkMode: () => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
@@ -32,11 +29,6 @@ interface LayoutProviderProps {
 
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    // Persistir preferência de dark mode
-    const saved = localStorage.getItem("darkMode");
-    return saved === "true";
-  });
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -50,14 +42,6 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
     setSidebarOpen(false);
   }, []);
 
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode((prev) => {
-      const newValue = !prev;
-      localStorage.setItem("darkMode", String(newValue));
-      return newValue;
-    });
-  }, []);
-
   return (
     <LayoutContext.Provider
       value={{
@@ -65,8 +49,6 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
         toggleSidebar,
         openSidebar,
         closeSidebar,
-        darkMode,
-        toggleDarkMode,
       }}
     >
       {children}

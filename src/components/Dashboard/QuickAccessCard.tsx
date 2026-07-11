@@ -36,7 +36,7 @@ const QuickAccessCard: React.FC<QuickAccessCardProps> = ({
         height: "100%",
         transition: "all 0.2s ease-in-out",
         "&:hover": {
-          borderColor: "#1976D2",
+          borderColor: "primary.main",
           boxShadow: "0 2px 8px rgba(25, 118, 210, 0.15)",
         },
       }}
@@ -62,14 +62,14 @@ const QuickAccessCard: React.FC<QuickAccessCardProps> = ({
               justifyContent: "center",
             }}
           >
-            <Icon sx={{ color: "#1976D2", fontSize: 28 }} />
+            <Icon sx={{ color: "primary.main", fontSize: 28 }} />
           </Box>
 
           {/* Texto */}
           <Box sx={{ flexGrow: 1 }}>
             <Typography
               variant="subtitle1"
-              sx={{ fontWeight: 600, color: "#2C3E50" }}
+              sx={{ fontWeight: 600, color: "text.primary" }}
             >
               {title}
             </Typography>
@@ -79,7 +79,7 @@ const QuickAccessCard: React.FC<QuickAccessCardProps> = ({
               <Typography variant="body2" color="text.secondary">
                 <Box
                   component="span"
-                  sx={{ fontWeight: 700, color: "#1976D2", mr: 0.5 }}
+                  sx={{ fontWeight: 700, color: "primary.main", mr: 0.5 }}
                 >
                   {count}
                 </Box>

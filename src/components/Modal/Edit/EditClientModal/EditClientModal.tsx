@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Box, Grid, Modal, Typography } from "@mui/material";
 import { IClient } from "../../../../interfaces/iclient";
 import {
   getClientById,
@@ -7,12 +6,8 @@ import {
 } from "../../../../services/clientServices";
 import { useData } from "../../../../context/DataContext";
 import { isValidCnpj } from "../../../../utils/validators";
-import {
-  modalStyle,
-  FormControlStyled,
-  StyledButton,
-  StyledTextField,
-} from "../../modalStyles";
+import { Modal, Button, ListSkeleton } from "../../../../ui";
+import ClientForm from "../../../Forms/ClientForm";
 
 interface EditClientModalProps {
   open: boolean;
@@ -78,183 +73,42 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
       handleClose();
       setClient({} as IClient);
       setError(null);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao editar cliente:", error);
-      setError(
-        error.response?.data?.message ||
-          "Ocorreu um erro ao editar o cliente. Tente novamente."
-      );
+      setError("Ocorreu um erro ao editar o cliente. Tente novamente.");
     }
   };
 
   const isFormValid = client.name && client.cep;
 
   return (
-    <Modal open={open} onClose={handleClose}>
-      <Box sx={modalStyle}>
-        <Typography
-          variant="h6"
-          component="h1"
-          gutterBottom
-          sx={{
-            borderBottom: "2px solid",
-            borderColor: "#1976d2",
-            pb: 1,
-            mb: 2,
-            fontWeight: "bold",
-            color: "#1976d2",
-          }}
-        >
-          Editar Cliente
-        </Typography>
-
-        {error && (
-          <Typography
-            color="error"
-            variant="body2"
-            sx={{ mb: 2, fontWeight: "bold" }}
-          >
-            {error}
-          </Typography>
-        )}
-
-        {isLoading ? (
-          <Typography variant="body1" sx={{ textAlign: "center", my: 4 }}>
-            Carregando...
-          </Typography>
-        ) : (
-          <FormControlStyled>
-            <Typography
-              variant="subtitle1"
-              sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Editar Cliente"
+      error={error}
+      actions={
+        isLoading ? undefined : (
+          <>
+            <Button variant="outlined" color="inherit" onClick={handleClose}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleEditClient}
+              disabled={!isFormValid}
             >
-              Informações:
-            </Typography>
-
-            <StyledTextField
-              id="name"
-              name="name"
-              label="Nome"
-              variant="outlined"
-              value={client.name || ""}
-              onChange={handleChange}
-              required
-            />
-            <StyledTextField
-              id="cnpj"
-              name="cnpj"
-              label="CNPJ"
-              variant="outlined"
-              value={client.cnpj || ""}
-              onChange={handleChange}
-              fullWidth
-            />
-
-            <Typography
-              variant="subtitle1"
-              sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-            >
-              Contato:
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <StyledTextField
-                  id="phone"
-                  name="phone"
-                  label="Telefone"
-                  variant="outlined"
-                  value={client.phone || ""}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <StyledTextField
-                  id="email"
-                  name="email"
-                  label="Email"
-                  type="email"
-                  variant="outlined"
-                  value={client.email || ""}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-
-            <Typography
-              variant="subtitle1"
-              sx={{ mt: 2, fontWeight: "bold", color: "text.secondary" }}
-            >
-              Endereço:
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <StyledTextField
-                  id="cep"
-                  name="cep"
-                  label="CEP"
-                  variant="outlined"
-                  value={client.cep || ""}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <StyledTextField
-                  id="address"
-                  name="address"
-                  label="Endereço"
-                  variant="outlined"
-                  value={client.address || ""}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <StyledTextField
-                  id="city"
-                  name="city"
-                  label="Cidade"
-                  variant="outlined"
-                  value={client.city || ""}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <StyledTextField
-                  id="state"
-                  name="state"
-                  label="Estado"
-                  variant="outlined"
-                  value={client.state || ""}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-
-            <Grid container justifyContent="flex-end" gap={2} sx={{ mt: 4 }}>
-              <StyledButton
-                variant="contained"
-                sx={{ bgcolor: "grey", "&:hover": { bgcolor: "darkgrey" } }}
-                onClick={handleClose}
-              >
-                Cancelar
-              </StyledButton>
-              <StyledButton
-                variant="contained"
-                sx={{ bgcolor: "#1976d2", "&:hover": { bgcolor: "#1565c0" } }}
-                onClick={handleEditClient}
-                disabled={!isFormValid}
-              >
-                Salvar
-              </StyledButton>
-            </Grid>
-          </FormControlStyled>
-        )}
-      </Box>
+              Salvar
+            </Button>
+          </>
+        )
+      }
+    >
+      {isLoading ? (
+        <ListSkeleton rows={4} />
+      ) : (
+        <ClientForm client={client} onChange={handleChange} />
+      )}
     </Modal>
   );
 };

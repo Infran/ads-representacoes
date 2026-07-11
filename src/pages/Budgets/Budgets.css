@@ -1,4 +1,6 @@
 /* Budgets Page Styles */
+/* Cores via CSS custom properties tokenizadas (--ads-*, publicadas pelo tema em
+   getTheme/MuiCssBaseline — UI U2.2), então a lista adapta ao dark mode. */
 
 .budgets-container {
   display: flex;
@@ -8,10 +10,10 @@
 
 /* Filters Section */
 .filters-container {
-  background: #fff;
+  background: var(--ads-surface);
   border-radius: 12px;
   padding: 16px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
 }
 
 .filters-row {
@@ -43,34 +45,34 @@
 .results-counter {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #eee;
-  color: #666;
+  border-top: 1px solid var(--ads-border);
+  color: var(--ads-text-muted);
   font-size: 0.875rem;
 }
 
 /* Budget List Table */
 .budget-list-container {
-  background: #fff;
+  background: var(--ads-surface);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
 }
 
 .budget-list-header {
   display: grid;
   grid-template-columns: 80px 1.5fr 1fr 120px 100px 50px;
   padding: 14px 20px;
-  background: #f8fafc;
-  border-bottom: 2px solid #e2e8f0;
+  background: var(--ads-surface-alt);
+  border-bottom: 2px solid var(--ads-border);
   font-weight: 600;
-  color: #475569;
+  color: var(--ads-text-muted);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .budget-list-item {
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--ads-border);
   transition: background-color 0.2s ease;
 }
 
@@ -79,11 +81,11 @@
 }
 
 .budget-list-item:hover {
-  background-color: #f8fafc;
+  background-color: var(--ads-surface-alt);
 }
 
 .budget-list-item.expanded {
-  background-color: #f0f9ff;
+  background-color: var(--ads-expanded);
 }
 
 .budget-row {
@@ -99,8 +101,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: #fff;
+  background: var(--ads-brand);
+  color: var(--ads-on-brand);
   font-weight: 700;
   font-size: 0.8rem;
   padding: 6px 10px;
@@ -111,7 +113,7 @@
 
 .budget-client {
   font-weight: 500;
-  color: #1e293b;
+  color: var(--ads-text-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,7 +121,7 @@
 }
 
 .budget-representative {
-  color: #64748b;
+  color: var(--ads-text-muted);
   font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
@@ -129,19 +131,19 @@
 
 .budget-value {
   font-weight: 700;
-  color: #059669;
+  color: var(--ads-success);
   font-size: 0.95rem;
 }
 
 .budget-date {
-  color: #64748b;
+  color: var(--ads-text-muted);
   font-size: 0.875rem;
 }
 
 .expand-icon {
   display: flex;
   justify-content: center;
-  color: #94a3b8;
+  color: var(--ads-text-muted);
   transition: transform 0.3s ease;
 }
 
@@ -152,8 +154,8 @@
 /* Expanded Details */
 .budget-details {
   padding: 0 20px 20px 20px;
-  background: #f8fafc;
-  border-top: 1px dashed #e2e8f0;
+  background: var(--ads-surface-alt);
+  border-top: 1px dashed var(--ads-border);
 }
 
 .details-grid {
@@ -164,16 +166,16 @@
 }
 
 .detail-section {
-  background: #fff;
+  background: var(--ads-surface);
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ads-border);
   margin-top: 16px;
 }
 
 .detail-section h4 {
   margin: 0 0 12px 0;
-  color: #475569;
+  color: var(--ads-text-muted);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -184,7 +186,7 @@
 
 .detail-section h4 svg {
   font-size: 1rem;
-  color: #3b82f6;
+  color: var(--ads-brand);
 }
 
 .products-list {
@@ -197,7 +199,7 @@
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--ads-border);
   font-size: 0.9rem;
 }
 
@@ -206,11 +208,11 @@
 }
 
 .product-name {
-  color: #334155;
+  color: var(--ads-text-strong);
 }
 
 .product-price {
-  color: #64748b;
+  color: var(--ads-text-muted);
   font-weight: 500;
 }
 
@@ -222,11 +224,11 @@
 }
 
 .detail-label {
-  color: #64748b;
+  color: var(--ads-text-muted);
 }
 
 .detail-value {
-  color: #334155;
+  color: var(--ads-text-strong);
   font-weight: 500;
 }
 
@@ -235,25 +237,26 @@
   justify-content: flex-end;
   gap: 12px;
   padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--ads-border);
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #64748b;
+  color: var(--ads-text-muted);
 }
 
 .empty-state svg {
   font-size: 4rem;
-  color: #cbd5e1;
+  color: var(--ads-text-muted);
+  opacity: 0.5;
   margin-bottom: 16px;
 }
 
 .empty-state h3 {
   margin: 0 0 8px 0;
-  color: #475569;
+  color: var(--ads-text-strong);
 }
 
 .empty-state p {

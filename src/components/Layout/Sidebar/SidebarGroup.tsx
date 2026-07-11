@@ -19,7 +19,7 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ group, open }) => {
             display: "block",
             px: 3,
             py: 1,
-            color: "rgba(0, 0, 0, 0.45)",
+            color: "text.secondary",
             fontWeight: 600,
             fontSize: "0.7rem",
             textTransform: "uppercase",

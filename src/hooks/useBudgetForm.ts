@@ -36,7 +36,7 @@ export interface SectionValidation {
   };
 }
 
-interface UseBudgetFormReturn {
+export interface UseBudgetFormReturn {
   // Estado do orçamento
   budget: IBudget;
   setBudget: React.Dispatch<React.SetStateAction<IBudget>>;
