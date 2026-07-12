@@ -10,13 +10,11 @@ import { FeedbackProvider } from './ui'
 
 const COLOR_MODE_KEY = 'ads_color_mode'
 
-// Modo inicial: preferência salva (U3.2) → senão prefers-color-scheme (U1.1).
+// Modo inicial: preferência salva (U3.2) → senão light por padrão (sem prefers-color-scheme).
 const getInitialMode = (): ColorMode => {
   const saved = localStorage.getItem(COLOR_MODE_KEY)
   if (saved === 'light' || saved === 'dark') return saved
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
+  return 'light'
 }
 
 // Root provê o tema (tokens + Light/Dark) + baseline + o contexto de modo de
