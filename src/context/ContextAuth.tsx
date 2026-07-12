@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { auth } from '../firebase';
 import {
   onAuthStateChanged,
@@ -29,7 +29,9 @@ export const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-// Hook personalizado para acessar o contexto de autenticação
+// Hook personalizado para acessar o contexto de autenticação — coexiste com
+// o contexto/provider neste módulo (padrão idêntico ao DataContext/ColorModeContext).
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextType {
   return useContext(AuthContext);
 }
@@ -60,14 +62,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       scheduleAutoLogout();
 
       return user;
-    } catch (error: any) {
-      logger.error('Error logging in:', error.code, error.message);
+    } catch (error) {
+      const { code, message } = error as { code?: string; message?: string };
+      logger.error('Error logging in:', code, message);
       throw error;
     }
   };
 
+  // Função para realizar o logout
+  const logout = useCallback(() => {
+    if (logoutTimer.current) {
+      clearTimeout(logoutTimer.current);
+      logoutTimer.current = null;
+    }
+    signOut(auth).then(() => {
+      setCurrentUser(null);
+      sessionStorage.removeItem('loginTime'); // Limpa o horário do login
+      window.location.href = '/Login'; // Redireciona para a página de login
+    });
+  }, []);
+
   // Função para agendar o logout automático
-  const scheduleAutoLogout = () => {
+  const scheduleAutoLogout = useCallback(() => {
     const loginTime = sessionStorage.getItem('loginTime');
     if (!loginTime) return;
 
@@ -85,20 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       logout(); // Se o tempo já expirou, desloga imediatamente
     }
-  };
-
-  // Função para realizar o logout
-  const logout = () => {
-    if (logoutTimer.current) {
-      clearTimeout(logoutTimer.current);
-      logoutTimer.current = null;
-    }
-    signOut(auth).then(() => {
-      setCurrentUser(null);
-      sessionStorage.removeItem('loginTime'); // Limpa o horário do login
-      window.location.href = '/Login'; // Redireciona para a página de login
-    });
-  };
+  }, [logout]);
 
   // Monitorar mudanças na autenticação do usuário
   useEffect(() => {
@@ -118,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribe();
       if (logoutTimer.current) clearTimeout(logoutTimer.current);
     };
-  }, []);
+  }, [scheduleAutoLogout]);
 
   // Contexto de valor para ser fornecido aos componentes descendentes
   const authContextValue: AuthContextType = {

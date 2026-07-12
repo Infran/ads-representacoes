@@ -65,6 +65,7 @@ const BudgetPreviewModal: React.FC<BudgetPreviewModalProps> = ({
         <IconButton
           onClick={onClose}
           size="small"
+          aria-label="Fechar"
           sx={{ color: "warning.contrastText" }}
         >
           <Close />

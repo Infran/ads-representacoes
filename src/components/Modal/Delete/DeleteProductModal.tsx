@@ -45,7 +45,7 @@ const DeleteProductModal: React.FC<ProductDeleteModalProps> = ({
       >
         {/* Botão de fechar */}
         <IconButton
-          aria-label="close"
+          aria-label="Fechar"
           onClick={onClose}
           sx={{
             position: 'absolute',

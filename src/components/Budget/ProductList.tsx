@@ -89,6 +89,7 @@ const ProductList: React.FC<ProductListProps> = ({
                 onClick={() => onRemove(index)}
                 size="small"
                 title="Remover produto"
+                aria-label="Remover produto"
               >
                 <Delete fontSize="small" />
               </IconButton>
@@ -127,6 +128,7 @@ const ProductList: React.FC<ProductListProps> = ({
                     size="small"
                     onClick={() => onQuantityChange(index, -1)}
                     disabled={item.quantity <= 1}
+                    aria-label="Diminuir quantidade"
                     sx={{
                       border: "1px solid",
                       borderColor: "divider",
@@ -164,6 +166,7 @@ const ProductList: React.FC<ProductListProps> = ({
                   <IconButton
                     size="small"
                     onClick={() => onQuantityChange(index, 1)}
+                    aria-label="Aumentar quantidade"
                     sx={{
                       border: "1px solid",
                       borderColor: "divider",

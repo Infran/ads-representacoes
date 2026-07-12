@@ -16,7 +16,7 @@
 - Especificações técnicas (código atual → otimizado): §3 do reporte.
 
 ### Portões de qualidade
-- [x] `npm run build` (tsc + vite) **verde** após P0; `npx tsc --noEmit` exit 0. `npm run lint` segue com **10 problemas pré-existentes** de type-safety/arquitetura (donos em outras trilhas — ver `PLANO_EXECUCAO_ESTRUTURA.md`, portões); P0 **não introduziu nenhum** novo.
+- [x] `npm run build` (tsc + vite) **verde** após P0; `npx tsc --noEmit` exit 0. `npm run lint` — **0 problemas** (2026-07-12; os 7 pré-existentes de type-safety/arquitetura foram fechados na "correção rápida" pós-Onda 5, ver `PLANO_EXECUCAO_ESTRUTURA.md`/`PLANO_EXECUCAO_SEGURANCA.md`, portões); P0 **não introduziu nenhum** novo.
 - [x] Regra do `CLAUDE.md`: P0 respeita — `getRecentBudgets` é primitivo de service (não chamado direto por componente); o rewire que violaria "ler via `useData()`" foi **deferido** justamente por isso (ver P0.3).
 
 ---

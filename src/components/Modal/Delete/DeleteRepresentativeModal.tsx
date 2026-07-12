@@ -45,7 +45,7 @@ const DeleteRepresentativeModal: React.FC<RepresentativeDeleteModalProps> = ({
       >
         {/* Botão de fechar */}
         <IconButton
-          aria-label="close"
+          aria-label="Fechar"
           onClick={onClose}
           sx={{
             position: 'absolute',

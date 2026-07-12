@@ -6,7 +6,7 @@ import { SvgIconTypeMap } from "@mui/material/SvgIcon";
 interface PageHeaderProps {
   title: string;
   description: string;
-  icon: OverridableComponent<SvgIconTypeMap<{}, "svg">>;
+  icon: OverridableComponent<SvgIconTypeMap>;
 }
 
 const PageHeader: FC<PageHeaderProps> = ({ title, description, icon: Icon }) => {

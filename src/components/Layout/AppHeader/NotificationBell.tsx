@@ -66,6 +66,7 @@ const NotificationBell: React.FC = () => {
     <>
       <IconButton
         onClick={handleOpen}
+        aria-label="Notificações"
         sx={{
           color: "text.secondary",
           "&:hover": {
@@ -170,6 +171,7 @@ const NotificationBell: React.FC = () => {
                         edge="end"
                         size="small"
                         onClick={() => handleClear(notification.id)}
+                        aria-label="Excluir notificação"
                         sx={{ opacity: 0.5, "&:hover": { opacity: 1 } }}
                       >
                         <Delete fontSize="small" />

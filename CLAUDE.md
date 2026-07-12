@@ -18,7 +18,7 @@ npm run lint           # eslint . --ext ts,tsx --max-warnings 0
 npm run preview        # preview a production build locally
 ```
 
-There is no test suite/runner configured in this repo (no `test` script, no test files).
+Test suite: Vitest + React Testing Library (`npm run test` / `npm run test:run`), plus a separate Firestore rules suite against the emulator (`npm run test:rules`). See `AUDITORIAS/ESTRUTURA/PLANO_EXECUCAO_ESTRUTURA.md` (F1) and `AUDITORIAS/SEGURANCA/PLANO_EXECUCAO_SEGURANCA.md` (S3.1) for how these were introduced.
 
 ### Deploy
 
@@ -28,13 +28,16 @@ There is no test suite/runner configured in this repo (no `test` script, no test
 
 Yes, the ID *without* `-dev` is the dev project, and the ID *with* `-dev` is prod. Don't trust the suffix — verify against `.env.production`'s `VITE_FIREBASE_PROJECT_ID` if in doubt.
 
-CI (`.github/workflows/deploy.yaml`) deploys on push (runs bare `firebase deploy`, no `--only`, so it deploys **everything** in `firebase.json` including `firestore.rules` once that section exists):
-- `development` branch → `npm run build:dev` → `firebase deploy --project=ads-representacoes-dev` — **this targets the real PROD project**
-- `main` branch → `npm run build:prod` → `firebase deploy --project=ads-representacoes` — **this targets the real DEV project**
-
-This means the CI branch names are effectively swapped relative to the real environments — a push to `development` deploys to what's actually production, and vice versa. This predates this session and is tracked as a new SEG finding; do not "fix" it unilaterally (it affects live Hosting URLs/custom domains) without confirming with the user first.
-
 Firebase project aliases in `.firebaserc` (corrected 2026-07-10 to match the real mapping above): `default`/`development` → `ads-representacoes` (dev), `production` → `ads-representacoes-dev` (prod). An earlier pass in this session (SEG S0.4) had these backwards — it assumed the project ID without `-dev` suffix was production, which turned out to be false. Always verify against the `.env.*` files, not the project ID suffix.
+
+**No CI/CD pipeline** — `.github/workflows/{ci,deploy}.yaml` were removed 2026-07-12 by explicit user decision; automation (lint/test/rules-check on push, and auto-deploy) is deferred to a future session. Don't recreate workflow files unless the user asks. This also retires the former SEG-09-rev finding (the old `deploy.yaml` had `development`/`main` branches auto-deploying to the *opposite* real environment) — there's no longer any automation left to have that bug.
+
+Deploys are now **manual only**, via the Firebase CLI, using the aliases above:
+```bash
+firebase use development && npm run build:dev  && firebase deploy   # → real DEV  (ads-representacoes)
+firebase use production  && npm run build:prod  && firebase deploy   # → real PROD (ads-representacoes-dev)
+```
+Bare `firebase deploy` (no `--only`) publishes **everything** in `firebase.json` — Hosting **and** `firestore.rules`/`firestore.indexes.json`. Scope it with `--only hosting` or `--only firestore:rules` when you mean just one. Never publish rules to a project before confirming its `staff/{uid}` docs already exist (see rule below) — this is now entirely on whoever runs the command, since nothing automated enforces the order anymore.
 
 ## Architecture
 

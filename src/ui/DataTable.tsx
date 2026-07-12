@@ -60,6 +60,7 @@ function DataTable<T extends GridValidRowModel>({
             <IconButton
               size="small"
               onClick={() => onEdit(params.id.toString())}
+              aria-label="Editar"
             >
               <EditIcon fontSize="small" color="primary" />
             </IconButton>
@@ -67,7 +68,11 @@ function DataTable<T extends GridValidRowModel>({
         )}
         {onDelete && (
           <Tooltip title="Excluir">
-            <IconButton size="small" onClick={() => onDelete(params.row)}>
+            <IconButton
+              size="small"
+              onClick={() => onDelete(params.row)}
+              aria-label="Excluir"
+            >
               <DeleteIcon fontSize="small" color="error" />
             </IconButton>
           </Tooltip>

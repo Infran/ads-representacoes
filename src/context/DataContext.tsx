@@ -267,6 +267,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 // HOOK
 // =====================================================
 
+// Hook de conveniência coexistindo com o contexto/provider neste módulo
+// (padrão idêntico ao ContextAuth/ColorModeContext do app).
+// eslint-disable-next-line react-refresh/only-export-components
 export const useData = (): DataContextState => {
   const context = useContext(DataContext);
   if (!context) {

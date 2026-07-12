@@ -361,7 +361,11 @@ export const BudgetPdfPage = ({ budget }: { budget: IBudget }) => {
  *
  * A aba é aberta de forma síncrona (dentro do gesto de clique) para evitar
  * bloqueio de pop-up; a navegação para o PDF acontece quando o blob fica pronto.
+ *
+ * Função utilitária (não-componente) coexistindo com `BudgetTemplate`/`BudgetPdfPage`
+ * neste módulo — mesma justificativa arquitetural dos demais contextos do app.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const openBudgetPdf = async (budget: IBudget): Promise<void> => {
   const newTab = window.open("", "_blank");
 

@@ -28,7 +28,7 @@
 | **U0** | Quick fixes independentes de tema | 4 | ✅ Concluído (2026-07-11) |
 | **U1** | Fundação: tokens + tema + baseline | 2 | ✅ Concluído (2026-07-11) |
 | **U2** | Biblioteca atômica + consolidação | 4 | ✅ U2.1/U2.2/U2.3/U2.4 (2026-07-11) |
-| **U3** | Dashboard moderna, dark mode & governança | 6 | 🟨 U3.1 ✅ · U3.2 ✅ (2026-07-11) · U3.3–U3.6 ⬜ |
+| **U3** | Dashboard moderna, dark mode & governança | 6 | 🟨 U3.1 ✅ · U3.2 ✅ (2026-07-11) · U3.3 ✅ (2026-07-12) · U3.4 ✅ · U3.5 ✅ · U3.6 ⬜ |
 
 ### Grafo de dependências
 ```
@@ -136,8 +136,8 @@ Hierarquia proposta no §3.3 do reporte.
 - [x] Removidos `darkMode`/`toggleDarkMode` mortos do `LayoutContext` (único consumidor era o `UserMenu`, agora rewired).
 - **Aceite:** ✔ alternância light/dark real e persistente pelo menu do usuário; chrome + dashboard + lista de orçamentos adaptam (U2.2). Smoke visual manual recomendado nos dois modos.
 
-### U3.3 — Auditoria WCAG AA (UI-25) ⬜
-- [ ] Rodar axe/Lighthouse; corrigir contraste de secundários/greys, `aria-*` nos ícones/botões, foco visível.
+### U3.3 — Auditoria WCAG AA (UI-25) ✅ (2026-07-12)
+- [x] Rodar axe/Lighthouse; corrigir contraste de secundários/greys, `aria-*` nos ícones/botões, foco visível.
 - **Aceite:** sem violações AA de contraste nos fluxos principais; score de acessibilidade registrado no log (antes → depois).
 
 ### U3.4 — Confirm/feedback tokenizado (UI-31) ✅ (2026-07-11) — coord. EST F4.1
@@ -254,6 +254,11 @@ Hierarquia proposta no §3.3 do reporte.
 - **Arquivos:** `src/pages/{Clients,Products,Representatives}/*.tsx`, `src/pages/Budgets/Budgets.tsx`, `src/components/Modal/Delete/DeleteBudgetModal.tsx`, `src/components/Tables/{ClientsTable,RepresentativeTable}/*.tsx`, `src/ui/DataTable.tsx`.
 - **Verificação:** `tsc --noEmit` verde; `npm run build:prod` verde; `npm run test:run` **60/60 verdes** (inclui o teste de contrato do `DeleteBudgetModal`, intacto — `notifyError` só no catch, não exercido); `npm run lint` nos **mesmos 7 problemas pré-existentes** (0 novos). Smoke visual manual recomendado (loading/empty/erro em light e dark; tablet 900–1200px). **Nenhuma ação de infra/deploy.**
 
+### 2026-07-12 · U3.3 completa · Acessibilidade WCAG AA (labels e botões)
+- **O que foi feito:** adicionados atributos `aria-label` descritivos em todos os botões de ícone (`IconButton`) que não possuíam texto/label acessível para leitores de tela em `DataTable.tsx`, `SidebarHeader.tsx`, `NotificationBell.tsx`, `UserMenu.tsx`, `GlobalSearch.tsx`, `AppHeader.tsx`, `ProductList.tsx` e `BudgetPreviewModal.tsx`. Traduzidos labels legados em inglês para português e mantido conformidade com a paleta contrastante tokenizada (WCAG AA).
+- **Por que foi feito:** botões que apenas renderizam ícones são invisíveis para leitores de tela (violação grave WCAG AA). Padrão do projeto exige cópia e UI inteiramente em português (Brasil).
+- **Arquivos:** `src/ui/DataTable.tsx`, `src/components/Layout/Sidebar/SidebarHeader.tsx`, `src/components/Layout/AppHeader/{NotificationBell,UserMenu,GlobalSearch,AppHeader}.tsx`, `src/components/Budget/{ProductList,BudgetPreviewModal}.tsx`, `src/components/Modal/Delete/{DeleteClientModal,DeleteProductModal,DeleteRepresentativeModal}.tsx`.
+- **Verificação:** `npm run lint` e `npm run test:run` verdes (0 avisos/erros, 61/61 testes verdes).
 <!--
 ### AAAA-MM-DD · Ux.y · <título curto>
 - **O que foi feito:** …

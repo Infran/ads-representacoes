@@ -15,6 +15,9 @@ interface LayoutContextType {
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
 
+// Hook de conveniência coexistindo com o contexto/provider neste módulo
+// (padrão idêntico ao DataContext/ContextAuth/ColorModeContext do app).
+// eslint-disable-next-line react-refresh/only-export-components
 export const useLayout = (): LayoutContextType => {
   const context = useContext(LayoutContext);
   if (!context) {

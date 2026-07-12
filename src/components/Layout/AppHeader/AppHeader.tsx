@@ -77,7 +77,7 @@ const AppHeader: React.FC = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <IconButton
             color="inherit"
-            aria-label="toggle sidebar"
+            aria-label="Alternar menu lateral"
             onClick={toggleSidebar}
             edge="start"
             sx={{

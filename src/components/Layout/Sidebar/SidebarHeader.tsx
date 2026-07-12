@@ -67,6 +67,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ open, onClose }) => {
       {/* Botão de fechar/abrir */}
       <IconButton
         onClick={onClose}
+        aria-label={open ? "Recolher menu lateral" : "Expandir menu lateral"}
         sx={{
           transition: "all 0.2s ease",
           ml: open ? 0 : -5,

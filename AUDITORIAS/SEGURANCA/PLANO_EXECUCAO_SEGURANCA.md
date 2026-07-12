@@ -17,7 +17,7 @@
 
 ### Portões de qualidade
 - [x] `npm run build` (tsc + vite) **verde** após S0/S1 (2026-07-10).
-- [~] `npm run lint --max-warnings 0`: os 4 arquivos alterados **não introduzem nenhum problema novo** (`Login.tsx`/`firebase.ts` limpos; os 4 avisos em `ContextAuth.tsx`/`budgetServices.ts` são **pré-existentes**). O gate global segue vermelho por **código morto pré-existente** de outras trilhas (unused imports em ~15 arquivos) — dono: **EST F0**.
+- [x] `npm run lint --max-warnings 0`: **0 problemas** (2026-07-12) — os 2 problemas de `ContextAuth.tsx` sob dono SEG (`no-explicit-any` no catch do `login`; `exhaustive-deps` no `useEffect` de auth state) fechados na "correção rápida" pós-Onda 5, junto com os demais itens pré-existentes de outras trilhas. Ver log 2026-07-12.
 - [x] `npm run test` verde (EST F1, 2026-07-11) + `npm run test:rules` verde (S3.1, 12/12 no emulador).
 - [x] Nenhum segredo committed: `.env*` permanecem gitignored.
 
@@ -30,7 +30,7 @@
 | **S0** | Perímetro crítico (bloqueia deploy) | 4 | ✅ Publicado em dev + prod · S0.2 encerrado (risco residual aceito) |
 | **S1** | Endurecimento do app | 4 | ✅ Concluído (código) |
 | **S2** | Integridade de dados | 2 | ✅ Concluído (2026-07-11) |
-| **S3** | Governança e testes de regras | 1 | ✅ Código + CI aditivo (2026-07-11) · ⚠️ gate no deploy pendente de decisão do usuário |
+| **S3** | Governança e testes de regras | 1 | ✅ Suíte local (2026-07-11) · 🗑️ CI removido por decisão do usuário (2026-07-12), automação adiada |
 
 ---
 
@@ -84,8 +84,8 @@ Verificado: [ContextAuth.tsx:70](../../src/context/ContextAuth.tsx#L70) usava `6
 - PROD real = Project ID **`ads-representacoes-dev`** (display name "ads-representacoes-prod")
 - [x] `.firebaserc` corrigido (2026-07-11) para o mapeamento **real**: `default`/`development` → `ads-representacoes`, `production` → `ads-representacoes-dev`.
 - [x] Nota do `CLAUDE.md` reescrita para documentar o mapeamento real + alertar que o sufixo `-dev` **não** é confiável como indicador (sempre conferir `.env.production`).
-- **🚨 Achado novo (SEG-09-rev): `deploy.yaml` tem as branches cruzadas com os ambientes reais.** `.github/workflows/deploy.yaml` roda `firebase deploy` (sem `--only`, então inclui `firestore` desde que S0.1 existe) com `--project=ads-representacoes-dev` no push para `development` (= **PROD real**) e `--project=ads-representacoes` no push para `main` (= **DEV real**). Ou seja, hoje um push para `development` publica na produção real, e um push para `main` publica no dev real. Isso é **anterior a esta sessão** e não foi corrigido — decisão de não mexer unilateralmente, pois afeta Hosting/domínios já em uso; precisa de confirmação do usuário antes de alterar `deploy.yaml`. Registrado aqui para não pushar `development` sem antes garantir `staff/{uid}` no projeto de prod real.
-- **Aceite:** `firebase use production` seleciona o projeto de produção real (Project ID `ads-representacoes-dev`); docs coerentes com o comportamento real do app. ✔ (mas ver achado SEG-09-rev acima — o `deploy.yaml` ainda não foi alinhado)
+- **🚨 Achado (SEG-09-rev), ~~branches cruzadas no `deploy.yaml`~~ — retirado em 2026-07-12:** o `.github/workflows/deploy.yaml` publicava `--project=ads-representacoes-dev` no push para `development` (= **PROD real**) e `--project=ads-representacoes` no push para `main` (= **DEV real**), branches cruzadas com os ambientes reais. **Resolvido por remoção**: toda a esteira `.github/workflows/{ci,deploy}.yaml` foi deletada por decisão explícita do usuário (automação adiada para o futuro) — sem `deploy.yaml`, não há mais push que dispare deploy nenhum, correto ou errado. Deploy agora é sempre manual (`firebase use <alias> && firebase deploy`, ver `CLAUDE.md` § Deploy); a responsabilidade de escolher o projeto certo passa a ser de quem roda o comando.
+- **Aceite:** `firebase use production` seleciona o projeto de produção real (Project ID `ads-representacoes-dev`); docs coerentes com o comportamento real do app. ✔ SEG-09-rev fechado — não por correção do mapeamento das branches, mas pela remoção do próprio mecanismo automático que tinha o bug.
 
 ---
 
@@ -135,12 +135,11 @@ Verificado: [firebase.ts:4](../../src/firebase.ts#L4) importava `browserLocalPer
 
 ## Fase S3 — Governança e testes de regras
 
-### S3.1 — Testes de `firestore.rules` no emulador + CI ✅ código + CI aditivo (2026-07-11) · ⚠️ gate no deploy pendente
+### S3.1 — Testes de `firestore.rules` no emulador + CI ✅ suíte local (2026-07-11) · 🗑️ CI removido (2026-07-12)
 - [x] Adicionado `@firebase/rules-unit-testing@^3` + script `test:rules` (`firebase emulators:exec --only firestore --project demo-ads-rules "vitest run --config vitest.rules.config.ts"`). Config dedicada (`vitest.rules.config.ts`, env `node`, fora de `src/`) e bloco `emulators` no `firebase.json` (porta 8080, UI off, singleProjectMode). Java 21 + firebase-tools 14 já disponíveis.
-- [x] **12 casos** (`test/rules/firestore.rules.test.ts`), espelhando o `firestore.rules` **versionado** (não o baseline do reporte — clients/products/representatives são staff-only **sem** validação de campo, desvio de S0.1): anônimo negado (read+write, todas as coleções); autenticado não-staff negado; staff CRUD ok em clients/products/representatives + `meta` (read/incremento); `budgets` — válido aceito, `totalValue` string/negativo e `selectedProducts` não-lista **negados**; coleção `staff` não escrevível nem pelo staff + leitura direta negada; coleção não mapeada cai no deny-by-default. **Rodam verdes localmente.**
-- [x] **CI (aditivo):** criado `.github/workflows/ci.yaml` — em todo push/PR roda `lint` + `test:run` (unit) + `test:rules` (com `setup-java` + emulador). **Não** faz deploy e **não** toca `deploy.yaml`.
-- [ ] ⚠️ **Gate real no `deploy.yaml` (bloquear deploy se o CI falhar):** requer editar o `deploy.yaml` (arquivo sensível — branches cruzadas, SEG-09-rev) OU habilitar branch protection exigindo o check `ci`. **Deixado como decisão do usuário** (mexe no pipeline que publica em PROD real). Sugestão pronta: adicionar um job `ci` e `needs: ci` ao job de deploy, ou marcar o workflow `ci` como required em Settings → Branches.
-- **Aceite:** suíte de regras **verde** (12/12) local e no workflow `ci`; alteração de regra que quebre uma asserção falha o CI. ✔ (o bloqueio literal do deploy fica condicionado à decisão acima)
+- [x] **12 casos** (`test/rules/firestore.rules.test.ts`), espelhando o `firestore.rules` **versionado** (não o baseline do reporte — clients/products/representatives são staff-only **sem** validação de campo, desvio de S0.1): anônimo negado (read+write, todas as coleções); autenticado não-staff negado; staff CRUD ok em clients/products/representatives + `meta` (read/incremento); `budgets` — válido aceito, `totalValue` string/negativo e `selectedProducts` não-lista **negados**; coleção `staff` não escrevível nem pelo staff + leitura direta negada; coleção não mapeada cai no deny-by-default. **Rodam verdes localmente** via `npm run test:rules` — continua valendo, não depende de CI.
+- [x] ~~CI (aditivo): `.github/workflows/ci.yaml`~~ — criado em 2026-07-11, **removido em 2026-07-12 por decisão explícita do usuário**: toda a esteira de CI/CD (`ci.yaml` + `deploy.yaml`) foi descartada, automação adiada para uma sessão futura. Isso também **retira** o achado SEG-09-rev (branches cruzadas do `deploy.yaml` publicando no ambiente real errado) — não existe mais automação nenhuma para ter esse bug; deploy agora é sempre manual (ver `CLAUDE.md` § Deploy).
+- **Aceite (revisado):** suíte de regras **verde** (12/12) rodando localmente sob demanda (`npm run test:rules`). Sem CI, não há gate automático — cabe a quem for rodar `firebase deploy` manualmente lembrar de rodar `npm run lint && npm run test:run && npm run test:rules` antes. ✔ (governança automatizada é trabalho futuro, não pendência desta onda)
 
 ---
 
@@ -210,6 +209,19 @@ Verificado: [firebase.ts:4](../../src/firebase.ts#L4) importava `browserLocalPer
 - **Por que foi feito:** fechar a Fase S2 (integridade de dados) junto com a desduplicação de services da Onda 3 — a criação atômica é dono único da EST (evita reescrever services 2×) e os validadores usam a infra de testes de EST F1.
 - **Arquivos:** `src/services/createCrudService.ts` (add atômico) + `createCrudService.test.ts`; `src/utils/validators.ts` + `validators.test.ts`; `src/services/clientServices.ts` (validateClient); `src/components/Modal/{Create/CreateClientModal,Edit/EditClientModal}/*` (check + mensagem).
 - **Verificação:** `npm run build` verde; `npm run test:run` **49 verdes** (incl. 7 do factory + 8 dos validadores); `npm run test:rules` **12 verdes** (regras inalteradas); lint nos mesmos 10 pré-existentes.
+
+### 2026-07-12 · Remoção da esteira de CI/CD (decisão do usuário) · fecha S3.1 (parte) e SEG-09-rev
+- **O que foi feito:** `.github/workflows/ci.yaml` e `.github/workflows/deploy.yaml` **deletados** (`git rm`) por pedido explícito do usuário — automação (lint/test/rules no push, auto-deploy) fica adiada para uma sessão futura. `CLAUDE.md` § Deploy reescrito: sem CI, deploy é sempre manual via `firebase use <alias> && firebase deploy`.
+- **Por que foi feito:** decisão de produto/processo do usuário, não achado técnico — simplificar a operação agora e retomar automação depois. Como efeito colateral, **fecha o achado SEG-09-rev** (branches cruzadas do `deploy.yaml` publicando no ambiente real errado): sem o workflow, não existe mais push nenhum disparando deploy, certo ou errado.
+- **Arquivos:** `.github/workflows/ci.yaml` (removido), `.github/workflows/deploy.yaml` (removido), `CLAUDE.md`.
+- **Verificação:** `npm run test:rules` continua funcionando localmente sob demanda (12/12) — a suíte de regras não dependia do CI para existir, só perdeu o gatilho automático. `npm run build`/`lint`/`test:run` inalterados por esta mudança.
+- **Risco aceito registrado:** sem CI, nada impede um `firebase deploy` manual com lint/testes quebrados ou regras não testadas. Fica sob responsabilidade de quem roda o comando (ver checklist manual em `CLAUDE.md` § Deploy).
+
+### 2026-07-12 · `ContextAuth.tsx` — lint (correção rápida) · fecha os 2 problemas de dono SEG
+- **O que foi feito:** `catch (error: any)` no `login` trocado por `catch (error)` + narrowing tipado (`error as { code?: string; message?: string }`), mesmo padrão já usado em `Login.tsx` — fecha o erro `no-explicit-any`. `logout` e `scheduleAutoLogout` movidos para `useCallback` (o primeiro com deps `[]`, o segundo com `[logout]`) para ficarem referencialmente estáveis; o `useEffect` de `onAuthStateChanged` passou a listar `scheduleAutoLogout` na dependência array (antes tinha `[]` com o warning `exhaustive-deps` suprimido implicitamente pela omissão) — sem isso, incluir a função na dependência causaria o efeito reexecutar a cada render, já que ela era recriada a cada render.
+- **Por que foi feito:** os 2 problemas de lint pré-existentes com dono SEG (registrados desde a Onda 1) estavam represados esperando uma janela de "correção rápida"; resolvidos junto com os demais problemas de outras trilhas na mesma passada (ver `SUMARIO_CONSOLIDADO.md`, log 2026-07-12).
+- **Arquivos:** `src/context/ContextAuth.tsx`.
+- **Verificação:** `npm run lint` **0 problemas** (era 7); `npx tsc --noEmit` verde; `npm run test:run` **61/61 verdes** (nenhum teste cobre `ContextAuth` diretamente — comportamento de timer/login preservado por leitura de código, já que a mudança só estabiliza identidade de função, não lógica).
 
 <!--
 ### AAAA-MM-DD · Sx.y · <título curto>

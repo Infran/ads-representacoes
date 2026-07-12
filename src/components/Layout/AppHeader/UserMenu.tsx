@@ -65,6 +65,7 @@ const UserMenu: React.FC = () => {
     <>
       <IconButton
         onClick={handleOpen}
+        aria-label="Menu do usuário"
         sx={{
           p: 0.5,
           "&:hover": {

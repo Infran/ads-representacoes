@@ -201,7 +201,11 @@ const GlobalSearch: React.FC = () => {
           />
         )}
         {open && query && (
-          <IconButton size="small" onClick={() => setQuery("")}>
+          <IconButton
+            size="small"
+            onClick={() => setQuery("")}
+            aria-label="Limpar busca"
+          >
             <Close sx={{ fontSize: 16 }} />
           </IconButton>
         )}
