@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Box, Typography, Card, CardActionArea } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
@@ -254,14 +254,13 @@ export const ChapterIntroducao: React.FC<HelpContentProps> = ({ goToOverview }) 
     </Box>
     <Callout variant="nota" title="Nada se perde ao fechar o navegador">
       Tudo o que você digita é enviado em tempo real e salvo com segurança nos
-      servidores do <strong>Google (Firebase Cloud Firestore)</strong>. Fechar o
-      navegador ou trocar de computador não apaga nada.
+      servidores do <strong>Google Cloud</strong>. Fechar o
+      navegador ou trocar de computador não apaga nada. Seus dados estão sempre seguros.
     </Callout>
     <Bullets
       items={[
         <>
-          <strong>Banco de dados na nuvem:</strong> os registros ficam no
-          Firestore, acessíveis de qualquer lugar com login.
+          <strong>Armazenamento em nuvem:</strong> os registros ficam guardados online (nos servidores do Google) e você acessa de qualquer lugar com login, mesmo de outro computador.
         </>,
         <>
           <strong>Identificação sequencial:</strong> cada item recebe um número
@@ -305,7 +304,7 @@ export const ChapterIntroducao: React.FC<HelpContentProps> = ({ goToOverview }) 
         A regra de ouro dos orçamentos
       </SectionTitle>
     </Box>
-    <Callout variant="importante" title="O orçamento é um documento histórico e imutável">
+    <Callout variant="importante" title="Um orçamento nunca muda automaticamente">
       Ao criar um orçamento, o sistema tira uma “foto” (snapshot) dos dados do
       cliente, do representante e dos produtos exatamente como estavam{" "}
       <strong>naquele momento</strong>.
@@ -319,8 +318,7 @@ export const ChapterIntroducao: React.FC<HelpContentProps> = ({ goToOverview }) 
           juridicamente as propostas já enviadas.
         </>,
         <>
-          Para refletir mudanças recentes num orçamento antigo, abra-o em modo de
-          edição, ajuste e salve novamente de forma explícita.
+          Se o cliente pedir para você atualizar um orçamento antigo com novos preços, abra-o em modo de edição, faça as mudanças e salve novamente. Esse será um novo orçamento.
         </>,
       ]}
     />
@@ -331,21 +329,18 @@ export const ChapterIntroducao: React.FC<HelpContentProps> = ({ goToOverview }) 
     <Faq
       items={[
         {
-          q: "Posso usar o sistema sem internet?",
+          q: "Preciso de internet para usar o sistema?",
           a: (
             <>
-              Não. Os dados e o login ficam no Google Cloud, então é preciso
-              conexão para abrir o sistema, autenticar e salvar registros. O cache
-              acelera a navegação, mas não substitui a internet para gravar.
+              Sim, o sistema precisa de conexão para abrir, fazer login e salvar registros. Você pode pesquisar e navegar nos dados já carregados mesmo com internet lenta, mas para gravar algo novo é necessário conexão ativa.
             </>
           ),
         },
         {
-          q: "E se duas pessoas editarem o mesmo cliente ao mesmo tempo?",
+          q: "E se dois colegas editarem o mesmo cliente ao mesmo tempo?",
           a: (
             <>
-              Vale a alteração salva por último. O cache de ambas se ajusta em até
-              5 minutos ou no próximo clique de atualização da tela.
+              Vale a alteração que foi salva por último (quem clicou em Salvar mais recentemente). A tela do outro colega se atualiza automaticamente em até 5 minutos, ou no próximo clique de "Atualizar".
             </>
           ),
         },
