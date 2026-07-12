@@ -5,7 +5,7 @@ import CreateRepresentativeModal from "../../components/Modal/Create/CreateRepre
 import { PersonAdd } from "@mui/icons-material";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { deleteRepresentative } from "../../services/representativeServices";
-import SearchBar from "../../components/SearchBar/SearchBar";
+import RepresentativesFilter, { RepresentativeFilters } from "../../components/Filters/RepresentativesFilter";
 import DeleteRepresentativeModal from "../../components/Modal/Delete/DeleteRepresentativeModal";
 import RepresentativeTable from "../../components/Tables/RepresentativeTable/RepresentativeTable";
 import { useData } from "../../context/DataContext";
@@ -15,7 +15,18 @@ import { logger } from "../../utils/logger";
 const Representatives = () => {
   const [openModal, setOpenModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<RepresentativeFilters>({
+    name: "",
+    email: "",
+    phone: "",
+    mobilePhone: "",
+    cep: "",
+    address: "",
+    city: "",
+    state: "",
+    role: "",
+    clientName: "",
+  });
   const [selectedRepresentative, setSelectedRepresentative] =
     useState<IRepresentative | null>(null);
 
@@ -26,23 +37,68 @@ const Representatives = () => {
     removeRepresentativeFromCache,
   } = useData();
 
-  // Filtragem local dos representantes
+  // Filtragem local dos representantes com filtros complexos
   const filteredRepresentativesList = useMemo(() => {
-    if (!searchTerm) return representativesList;
-
     return representativesList.filter((representative) => {
-      return (
-        representative.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesName =
+        !filters.name ||
+        representative.name?.toLowerCase().includes(filters.name.toLowerCase());
+      const matchesEmail =
+        !filters.email ||
         representative.email
           ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
+          .includes(filters.email.toLowerCase());
+      const matchesPhone =
+        !filters.phone ||
         representative.phone
           ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        representative.address?.toLowerCase().includes(searchTerm.toLowerCase())
+          .includes(filters.phone.toLowerCase());
+      const matchesMobilePhone =
+        !filters.mobilePhone ||
+        representative.mobilePhone
+          ?.toLowerCase()
+          .includes(filters.mobilePhone.toLowerCase());
+      const matchesAddress =
+        !filters.address ||
+        representative.address
+          ?.toLowerCase()
+          .includes(filters.address.toLowerCase());
+      const matchesCep =
+        !filters.cep ||
+        representative.cep?.toLowerCase().includes(filters.cep.toLowerCase());
+      const matchesCity =
+        !filters.city ||
+        representative.city?.toLowerCase().includes(filters.city.toLowerCase());
+      const matchesState =
+        !filters.state ||
+        representative.state
+          ?.toLowerCase()
+          .includes(filters.state.toLowerCase());
+      const matchesRole =
+        !filters.role ||
+        representative.role
+          ?.toLowerCase()
+          .includes(filters.role.toLowerCase());
+      const matchesClientName =
+        !filters.clientName ||
+        representative.client?.name
+          ?.toLowerCase()
+          .includes(filters.clientName.toLowerCase());
+
+      return (
+        matchesName &&
+        matchesEmail &&
+        matchesPhone &&
+        matchesMobilePhone &&
+        matchesAddress &&
+        matchesCep &&
+        matchesCity &&
+        matchesState &&
+        matchesRole &&
+        matchesClientName
       );
     });
-  }, [representativesList, searchTerm]);
+  }, [representativesList, filters]);
 
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
@@ -72,35 +128,44 @@ const Representatives = () => {
     }
   };
 
-  const handleSearch = () => {
-    // A filtragem já é feita pelo useMemo, então não precisa fazer nada aqui
-    // Mantido para compatibilidade com SearchBar
-  };
-
   const isEmpty = !loading && filteredRepresentativesList.length === 0;
+  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
 
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Representantes"
-          description="Utilize esta seção para Adicionar, Editar ou Excluir um Representante."
+          description="Gerencie os representantes: busque, edite ou exclua registros."
           icon={PersonAdd}
+          actionLabel="Adicionar representante"
+          onAction={handleOpen}
         />
-        <SearchBar
-          search={searchTerm}
-          onSearchChange={(e) => setSearchTerm(e.target.value)}
-          onSearch={handleSearch}
-          onAdd={handleOpen}
-          inputLabel="Digite o nome do representante"
+        <RepresentativesFilter
+          filters={filters}
+          onFilterChange={setFilters}
+          onReset={() =>
+            setFilters({
+              name: "",
+              email: "",
+              phone: "",
+              mobilePhone: "",
+              cep: "",
+              address: "",
+              city: "",
+              state: "",
+              role: "",
+              clientName: "",
+            })
+          }
         />
         {loading ? (
           <TableSkeleton />
         ) : isEmpty ? (
-          searchTerm ? (
+          hasActiveFilters ? (
             <EmptyState
               title="Nenhum representante encontrado"
-              description={`Nada corresponde a "${searchTerm}".`}
+              description="Nenhum representante corresponde aos filtros aplicados."
             />
           ) : (
             <EmptyState

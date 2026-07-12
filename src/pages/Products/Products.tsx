@@ -6,7 +6,7 @@ import CreateProductModal from "../../components/Modal/Create/CreateProductModal
 import { Storefront } from "@mui/icons-material";
 import { IProduct } from "../../interfaces/iproduct";
 import { deleteProduct } from "../../services/productServices";
-import SearchBar from "../../components/SearchBar/SearchBar";
+import ProductsFilter, { ProductFilters } from "../../components/Filters/ProductsFilter";
 import DeleteProductModal from "../../components/Modal/Delete/DeleteProductModal";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
@@ -14,25 +14,52 @@ import { logger } from "../../utils/logger";
 
 const Products = () => {
   const [openModal, setOpenModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<ProductFilters>({
+    name: "",
+    description: "",
+    ncm: "",
+    icms: "",
+    minValue: "",
+    maxValue: "",
+  });
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
   const { products: productsList, loading, removeProductFromCache } = useData();
 
-  // Filtragem local dos produtos
+  // Filtragem local dos produtos com filtros complexos
   const filteredProductsList = useMemo(() => {
-    if (!searchTerm) return productsList;
-
     return productsList.filter((product) => {
+      const matchesName =
+        !filters.name ||
+        product.name?.toLowerCase().includes(filters.name.toLowerCase());
+      const matchesDescription =
+        !filters.description ||
+        product.description
+          ?.toLowerCase()
+          .includes(filters.description.toLowerCase());
+      const matchesNcm =
+        !filters.ncm ||
+        product.ncm?.toLowerCase().includes(filters.ncm.toLowerCase());
+      const matchesIcms =
+        !filters.icms ||
+        product.icms?.toLowerCase().includes(filters.icms.toLowerCase());
+      const matchesMinValue =
+        !filters.minValue || (product.unitValue || 0) >= parseInt(filters.minValue);
+      const matchesMaxValue =
+        !filters.maxValue || (product.unitValue || 0) <= parseInt(filters.maxValue);
+
       return (
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.unitValue?.toString().includes(searchTerm)
+        matchesName &&
+        matchesDescription &&
+        matchesNcm &&
+        matchesIcms &&
+        matchesMinValue &&
+        matchesMaxValue
       );
     });
-  }, [productsList, searchTerm]);
+  }, [productsList, filters]);
 
   const handleOpen = () => setOpenModal(true);
   const handleClose = () => setOpenModal(false);
@@ -62,35 +89,40 @@ const Products = () => {
     }
   };
 
-  const handleSearch = () => {
-    // A filtragem já é feita pelo useMemo, então não precisa fazer nada aqui
-    // Mantido para compatibilidade com SearchBar
-  };
-
   const isEmpty = !loading && filteredProductsList.length === 0;
+  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
 
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Produtos"
-          description="Utilize esta seção para Adicionar, Editar ou Excluir um Produto."
+          description="Gerencie o catálogo de produtos: busque, edite ou exclua registros."
           icon={Storefront}
+          actionLabel="Adicionar produto"
+          onAction={handleOpen}
         />
-        <SearchBar
-          search={searchTerm}
-          onSearchChange={(e) => setSearchTerm(e.target.value)}
-          onSearch={handleSearch}
-          onAdd={handleOpen}
-          inputLabel="Digite o nome do produto"
+        <ProductsFilter
+          filters={filters}
+          onFilterChange={setFilters}
+          onReset={() =>
+            setFilters({
+              name: "",
+              description: "",
+              ncm: "",
+              icms: "",
+              minValue: "",
+              maxValue: "",
+            })
+          }
         />
         {loading ? (
           <TableSkeleton />
         ) : isEmpty ? (
-          searchTerm ? (
+          hasActiveFilters ? (
             <EmptyState
               title="Nenhum produto encontrado"
-              description={`Nada corresponde a "${searchTerm}".`}
+              description="Nenhum produto corresponde aos filtros aplicados."
             />
           ) : (
             <EmptyState

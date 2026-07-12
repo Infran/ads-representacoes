@@ -6,7 +6,7 @@ import { deleteClient } from "../../services/clientServices";
 import { IClient } from "../../interfaces/iclient";
 import { ClientsTable } from "../../components/Tables/ClientsTable/ClientsTable";
 import CreateClientModal from "../../components/Modal/Create/CreateClientModal/CreateClientModal";
-import SearchBar from "../../components/SearchBar/SearchBar";
+import ClientsFilter, { ClientFilters } from "../../components/Filters/ClientsFilter";
 import DeleteClientModal from "../../components/Modal/Delete/DeleteClientModal";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
@@ -15,7 +15,16 @@ import { logger } from "../../utils/logger";
 const Clients = () => {
   const [openModal, setOpenModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState<ClientFilters>({
+    name: "",
+    email: "",
+    phone: "",
+    cnpj: "",
+    cep: "",
+    address: "",
+    city: "",
+    state: "",
+  });
   const [selectedClient, setSelectedClient] = useState<IClient | null>(null);
 
   // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
@@ -25,24 +34,46 @@ const Clients = () => {
     removeClientFromCache,
   } = useData();
 
-  // Filtragem local dos clientes
+  // Filtragem local dos clientes com filtros complexos
   const filteredClients = useMemo(() => {
-    if (!searchTerm) return clientList;
-
     return clientList.filter((client) => {
+      const matchesName =
+        !filters.name ||
+        client.name?.toLowerCase().includes(filters.name.toLowerCase());
+      const matchesEmail =
+        !filters.email ||
+        client.email?.toLowerCase().includes(filters.email.toLowerCase());
+      const matchesPhone =
+        !filters.phone ||
+        client.phone?.toLowerCase().includes(filters.phone.toLowerCase());
+      const matchesCnpj =
+        !filters.cnpj ||
+        client.cnpj?.toLowerCase().includes(filters.cnpj.toLowerCase());
+      const matchesAddress =
+        !filters.address ||
+        client.address?.toLowerCase().includes(filters.address.toLowerCase());
+      const matchesCep =
+        !filters.cep ||
+        client.cep?.toLowerCase().includes(filters.cep.toLowerCase());
+      const matchesCity =
+        !filters.city ||
+        client.city?.toLowerCase().includes(filters.city.toLowerCase());
+      const matchesState =
+        !filters.state ||
+        client.state?.toLowerCase().includes(filters.state.toLowerCase());
+
       return (
-        client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.address?.toLowerCase().includes(searchTerm.toLowerCase())
+        matchesName &&
+        matchesEmail &&
+        matchesPhone &&
+        matchesCnpj &&
+        matchesAddress &&
+        matchesCep &&
+        matchesCity &&
+        matchesState
       );
     });
-  }, [clientList, searchTerm]);
-
-  const handleSearch = () => {
-    // A filtragem já é feita pelo useMemo, então não precisa fazer nada aqui
-    // Mantido para compatibilidade com SearchBar
-  };
+  }, [clientList, filters]);
 
   const handleClose = () => setOpenModal(false);
   const handleCloseDeleteModal = () => setOpenDeleteModal(false);
@@ -72,29 +103,41 @@ const Clients = () => {
   };
 
   const isEmpty = !loading && filteredClients.length === 0;
+  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
 
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Clientes"
-          description="Utilize esta seção para Adicionar, Editar ou Excluir um Cliente."
+          description="Gerencie os clientes cadastrados: busque, edite ou exclua registros."
           icon={PersonAdd}
+          actionLabel="Adicionar cliente"
+          onAction={() => setOpenModal(true)}
         />
-        <SearchBar
-          search={searchTerm}
-          onSearchChange={(e) => setSearchTerm(e.target.value)}
-          onSearch={handleSearch}
-          onAdd={() => setOpenModal(true)}
-          inputLabel="Digite o nome do cliente"
+        <ClientsFilter
+          filters={filters}
+          onFilterChange={setFilters}
+          onReset={() =>
+            setFilters({
+              name: "",
+              email: "",
+              phone: "",
+              cnpj: "",
+              cep: "",
+              address: "",
+              city: "",
+              state: "",
+            })
+          }
         />
         {loading ? (
           <TableSkeleton />
         ) : isEmpty ? (
-          searchTerm ? (
+          hasActiveFilters ? (
             <EmptyState
               title="Nenhum cliente encontrado"
-              description={`Nada corresponde a "${searchTerm}".`}
+              description="Nenhum cliente corresponde aos filtros aplicados."
             />
           ) : (
             <EmptyState

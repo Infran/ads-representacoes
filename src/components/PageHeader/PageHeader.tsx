@@ -1,70 +1,93 @@
-import React, { FC } from "react";
-import { Box, Paper, Typography, useTheme } from "@mui/material";
+import { FC } from "react";
+import { Box, Paper, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { Add } from "@mui/icons-material";
 import { OverridableComponent } from "@mui/material/OverridableComponent";
 import { SvgIconTypeMap } from "@mui/material/SvgIcon";
+import Button from "../../ui/Button";
+
+type IconType = OverridableComponent<SvgIconTypeMap>;
 
 interface PageHeaderProps {
   title: string;
   description: string;
-  icon: OverridableComponent<SvgIconTypeMap>;
+  icon: IconType;
+  /** Rótulo do botão de ação primária (ex.: "Adicionar cliente"). */
+  actionLabel?: string;
+  onAction?: () => void;
+  /** Ícone do botão de ação. Padrão: "+". */
+  actionIcon?: IconType;
 }
 
-const PageHeader: FC<PageHeaderProps> = ({ title, description, icon: Icon }) => {
-  const theme = useTheme();
-
-  return (
-    <Paper
-      elevation={2}
+/**
+ * Cabeçalho de página tokenizado: tile de ícone com tom de marca, título e
+ * descrição e — opcionalmente — a ação primária da tela (ex.: Adicionar) à
+ * direita. Manter a ação de cadastro aqui, e não na barra de filtros, separa
+ * "operar a lista" de "criar um registro".
+ */
+const PageHeader: FC<PageHeaderProps> = ({
+  title,
+  description,
+  icon: Icon,
+  actionLabel,
+  onAction,
+  actionIcon: ActionIcon = Add,
+}) => (
+  <Paper
+    elevation={0}
+    sx={{
+      p: { xs: 2, sm: 2.5 },
+      borderRadius: 3,
+      border: "1px solid",
+      borderColor: "divider",
+      bgcolor: "background.paper",
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+      flexWrap: "wrap",
+    }}
+  >
+    <Box
+      aria-hidden
       sx={{
-        padding: theme.spacing(2),
-        borderRadius: theme.shape.borderRadius,
         display: "flex",
         alignItems: "center",
-        gap: theme.spacing(2),
-        backgroundColor: theme.palette.background.paper,
+        justifyContent: "center",
+        width: 52,
+        height: 52,
+        borderRadius: 2.5,
+        flexShrink: 0,
+        color: "primary.main",
+        bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
       }}
     >
-      {/* Ícone compacto */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 60,
-          height: 60,
-          backgroundColor: theme.palette.primary.light,
-          borderRadius: "50%",
-          color: theme.palette.primary.contrastText,
-        }}
-      >
-        <Icon sx={{ fontSize: 32 }} />
-      </Box>
+      <Icon sx={{ fontSize: 28 }} />
+    </Box>
 
-      {/* Título e descrição compactos */}
-      <Box>
-        <Typography
-          variant="h6"
-          component="h1"
-          sx={{
-            fontWeight: "bold",
-            fontSize: "1rem",
-            color: theme.palette.text.primary,
-          }}
-        >
-          {title}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: theme.palette.text.secondary,
-            fontSize: "0.875rem",
-          }}
-        >
-          {description}
-        </Typography>
-      </Box>
-    </Paper>
-  );
-};
+    <Box sx={{ minWidth: 0, flex: "1 1 auto" }}>
+      <Typography
+        variant="h6"
+        component="h1"
+        sx={{ fontWeight: 700, lineHeight: 1.25 }}
+      >
+        {title}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+        {description}
+      </Typography>
+    </Box>
+
+    {actionLabel && onAction && (
+      <Button
+        variant="contained"
+        onClick={onAction}
+        startIcon={<ActionIcon />}
+        sx={{ flexShrink: 0, ml: { sm: "auto" }, width: { xs: "100%", sm: "auto" } }}
+      >
+        {actionLabel}
+      </Button>
+    )}
+  </Paper>
+);
 
 export default PageHeader;
