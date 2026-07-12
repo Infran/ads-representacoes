@@ -6,9 +6,14 @@ import {
   ListItemText,
   Tooltip,
   Badge,
+  Box,
+  keyframes,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ArrowForward } from "@mui/icons-material";
+import { useHelpOnboarding } from "../../../hooks/useHelpOnboarding";
 import type { MenuItem } from "./sidebarConfig";
 
 interface SidebarItemProps {
@@ -16,10 +21,18 @@ interface SidebarItemProps {
   open: boolean;
 }
 
+// Animação da seta pulsante apontando para Ajuda
+const pulse = keyframes`
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  50% { opacity: 0.6; transform: translateX(4px); }
+`;
+
 const SidebarItem: React.FC<SidebarItemProps> = ({ item, open }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const { showArrow, showBadge } = useHelpOnboarding();
+  const isHelpItem = item.id === 'help';
 
   // Verifica se a rota está ativa (exata ou início)
   const isActive =
@@ -33,7 +46,23 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ item, open }) => {
   const IconComponent = item.icon;
 
   const content = (
-    <ListItem disablePadding sx={{ display: "block" }}>
+    <ListItem disablePadding sx={{ display: "block", position: "relative" }}>
+      {isHelpItem && showArrow && (
+        <Box
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "error.main",
+            fontSize: 24,
+            animation: `${pulse} 1s ease-in-out infinite`,
+            zIndex: 10,
+          }}
+        >
+          <ArrowForward />
+        </Box>
+      )}
       <ListItemButton
         onClick={handleClick}
         sx={{
@@ -63,8 +92,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ item, open }) => {
             transition: "color 0.2s ease",
           }}
         >
-          {item.badge ? (
-            <Badge badgeContent={item.badge} color="error" max={99}>
+          {isHelpItem && showBadge ? (
+            <Badge badgeContent="●" color="error" max={99}>
               <IconComponent />
             </Badge>
           ) : (
