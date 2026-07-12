@@ -52,7 +52,7 @@ const BudgetFormPage: React.FC<BudgetFormPageProps> = ({ mode }) => {
         })
         .catch((error) => {
           logger.error("Erro ao carregar orçamento:", error);
-          notifyError("Erro", "Não foi possível carregar o orçamento.").then(
+          notifyError("Erro ao carregar orçamento", error).then(
             () => navigate("/Orcamentos")
           );
         })

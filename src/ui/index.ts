@@ -16,3 +16,5 @@ export {
   notifyWarning,
   notifyError,
 } from "./Feedback";
+export { FeedbackProvider } from "./FeedbackProvider";
+

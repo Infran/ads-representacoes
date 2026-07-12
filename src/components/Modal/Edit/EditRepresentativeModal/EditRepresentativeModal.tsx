@@ -7,7 +7,7 @@ import {
 } from "../../../../services/representativeServices";
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
-import { Modal, Button } from "../../../../ui";
+import { Modal, Button, notifySuccess } from "../../../../ui";
 import { logger } from "../../../../utils/logger";
 import RepresentativeForm from "../../../Forms/RepresentativeForm";
 
@@ -91,6 +91,7 @@ const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
       handleClose();
       setRepresentative({} as IRepresentative);
       setError(null);
+      notifySuccess("Sucesso!", "Representante atualizado com sucesso!");
     } catch (error) {
       logger.error("Erro ao editar representante:", error);
       setError("Ocorreu um erro ao editar o representante. Tente novamente.");

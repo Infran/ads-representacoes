@@ -9,7 +9,7 @@ import CreateClientModal from "../../components/Modal/Create/CreateClientModal/C
 import SearchBar from "../../components/SearchBar/SearchBar";
 import DeleteClientModal from "../../components/Modal/Delete/DeleteClientModal";
 import { useData } from "../../context/DataContext";
-import { TableSkeleton, EmptyState, notifyError } from "../../ui";
+import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
 import { logger } from "../../utils/logger";
 
 const Clients = () => {
@@ -60,11 +60,12 @@ const Clients = () => {
         removeClientFromCache(selectedClient.id);
         setOpenDeleteModal(false);
         setSelectedClient(null);
+        notifySuccess("Sucesso!", "Cliente excluído com sucesso!");
       } catch (error) {
         logger.error("Erro ao excluir cliente:", error);
         notifyError(
           "Não foi possível excluir o cliente",
-          "Tente novamente em instantes."
+          error
         );
       }
     }

@@ -18,6 +18,7 @@ const Representatives = lazy(
   () => import("./pages/Representatives/Representatives")
 );
 const BudgetFormPage = lazy(() => import("./pages/BudgetFormPage"));
+const Help = lazy(() => import("./pages/Help"));
 
 const AppRouter = () => {
   const { currentUser: user } = useContext(AuthContext);
@@ -53,6 +54,7 @@ const AppRouter = () => {
                   path="Orcamentos/Editar/:id"
                   element={<BudgetFormPage mode="edit" />}
                 />
+                <Route path="Ajuda" element={<Help />} />
               </Route>
             </Route>
           </Routes>

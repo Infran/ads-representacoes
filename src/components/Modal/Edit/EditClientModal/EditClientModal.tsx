@@ -6,7 +6,7 @@ import {
 } from "../../../../services/clientServices";
 import { useData } from "../../../../context/DataContext";
 import { isValidCnpj } from "../../../../utils/validators";
-import { Modal, Button, ListSkeleton } from "../../../../ui";
+import { Modal, Button, ListSkeleton, notifySuccess } from "../../../../ui";
 import { logger } from "../../../../utils/logger";
 import ClientForm from "../../../Forms/ClientForm";
 
@@ -74,6 +74,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
       handleClose();
       setClient({} as IClient);
       setError(null);
+      notifySuccess("Sucesso!", "Cliente atualizado com sucesso!");
     } catch (error) {
       logger.error("Erro ao editar cliente:", error);
       setError("Ocorreu um erro ao editar o cliente. Tente novamente.");

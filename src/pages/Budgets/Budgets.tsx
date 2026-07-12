@@ -11,7 +11,7 @@ import DeleteBudgetModal from "../../components/Modal/Delete/DeleteBudgetModal";
 import { useBudgetFilters } from "./useBudgetFilters";
 import BudgetFilters from "./BudgetFilters";
 import BudgetListItem from "./BudgetListItem";
-import { ListSkeleton } from "../../ui";
+import { ListSkeleton, notifySuccess } from "../../ui";
 
 const Budgets = () => {
   const navigate = useNavigate();
@@ -33,6 +33,7 @@ const Budgets = () => {
     // Atualiza o cache local em vez de recarregar a página
     removeBudgetFromCache(deletedId);
     setDeleteModalId(null);
+    notifySuccess("Sucesso!", "Orçamento excluído com sucesso!");
   };
 
   // PERF P1.1: um único modal de exclusão (fora do .map). Busca no array

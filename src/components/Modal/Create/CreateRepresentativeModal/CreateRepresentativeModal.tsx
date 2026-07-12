@@ -4,7 +4,7 @@ import { IRepresentative } from "../../../../interfaces/irepresentative";
 import { addRepresentative } from "../../../../services/representativeServices";
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
-import { Modal, Button } from "../../../../ui";
+import { Modal, Button, notifySuccess } from "../../../../ui";
 import { logger } from "../../../../utils/logger";
 import RepresentativeForm from "../../../Forms/RepresentativeForm";
 
@@ -68,6 +68,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
       handleClose();
       setRepresentative({} as IRepresentative);
       setError(null);
+      notifySuccess("Sucesso!", "Representante cadastrado com sucesso!");
     } catch (error) {
       logger.error("Erro ao adicionar representante:", error);
       setError(

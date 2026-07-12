@@ -22,7 +22,7 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, on
       logger.error("Erro ao excluir orçamento:", error);
       notifyError(
         "Não foi possível excluir o orçamento",
-        "Tente novamente em instantes."
+        error
       );
     }
   };

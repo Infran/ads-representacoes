@@ -7,7 +7,7 @@ import {
 import { useData } from "../../../../context/DataContext";
 import ncmData from "../../../../tabela_ncm.json";
 import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
-import { Modal, Button } from "../../../../ui";
+import { Modal, Button, notifySuccess } from "../../../../ui";
 import { logger } from "../../../../utils/logger";
 import ProductForm from "../../../Forms/ProductForm";
 
@@ -106,6 +106,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       handleClose();
       setProduct({} as IProduct);
       setError(null);
+      notifySuccess("Sucesso!", "Produto atualizado com sucesso!");
     } catch (error) {
       logger.error("Erro ao editar produto:", error);
       setError("Ocorreu um erro ao editar o produto. Tente novamente.");

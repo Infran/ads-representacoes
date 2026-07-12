@@ -5,6 +5,8 @@ import App from './App.tsx'
 import { AuthProvider } from './context/ContextAuth.tsx'
 import { getTheme } from './theme'
 import { ColorModeContext, ColorMode } from './theme/ColorModeContext'
+import { FeedbackProvider } from './ui'
+
 
 const COLOR_MODE_KEY = 'ads_color_mode'
 
@@ -39,9 +41,11 @@ export default function Root() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <FeedbackProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </FeedbackProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>
   )

@@ -9,7 +9,7 @@ import SearchBar from "../../components/SearchBar/SearchBar";
 import DeleteRepresentativeModal from "../../components/Modal/Delete/DeleteRepresentativeModal";
 import RepresentativeTable from "../../components/Tables/RepresentativeTable/RepresentativeTable";
 import { useData } from "../../context/DataContext";
-import { TableSkeleton, EmptyState, notifyError } from "../../ui";
+import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
 import { logger } from "../../utils/logger";
 
 const Representatives = () => {
@@ -61,11 +61,12 @@ const Representatives = () => {
         removeRepresentativeFromCache(selectedRepresentative.id);
         setOpenDeleteModal(false);
         setSelectedRepresentative(null);
+        notifySuccess("Sucesso!", "Representante excluído com sucesso!");
       } catch (error) {
         logger.error("Erro ao excluir representante:", error);
         notifyError(
           "Não foi possível excluir o representante",
-          "Tente novamente em instantes."
+          error
         );
       }
     }

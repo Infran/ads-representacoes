@@ -61,8 +61,8 @@ export const useBudgetActions = ({
       }
     } catch (error) {
       notifyError(
-        "Erro",
-        `Erro ao ${isEditing ? "atualizar" : "cadastrar"} o orçamento.`
+        `Erro ao ${isEditing ? "atualizar" : "cadastrar"} o orçamento`,
+        error
       );
       logger.error(error);
     }

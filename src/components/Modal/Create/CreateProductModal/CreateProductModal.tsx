@@ -4,7 +4,7 @@ import { addProduct } from "../../../../services/productServices";
 import { useData } from "../../../../context/DataContext";
 import ncmData from "../../../../tabela_ncm.json";
 import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
-import { Modal, Button } from "../../../../ui";
+import { Modal, Button, notifySuccess } from "../../../../ui";
 import { logger } from "../../../../utils/logger";
 import ProductForm from "../../../Forms/ProductForm";
 
@@ -81,6 +81,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
       setProduct({} as IProduct);
       setMaskedUnitValue("");
       setError(null);
+      notifySuccess("Sucesso!", "Produto cadastrado com sucesso!");
     } catch (error) {
       logger.error("Erro ao adicionar produto:", error);
       setError("Ocorreu um erro ao adicionar o produto. Tente novamente.");

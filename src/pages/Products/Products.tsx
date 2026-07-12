@@ -9,7 +9,7 @@ import { deleteProduct } from "../../services/productServices";
 import SearchBar from "../../components/SearchBar/SearchBar";
 import DeleteProductModal from "../../components/Modal/Delete/DeleteProductModal";
 import { useData } from "../../context/DataContext";
-import { TableSkeleton, EmptyState, notifyError } from "../../ui";
+import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
 import { logger } from "../../utils/logger";
 
 const Products = () => {
@@ -51,11 +51,12 @@ const Products = () => {
         removeProductFromCache(selectedProduct.id);
         setOpenDeleteModal(false);
         setSelectedProduct(null);
+        notifySuccess("Sucesso!", "Produto excluído com sucesso!");
       } catch (error) {
         logger.error("Erro ao excluir produto:", error);
         notifyError(
           "Não foi possível excluir o produto",
-          "Tente novamente em instantes."
+          error
         );
       }
     }

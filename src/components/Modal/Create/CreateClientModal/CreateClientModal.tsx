@@ -3,7 +3,7 @@ import { IClient } from "../../../../interfaces/iclient";
 import { addClient } from "../../../../services/clientServices";
 import { useData } from "../../../../context/DataContext";
 import { isValidCnpj } from "../../../../utils/validators";
-import { Modal, Button } from "../../../../ui";
+import { Modal, Button, notifySuccess } from "../../../../ui";
 import { logger } from "../../../../utils/logger";
 import ClientForm from "../../../Forms/ClientForm";
 
@@ -53,6 +53,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
       handleClose();
       setClient({} as IClient);
       setError(null);
+      notifySuccess("Sucesso!", "Cliente cadastrado com sucesso!");
     } catch (error) {
       logger.error("Erro ao adicionar cliente:", error);
       setError("Ocorreu um erro ao adicionar o cliente. Tente novamente.");

@@ -1,72 +1,126 @@
-import Swal, { SweetAlertResult } from "sweetalert2";
-import { tokens } from "../theme/tokens";
+export type FeedbackType = "success" | "warning" | "error" | "info" | "question";
 
-/**
- * Wrapper de diálogos de confirmação/feedback tokenizado (UI U2.1).
- * Centraliza as cores de botão do Swal nos tokens de marca (elimina os
- * `#3085d6`/`#d33` hardcoded espalhados). Consumido por U3.4 / EST F4.1.
- */
-
-interface ConfirmOptions {
+export interface ConfirmOptions {
   title: string;
   text?: string;
   confirmText?: string;
   cancelText?: string;
-  icon?: "warning" | "error" | "success" | "info" | "question";
-  /**
-   * Ação destrutiva (logout, excluir): pinta o botão de confirmar com a cor de
-   * erro (vermelho) e o de cancelar com a de marca — preserva a affordance de
-   * "cuidado" sem hardcode de hex.
-   */
+  icon?: FeedbackType;
   danger?: boolean;
 }
 
-/** Diálogo de confirmação (sim/não) com cores de marca. Resolve `true` se confirmado. */
-export const confirmDialog = async ({
-  title,
-  text,
-  confirmText = "Confirmar",
-  cancelText = "Cancelar",
-  icon = "warning",
-  danger = false,
-}: ConfirmOptions): Promise<boolean> => {
-  const result: SweetAlertResult = await Swal.fire({
-    title,
-    text,
-    icon,
-    showCancelButton: true,
-    confirmButtonText: confirmText,
-    cancelButtonText: cancelText,
-    reverseButtons: true,
-    confirmButtonColor: danger ? tokens.color.error : tokens.color.brand.main,
-    cancelButtonColor: danger ? tokens.color.brand.main : tokens.color.error,
-  });
-  return result.isConfirmed;
+type OpenConfirmFn = (options: ConfirmOptions, resolve: (val: boolean) => void) => void;
+type AddToastFn = (
+  title: string,
+  text: string | undefined,
+  type: "success" | "warning" | "error" | "info"
+) => void;
+
+let openConfirmFn: OpenConfirmFn | null = null;
+let addToastFn: AddToastFn | null = null;
+
+export const registerFeedbackMethods = (
+  openConfirm: OpenConfirmFn | null,
+  addToast: AddToastFn | null
+) => {
+  openConfirmFn = openConfirm;
+  addToastFn = addToast;
 };
 
-/** Toast/alerta simples de sucesso. */
-export const notifySuccess = (title: string, text?: string) =>
-  Swal.fire({
-    icon: "success",
-    title,
-    text,
-    confirmButtonColor: tokens.color.brand.main,
-  });
+// Mapeamento e parser inteligente de erros do Firebase/Firestore e Javascript
+const getErrorMessage = (error: any): string => {
+  if (!error) return "Ocorreu um erro inesperado. Por favor, tente novamente.";
 
-/** Alerta de aviso tokenizado (validação/atenção, sem ação destrutiva). */
-export const notifyWarning = (title: string, text?: string) =>
-  Swal.fire({
-    icon: "warning",
-    title,
-    text,
-    confirmButtonColor: tokens.color.brand.main,
-  });
+  if (typeof error === "string") return error;
 
-/** Alerta de erro tokenizado. */
-export const notifyError = (title: string, text?: string) =>
-  Swal.fire({
-    icon: "error",
-    title,
-    text,
-    confirmButtonColor: tokens.color.brand.main,
+  // Extração de códigos do Firebase (incluindo causa aninhada)
+  const code = error.code || (error.cause && error.cause.code);
+  if (code) {
+    switch (code) {
+      case "permission-denied":
+      case "firestore/permission-denied":
+        return "Você não tem permissão para realizar esta operação no banco de dados (permissão negada).";
+      case "unavailable":
+      case "firestore/unavailable":
+        return "O serviço está temporariamente indisponível. Verifique sua conexão com a internet.";
+      case "not-found":
+        return "O registro solicitado não foi localizado ou já foi excluído do sistema.";
+      case "already-exists":
+        return "Este registro já existe no sistema e não pode ser duplicado.";
+      case "auth/network-request-failed":
+        return "Erro de rede. Não foi possível comunicar com o servidor de autenticação.";
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+        return "Credenciais inválidas. Verifique os dados inseridos (e-mail e senha) e tente novamente.";
+      case "auth/user-not-found":
+        return "Nenhum usuário correspondente a este e-mail foi localizado.";
+      case "auth/email-already-in-use":
+        return "Este endereço de e-mail já está associado a outra conta de usuário.";
+      default:
+        break;
+    }
+  }
+
+  // Erros comuns baseados em mensagens conhecidas
+  const message = error.message || "";
+  if (message) {
+    if (message.includes("network") || message.includes("offline")) {
+      return "Sem conexão com a internet. Verifique sua rede e tente novamente.";
+    }
+    return message;
+  }
+
+  return "Ocorreu um erro inesperado. Por favor, tente novamente.";
+};
+
+/** Diálogo de confirmação (sim/não) tokenizado com UI customizada. Resolve `true` se confirmado. */
+export const confirmDialog = (options: ConfirmOptions): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (openConfirmFn) {
+      openConfirmFn(options, resolve);
+    } else {
+      console.warn("FeedbackProvider não registrado para confirmDialog.");
+      resolve(false);
+    }
   });
+};
+
+/** Toast simples de sucesso. */
+export const notifySuccess = (title: string, text?: string): Promise<void> => {
+  if (addToastFn) {
+    addToastFn(title, text, "success");
+  } else {
+    console.warn("FeedbackProvider não registrado para notifySuccess.");
+  }
+  return Promise.resolve();
+};
+
+/** Alerta de aviso com tradutor de erros para a descrição. */
+export const notifyWarning = (
+  title: string,
+  textOrError?: string | any
+): Promise<void> => {
+  if (addToastFn) {
+    const text =
+      typeof textOrError === "string" ? textOrError : getErrorMessage(textOrError);
+    addToastFn(title, text, "warning");
+  } else {
+    console.warn("FeedbackProvider não registrado para notifyWarning.");
+  }
+  return Promise.resolve();
+};
+
+/** Alerta de erro com tradutor de erros para a descrição. */
+export const notifyError = (
+  title: string,
+  textOrError?: string | any
+): Promise<void> => {
+  if (addToastFn) {
+    const text =
+      typeof textOrError === "string" ? textOrError : getErrorMessage(textOrError);
+    addToastFn(title, text, "error");
+  } else {
+    console.warn("FeedbackProvider não registrado para notifyError.");
+  }
+  return Promise.resolve();
+};

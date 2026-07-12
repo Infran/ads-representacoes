@@ -29,8 +29,7 @@
     "firebase": "^10.10.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.3",
-    "sweetalert2": "^11.17.2"
+    "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^3.0.4",
