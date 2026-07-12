@@ -248,79 +248,82 @@ export const ChapterIntroducao: React.FC<HelpContentProps> = ({ goToOverview }) 
     />
 
     <Box sx={{ mt: 4 }}>
-      <SectionTitle icon={Cloud} color="info">
+      <SectionTitle icon={Cloud} color=”info”>
         Onde as informações ficam salvas
       </SectionTitle>
     </Box>
-    <Callout variant="nota" title="Nada se perde ao fechar o navegador">
+    <Callout variant=”nota” title=”Nada se perde ao fechar o navegador”>
       Tudo o que você digita é enviado em tempo real e salvo com segurança nos
-      servidores do <strong>Google (Firebase Cloud Firestore)</strong>. Fechar o
-      navegador ou trocar de computador não apaga nada.
+      servidores do <strong>Google Cloud</strong>. Fechar o navegador ou trocar
+      de computador não apaga nada. Seus dados estão sempre seguros.
     </Callout>
     <Bullets
       items={[
         <>
-          <strong>Banco de dados na nuvem:</strong> os registros ficam no
-          Firestore, acessíveis de qualquer lugar com login.
+          <strong>Armazenamento em nuvem:</strong> os registros ficam guardados
+          online (nos servidores do Google) e você acessa de qualquer lugar com
+          login, mesmo de outro computador.
         </>,
         <>
-          <strong>Identificação sequencial:</strong> cada item recebe um número
-          único e sequencial (1, 2, 3…), gerado automaticamente, sem repetições
-          nem “buracos” na numeração.
+          <strong>Numeração automática:</strong> cada orçamento recebe um número
+          único (1, 2, 3…) gerado automaticamente, sem pular números.
         </>,
       ]}
     />
 
     <Box sx={{ mt: 4 }}>
       <SectionTitle icon={Speed} color="success">
-        O sistema de cache (por que é tão rápido?)
+        Por que o sistema é tão rápido?
       </SectionTitle>
     </Box>
     <Bullets
       items={[
         <>
-          <strong>Cópia local:</strong> ao entrar, o sistema baixa uma cópia
-          temporária das listas de clientes, produtos e representantes e guarda no
-          seu navegador.
+          <strong>Cópia rápida no seu navegador:</strong> quando você entra, o
+          sistema traz as listas de clientes, produtos e representantes e as
+          guarda localmente no seu navegador para acesso imediato.
         </>,
         <>
-          <strong>Velocidade instantânea:</strong> pesquisas e listagens são lidas
-          desse cache local, aparecendo em menos de um segundo.
+          <strong>Buscas e filtros instantâneos:</strong> as pesquisas não
+          consultam a internet — rodam no seu computador, por isso aparecem em
+          menos de um segundo.
         </>,
         <>
-          <strong>Atualização inteligente:</strong> ao adicionar, editar ou
-          excluir, a mudança vai para a nuvem e o cache local é atualizado
+          <strong>Sempre atualizado:</strong> quando você adiciona, edita ou
+          exclui algo, a mudança é salva na nuvem e no navegador
           automaticamente.
         </>,
         <>
-          <strong>Renovação (TTL):</strong> o cache é renovado a cada{" "}
-          <Term>5 minutos</Term> para você não ver dados desatualizados se um
-          colega cadastrar algo ao mesmo tempo.
+          <strong>Sincronização automática:</strong> a cada{" "}
+          <Term>5 minutos</Term>, o sistema verifica se algum colega digitou
+          algo novo e atualiza sua tela automaticamente. Você nunca vê dados
+          desatualizados por muito tempo.
         </>,
       ]}
     />
 
     <Box sx={{ mt: 4 }}>
-      <SectionTitle icon={History} color="warning">
+      <SectionTitle icon={History} color=”warning”>
         A regra de ouro dos orçamentos
       </SectionTitle>
     </Box>
-    <Callout variant="importante" title="O orçamento é um documento histórico e imutável">
-      Ao criar um orçamento, o sistema tira uma “foto” (snapshot) dos dados do
-      cliente, do representante e dos produtos exatamente como estavam{" "}
-      <strong>naquele momento</strong>.
+    <Callout variant=”importante” title=”Um orçamento nunca muda automaticamente”>
+      Ao criar um orçamento, o sistema faz uma cópia exata de todos os dados do
+      cliente, representante e produtos <strong>naquele dia e hora</strong>.
+      Essa cópia fica congelada no tempo.
     </Callout>
     <Bullets
       items={[
         <>
-          Se hoje você emite um orçamento com o produto X a <Term>R$ 100,00</Term>{" "}
-          e amanhã altera o catálogo para <Term>R$ 120,00</Term>, o orçamento de
-          ontem <strong>continua com R$ 100,00</strong>. Isso protege
-          juridicamente as propostas já enviadas.
+          Se você emite um orçamento hoje com o produto X a <Term>R$ 100,00</Term>{“ “}
+          e amanhã muda o preço na tabela para <Term>R$ 120,00</Term>, o
+          orçamento de ontem <strong>continua com R$ 100,00</strong> para sempre.
+          Isso garante que a proposta que você mandou ao cliente é honrada.
         </>,
         <>
-          Para refletir mudanças recentes num orçamento antigo, abra-o em modo de
-          edição, ajuste e salve novamente de forma explícita.
+          Se o cliente pedir para você atualizar um orçamento antigo com novos
+          preços, abra-o em modo de edição, faça as mudanças e salve novamente.
+          Esse será um novo orçamento.
         </>,
       ]}
     />
@@ -331,21 +334,24 @@ export const ChapterIntroducao: React.FC<HelpContentProps> = ({ goToOverview }) 
     <Faq
       items={[
         {
-          q: "Posso usar o sistema sem internet?",
+          q: "Preciso de internet para usar o sistema?",
           a: (
             <>
-              Não. Os dados e o login ficam no Google Cloud, então é preciso
-              conexão para abrir o sistema, autenticar e salvar registros. O cache
-              acelera a navegação, mas não substitui a internet para gravar.
+              Sim, o sistema precisa de conexão para abrir, fazer login e salvar
+              registros. Você pode pesquisar e navegar nos dados já carregados
+              mesmo com internet lenta, mas para gravar algo novo é necessário
+              conexão ativa.
             </>
           ),
         },
         {
-          q: "E se duas pessoas editarem o mesmo cliente ao mesmo tempo?",
+          q: "E se dois colegas editarem o mesmo cliente ao mesmo tempo?",
           a: (
             <>
-              Vale a alteração salva por último. O cache de ambas se ajusta em até
-              5 minutos ou no próximo clique de atualização da tela.
+              Vale a alteração que foi salva por último (quem clicou em Salvar
+              mais recentemente). A tela do outro colega se atualiza
+              automaticamente em até 5 minutos, ou no próximo clique de
+              "Atualizar".
             </>
           ),
         },
@@ -377,36 +383,36 @@ export const ChapterClientes: React.FC<HelpContentProps> = ({ goToOverview }) =>
     <FieldTable
       fields={[
         { name: "Nome", req: "req", input: "Nome ou razão social da empresa.", format: "Texto livre. Ex.: Metalúrgica Silva Ltda." },
-        { name: "CNPJ", req: "opt", input: "CNPJ da empresa (14 números).", format: <>Formata sozinho para <Term>00.000.000/0000-00</Term>.</> },
-        { name: "Telefone", req: "opt", input: "Telefone fixo ou celular (DDD + número).", format: <>Formata para <Term>(00) 0000-0000</Term> ou <Term>(00) 00000-0000</Term>.</> },
-        { name: "Email", req: "opt", input: "E-mail de contato da empresa.", format: "Valida o formato. Máximo de 50 caracteres." },
-        { name: "CEP", req: "req", input: "CEP (8 números).", format: <>Formata para <Term>00000-000</Term>.</> },
+        { name: "CNPJ", req: "opt", input: "CNPJ da empresa (14 números).", format: <>O sistema formata automaticamente para <Term>00.000.000/0000-00</Term>.</> },
+        { name: "Telefone", req: "opt", input: "Telefone fixo ou celular com DDD.", format: <>O sistema formata automaticamente para <Term>(00) 0000-0000</Term>.</> },
+        { name: "Email", req: "opt", input: "E-mail de contato da empresa.", format: "Máximo de 50 caracteres. Ex.: contato@empresa.com" },
+        { name: "CEP", req: "req", input: "CEP com 8 números.", format: <>O sistema formata automaticamente para <Term>00000-000</Term>.</> },
         { name: "Endereço", req: "opt", input: "Logradouro, número e complemento.", format: "Texto livre. Ex.: Av. Brasil, 1500 - Sala 4." },
         { name: "Cidade", req: "opt", input: "Cidade do cliente.", format: "Texto livre. Ex.: Caxias do Sul." },
-        { name: "Estado", req: "opt", input: "Unidade Federativa (UF).", format: "Texto. Ex.: RS, SP, SC." },
+        { name: "Estado", req: "opt", input: "Sigla do estado (UF).", format: "Duas letras. Ex.: RS, SP, SC." },
       ]}
     />
 
-    <SectionTitle icon={FactCheck} color="warning">
-      Regras de validação
+    <SectionTitle icon={FactCheck} color=”warning”>
+      O que é obrigatório
     </SectionTitle>
     <NumberedList
       items={[
         <>
-          <strong>Campos obrigatórios:</strong> o botão <strong>Adicionar</strong>{" "}
-          fica desabilitado (cinza) enquanto <strong>Nome</strong> e{" "}
-          <strong>CEP</strong> não estiverem preenchidos.
+          <strong>Nome e CEP são obrigatórios:</strong> o botão{“ “}
+          <strong>Adicionar</strong> fica desabilitado (cinza) até esses campos
+          estarem preenchidos.
         </>,
         <>
-          <strong>Validação do CNPJ:</strong> se você digitar um CNPJ, o sistema
-          confere os dígitos verificadores de verdade.
+          <strong>CNPJ deve ser real (se digitado):</strong> o sistema valida o
+          CNPJ e recusa CNPJs falsos. Se quiser deixar em branco, fica de boa.
         </>,
       ]}
     />
-    <Callout variant="atencao" title="CNPJ inválido bloqueia o salvamento">
-      Um CNPJ falso (como <Term>11.111.111/1111-11</Term>) exibe o aviso
-      “CNPJ inválido. Verifique os dígitos.” e impede salvar até você corrigir ou
-      deixar o campo em branco.
+    <Callout variant=”atencao” title=”CNPJ inválido bloqueia o salvamento”>
+      Se o CNPJ que você digitou for inválido (ex.:{“ “}
+      <Term>11.111.111/1111-11</Term>), o sistema mostra a mensagem “CNPJ
+      inválido. Verifique.” Você pode corrigir o número ou deixar o campo vazio.
     </Callout>
 
     <SectionTitle icon={AccountTree}>Fluxo de trabalho</SectionTitle>
@@ -498,38 +504,39 @@ export const ChapterRepresentantes: React.FC<HelpContentProps> = ({ goToOverview
     <SectionTitle icon={FactCheck}>Campos do formulário</SectionTitle>
     <FieldTable
       fields={[
-        { name: "Cliente", req: "rec", input: "Empresa (cliente) já cadastrada.", format: "Autocompletar: mostra sugestões conforme você digita." },
-        { name: "Nome", req: "req", input: "Nome completo do representante.", format: "Texto livre. Limite de 80 caracteres." },
-        { name: "Cargo", req: "opt", input: "Função na empresa (comprador, diretor…).", format: "Texto livre. Limite de 50 caracteres." },
-        { name: "Email", req: "opt", input: "E-mail corporativo ou pessoal.", format: "Valida o formato. Limite de 80 caracteres." },
-        { name: "Telefone", req: "opt", input: "Telefone fixo comercial.", format: <>Formata para <Term>(00) 0000-0000</Term>.</> },
-        { name: "Celular", req: "opt", input: "Celular / WhatsApp.", format: <>Formata para <Term>(00) 00000-0000</Term>.</> },
-        { name: "CEP", req: "opt", input: "CEP de trabalho.", format: <>Formata para <Term>00000-000</Term>.</> },
-        { name: "Endereço", req: "opt", input: "Logradouro e número do escritório.", format: "Texto livre. Limite de 80 caracteres." },
-        { name: "Estado", req: "opt", input: "Sigla do estado.", format: "Texto. Limite de 2 caracteres (ex.: RS)." },
-        { name: "Cidade", req: "opt", input: "Cidade.", format: "Texto livre. Limite de 50 caracteres." },
+        { name: "Cliente", req: "rec", input: "Empresa (cliente) já cadastrada no sistema.", format: "Digite o nome e escolha da lista de sugestões." },
+        { name: "Nome", req: "req", input: "Nome completo do representante.", format: "Texto livre. Até 80 caracteres." },
+        { name: "Cargo", req: "opt", input: "Função na empresa (ex.: comprador, diretor).", format: "Texto livre. Até 50 caracteres." },
+        { name: "Email", req: "opt", input: "E-mail corporativo ou pessoal.", format: "Até 80 caracteres. Ex.: nomes@empresa.com" },
+        { name: "Telefone", req: "opt", input: "Telefone fixo comercial.", format: <>O sistema formata automaticamente para <Term>(00) 0000-0000</Term>.</> },
+        { name: "Celular", req: "opt", input: "Celular ou WhatsApp.", format: <>O sistema formata automaticamente para <Term>(00) 00000-0000</Term>.</> },
+        { name: "CEP", req: "opt", input: "CEP do local de trabalho.", format: <>O sistema formata automaticamente para <Term>00000-000</Term>.</> },
+        { name: "Endereço", req: "opt", input: "Logradouro e número do escritório.", format: "Texto livre. Até 80 caracteres." },
+        { name: "Estado", req: "opt", input: "Sigla do estado (UF).", format: "Duas letras (ex.: RS, SP)." },
+        { name: "Cidade", req: "opt", input: "Cidade onde trabalha.", format: "Texto livre. Até 50 caracteres." },
       ]}
     />
 
-    <SectionTitle icon={AccountTree} color="info">
-      Preenchimento automático de endereço
+    <SectionTitle icon={AccountTree} color=”info”>
+      O sistema preenche o endereço automaticamente
     </SectionTitle>
     <FlowSteps
       nodes={[
-        { label: "Selecione o cliente", detail: "No campo “Selecione um cliente”." },
-        { label: "Endereço herdado", detail: "CEP, Endereço, Cidade e Estado do cliente entram sozinhos." },
-        { label: "Ajuste se precisar", detail: "Filial ou home-office? Reescreva sem afetar o cliente." },
+        { label: “Você escolhe o cliente”, detail: “Digite o nome e clique na sugestão.” },
+        { label: “Endereço preenchido na hora”, detail: “O CEP, Endereço, Cidade e Estado do cliente entram sozinhos.” },
+        { label: “Pode mudar se precisar”, detail: “Se o representante trabalha em outra filial, você pode editar.” },
       ]}
     />
     <Bullets
       items={[
         <>
-          Ao escolher a empresa, os campos <strong>CEP, Endereço, Cidade e
-          Estado</strong> são preenchidos na hora com os dados do cliente.
+          Quando você seleciona uma empresa, seus endereço e CEP aparecem
+          automaticamente — assim você não precisa digitar duas vezes.
         </>,
         <>
-          Se o representante trabalha em outro local, apague e digite o endereço
-          específico — isso <strong>não altera</strong> o cadastro do cliente.
+          Se o representante trabalha em outro local (filial, home-office), você
+          pode editar esses campos — isso <strong>não muda</strong> o cadastro da
+          empresa original.
         </>,
       ]}
     />
@@ -602,46 +609,47 @@ export const ChapterProdutos: React.FC<HelpContentProps> = ({ goToOverview }) =>
     <SectionTitle icon={FactCheck}>Campos do formulário</SectionTitle>
     <FieldTable
       fields={[
-        { name: "NCM", req: "req", input: "Código NCM do produto (8 números).", format: "Classificação fiscal. Usado para buscar a descrição padrão." },
-        { name: "ICMS (%)", req: "opt", input: "Alíquota de ICMS aplicável.", format: <>Exibe o símbolo <Term>%</Term>. Ex.: 12, 18.</> },
-        { name: "Nome do produto", req: "req", input: "Nome comercial do produto.", format: "Texto livre. Ex.: Válvula reguladora de pressão 3/4." },
-        { name: "Qtd. em estoque", req: "locked", input: "Campo desabilitado, fixo em 0.", format: "O sistema gerencia propostas, não estoque físico." },
-        { name: "Valor (unitário)", req: "req", input: "Valor de tabela do produto.", format: <>Formata em Real. Você digita só os números e o <Term>R$</Term> entra sozinho.</> },
-        { name: "Descrição", req: "opt", input: "Texto detalhado do produto.", format: "Costuma vir do NCM, mas aceita edição livre." },
+        { name: "NCM", req: "req", input: "Código fiscal do produto (8 números).", format: "Ex.: 84811000. Usado para buscar descrição padrão." },
+        { name: "ICMS (%)", req: "opt", input: "Percentual de imposto sobre o produto.", format: <>Ex.: 12 ou 18 (o símbolo <Term>%</Term> é adicionado automaticamente).</> },
+        { name: "Nome do produto", req: "req", input: "Nome comercial do produto.", format: "Texto livre. Ex.: Válvula reguladora 3/4." },
+        { name: "Qtd. em estoque", req: "locked", input: "Campo desabilitado, sempre zero.", format: "O sistema é para fazer orçamentos, não gerenciar estoque." },
+        { name: "Valor unitário", req: "req", input: "Preço de uma unidade do produto.", format: <>Digite apenas números (ex.: 1500 para R$ 15,00). O símbolo <Term>R$</Term> aparece sozinho.</> },
+        { name: "Descrição", req: "opt", input: "Detalhes do produto para o orçamento.", format: "Geralmente vem pronto do NCM, mas você pode editar." },
       ]}
     />
 
     <SectionTitle icon={AccountTree} color="info">
-      Busca automática de NCM
+      O sistema busca a descrição automaticamente
     </SectionTitle>
     <FlowSteps
       nodes={[
-        { label: "Digite o NCM", detail: "8 dígitos; o sistema remove traços e pontos." },
-        { label: "Consulta interna", detail: "Pesquisa na tabela NCM oficial embarcada." },
-        { label: "Preenche a descrição", detail: "Se achar, completa; se não, deixa em branco." },
+        { label: "Você digita o código NCM", detail: "8 números (ex.: 84811000)." },
+        { label: "Sistema procura na tabela", detail: "Busca o código na tabela de classificação." },
+        { label: "Descrição preenchida", detail: "Se acha, preenche automaticamente. Se não, deixa em branco." },
       ]}
     />
     <Bullets
       items={[
         <>
-          Ao digitar um NCM válido (ex.: <Term>84811000</Term>), a{" "}
-          <strong>Descrição</strong> recebe automaticamente o texto técnico
-          oficial — sem digitar tudo à mão.
+          Quando você digita um NCM válido (ex.: <Term>84811000</Term>), a{" "}
+          <strong>Descrição</strong> preenchida automaticamente — você não precisa
+          digitar à mão.
         </>,
         <>
-          O campo continua aberto: complemente a descrição com detalhes
-          comerciais quando quiser.
+          Você pode editar a descrição livremente para adicionar detalhes
+          comerciais ou especificar modelos.
         </>,
       ]}
     />
 
     <SectionTitle icon={Payments} color="success">
-      Valores em centavos
+      Como o preço é digitado
     </SectionTitle>
-    <Callout variant="nota" title="Contas sempre exatas">
-      Para nunca arredondar errado, o valor é gravado em centavos: um produto de{" "}
-      <Term>R$ 12,50</Term> é salvo como o inteiro <Term>1250</Term>. Na tela ele
-      aparece normalmente como R$ 12,50 — a conversão é invisível.
+    <Callout variant="nota" title="Contas sempre certas, sem erros de arredondamento">
+      Você digita só números inteiros e os centavos ficam implícitos. Para um
+      produto de <Term>R$ 12,50</Term>, você digita <Term>1250</Term>. Na tela e
+      nos orçamentos ele aparece normalmente como <Term>R$ 12,50</Term> — sem você
+      precisar digitar o separador decimal.
     </Callout>
 
     <SectionTitle icon={AccountTree}>Fluxo de trabalho</SectionTitle>
@@ -655,9 +663,10 @@ export const ChapterProdutos: React.FC<HelpContentProps> = ({ goToOverview }) =>
         <>Clique em <strong>Adicionar</strong>.</>,
       ]}
     />
-    <Callout variant="dica" title="Digitando o valor">
-      Digite apenas os números, com os centavos ao final. Para{" "}
-      <Term>R$ 1.500,00</Term>, digite <Term>150000</Term>.
+    <Callout variant="dica" title="Dica de digitação">
+      Pense em centavos: <Term>R$ 15,00</Term> = digite{" "}
+      <Term>1500</Term>. <Term>R$ 1.500,50</Term> = digite{" "}
+      <Term>150050</Term>. Sem ponto, sem vírgula — só números.
     </Callout>
     <SubHeading>B. Pesquisar, editar e excluir</SubHeading>
     <Bullets
@@ -763,13 +772,13 @@ export const ChapterOrcamentos: React.FC<HelpContentProps> = ({ goToOverview }) 
     </Typography>
 
     <SectionTitle icon={FactCheck} color="success">
-      Painel de resumo (validação ao vivo)
+      Painel de resumo (vê tudo de uma vez)
     </SectionTitle>
     <Bullets
       items={[
-        <><strong>Valor total acumulado:</strong> atualiza em tempo real conforme você monta a proposta.</>,
-        <><strong>Status das seções:</strong> visto verde quando completa, alerta quando falta algo obrigatório.</>,
-        <><strong>Salvar Orçamento</strong> só habilita quando as três abas estão válidas.</>,
+        <><strong>Valor total:</strong> atualiza na hora conforme você adiciona produtos.</>,
+        <><strong>Status das abas:</strong> um visto verde mostra quando está tudo pronto, e um alerta mostra o que falta.</>,
+        <><strong>Botão Salvar:</strong> fica ativo (clicável) só quando as 3 abas estão preenchidas e validadas.</>,
       ]}
     />
 
@@ -801,12 +810,13 @@ export const ChapterOrcamentos: React.FC<HelpContentProps> = ({ goToOverview }) 
     <Faq
       items={[
         {
-          q: 'O botão "Salvar" está desativado. O que falta?',
+          q: 'Por que o botão “Salvar” está cinza?',
           a: (
             <>
-              Olhe o <strong>Painel de Resumo</strong> à direita: ele lista as abas
-              incompletas. Em geral falta um dos 5 campos obrigatórios de
-              “Condições Comerciais” ou nenhum produto foi adicionado.
+              O orçamento ainda não está completo. Olhe o <strong>Painel de
+              Resumo</strong> (lado direito) — ele vai mostrar qual aba falta
+              preencher. Geralmente é porque nenhum produto foi adicionado, ou
+              faltam informações na aba “Condições”.
             </>
           ),
         },
@@ -879,21 +889,23 @@ export const ChapterDashboard: React.FC<HelpContentProps> = ({ goToOverview }) =
     <Faq
       items={[
         {
-          q: "Fiz um orçamento e o Valor Total não mudou. O que fazer?",
+          q: "Criei um orçamento mas o Valor Total no painel não mudou. E agora?",
           a: (
             <>
-              A Dashboard usa o cache do navegador. Normalmente atualiza na hora;
-              se não, troque de tela e volte, ou recarregue a página (<Term>F5</Term>)
-              para recalcular as métricas.
+              Isso é raro, mas pode acontecer se a tela não atualizou. Tente
+              sair da Dashboard e voltar, ou pressione <Term>F5</Term> para
+              recarregar a página. Os totais vão aparecer certos.
             </>
           ),
         },
         {
-          q: 'O que significa "Nenhum este mês" no cartão de Orçamentos?',
+          q: 'O cartão de Orçamentos mostra "+0 este mês". É normal?',
           a: (
             <>
-              Apenas que nenhum orçamento novo foi emitido no mês atual. O contador
-              zera no início de cada mês automaticamente.
+              Sim, significa que nenhum orçamento novo foi criado no mês atual. A
+              contagem zera automaticamente no primeiro dia do mês. Continua
+              mostrando o total geral (todos os orçamentos de todos os tempos) no
+              número maior.
             </>
           ),
         },
