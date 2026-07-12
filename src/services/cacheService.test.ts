@@ -23,7 +23,9 @@ const rows: Row[] = [
 
 beforeEach(() => {
   // Silencia os logs verbosos do cache para não poluir a saída dos testes.
-  vi.spyOn(console, "log").mockImplementation(() => {});
+  // O cache agora loga via `logger` (EST F4.5): debug p/ HIT/MISS/SET, error
+  // p/ falhas — daí silenciar `console.debug`/`console.error`.
+  vi.spyOn(console, "debug").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
   invalidateAllCache();
   localStorage.clear();

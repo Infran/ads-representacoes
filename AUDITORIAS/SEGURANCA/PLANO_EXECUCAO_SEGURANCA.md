@@ -148,7 +148,7 @@ Verificado: [firebase.ts:4](../../src/firebase.ts#L4) importava `browserLocalPer
 
 | Achado SEG | Dono | Onde |
 |---|---|---|
-| SEG-11 (`console.*` vaza info) | EST F4.5 (logger) + PERF P0.2 (`esbuild.drop`) | `PLANO_EXECUCAO_ESTRUTURA.md` / `PLANO_EXECUCAO_PERFORMANCE.md` |
+| SEG-11 (`console.*` vaza info) | EST F4.5 (logger) + PERF P0.2 (`esbuild.drop`) — ✅ **Resolvido (2026-07-11)**: `src/utils/logger.ts` silencioso em prod substituiu os 40 `console.*`; `esbuild.drop` remove o restante (0 `console.*` nos chunks da app). | `PLANO_EXECUCAO_ESTRUTURA.md` / `PLANO_EXECUCAO_PERFORMANCE.md` |
 | SEG-12 (PDF `document.write`/`ReactDOM.render`) | EST F4.3 — ✅ **Resolvido (2026-07-10)** via `openBudgetPdf()` (Blob), removendo `document.write`/`ReactDOM.render` dos 2 call sites (`Budgets.tsx` + `RecentBudgets.tsx`). Não era XSS; agora nem API legada há. | `PLANO_EXECUCAO_ESTRUTURA.md` |
 | SEG-14 (config no bundle) | — informativo, sem ação | — |
 

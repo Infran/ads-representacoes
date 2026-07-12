@@ -4,6 +4,7 @@ import { addClient } from "../../../../services/clientServices";
 import { useData } from "../../../../context/DataContext";
 import { isValidCnpj } from "../../../../utils/validators";
 import { Modal, Button } from "../../../../ui";
+import { logger } from "../../../../utils/logger";
 import ClientForm from "../../../Forms/ClientForm";
 
 interface CreateClientModalProps {
@@ -53,7 +54,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
       setClient({} as IClient);
       setError(null);
     } catch (error) {
-      console.error("Erro ao adicionar cliente:", error);
+      logger.error("Erro ao adicionar cliente:", error);
       setError("Ocorreu um erro ao adicionar o cliente. Tente novamente.");
     }
   };

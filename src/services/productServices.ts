@@ -54,29 +54,3 @@ export const updateProduct = (product: IProduct): Promise<void> =>
 
 /** Exclui um produto pelo ID. */
 export const deleteProduct = productCrud.remove;
-
-/**
- * @deprecated Use useData().searchProductsLocal() para busca com cache local.
- * Esta função ainda faz chamadas ao Firestore - evite usá-la.
- */
-export const searchProducts = async (
-  searchTerm: string
-): Promise<IProduct[]> => {
-  console.warn(
-    "[DEPRECATED] searchProducts está deprecated. Use searchProductsLocal do DataContext para evitar reads no Firestore."
-  );
-
-  const products = await getProducts();
-
-  if (!searchTerm?.trim()) {
-    return products;
-  }
-
-  const term = searchTerm.toLowerCase();
-  return products.filter(
-    (product) =>
-      product.name?.toLowerCase().includes(term) ||
-      product.ncm?.toLowerCase().includes(term) ||
-      product.description?.toLowerCase().includes(term)
-  );
-};

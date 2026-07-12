@@ -52,29 +52,3 @@ export const updateRepresentative = (
 
 /** Exclui um representante pelo ID. */
 export const deleteRepresentative = representativeCrud.remove;
-
-/**
- * @deprecated Use useData().searchRepresentativesLocal() para busca com cache local.
- * Esta função ainda faz chamadas ao Firestore - evite usá-la.
- */
-export const searchRepresentatives = async (
-  searchTerm: string
-): Promise<IRepresentative[]> => {
-  console.warn(
-    "[DEPRECATED] searchRepresentatives está deprecated. Use searchRepresentativesLocal do DataContext para evitar reads no Firestore."
-  );
-
-  const representatives = await getRepresentatives();
-
-  if (!searchTerm?.trim()) {
-    return representatives;
-  }
-
-  const term = searchTerm.toLowerCase();
-  return representatives.filter(
-    (representative) =>
-      representative.name?.toLowerCase().includes(term) ||
-      representative.email?.toLowerCase().includes(term) ||
-      representative.client?.name?.toLowerCase().includes(term)
-  );
-};

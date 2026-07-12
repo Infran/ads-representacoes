@@ -11,6 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { logger } from "../../utils/logger";
 
 // Traduz o código de erro do Firebase Auth para uma mensagem pt-BR ao usuário.
 const getLoginErrorMessage = (code?: string): string => {
@@ -54,7 +55,7 @@ export const Login = () => {
       navigate("/Home");
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      console.error("Erro ao fazer login:", code);
+      logger.error("Erro ao fazer login:", code);
       setError(getLoginErrorMessage(code));
     } finally {
       setSubmitting(false);

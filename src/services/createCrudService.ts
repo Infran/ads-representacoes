@@ -34,6 +34,7 @@ import {
   QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { logger } from "../utils/logger";
 
 /**
  * Remove campos `undefined` de um objeto (Firestore não aceita `undefined`).
@@ -101,11 +102,11 @@ export function createCrudService<T extends { id: string | number }>(
   const getById = async (id: string): Promise<T | null> => {
     if (idPattern) {
       if (!idPattern.test(id)) {
-        console.warn(`getById(${collectionName}) com ID inválido:`, id);
+        logger.warn(`getById(${collectionName}) com ID inválido:`, id);
         return null;
       }
     } else if (!id) {
-      console.warn(`getById(${collectionName}) chamado com ID vazio`);
+      logger.warn(`getById(${collectionName}) chamado com ID vazio`);
       return null;
     }
 
@@ -114,7 +115,7 @@ export function createCrudService<T extends { id: string | number }>(
       if (!snap.exists()) return null;
       return { id: snap.id, ...snap.data() } as T;
     } catch (error) {
-      console.error(`Erro ao buscar ${collectionName}:`, error);
+      logger.error(`Erro ao buscar ${collectionName}:`, error);
       throw error;
     }
   };

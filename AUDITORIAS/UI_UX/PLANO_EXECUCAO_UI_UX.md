@@ -140,13 +140,17 @@ Hierarquia proposta no §3.3 do reporte.
 - [ ] Rodar axe/Lighthouse; corrigir contraste de secundários/greys, `aria-*` nos ícones/botões, foco visível.
 - **Aceite:** sem violações AA de contraste nos fluxos principais; score de acessibilidade registrado no log (antes → depois).
 
-### U3.4 — Confirm/feedback tokenizado (UI-31) ⛔ coordenar com EST F4.1 ⬜
-- [ ] EST F4.1 remove o `Swal` de dentro do `useBudgetForm` (dono EST); aqui, padronizar o wrapper `src/ui/Feedback` e migrar os usos restantes (`Sidebar`, confirmações de CRUD) para ele.
-- **Aceite:** zero `Swal.fire` com cores hardcoded; diálogos seguem o tema (inclusive dark).
+### U3.4 — Confirm/feedback tokenizado (UI-31) ✅ (2026-07-11) — coord. EST F4.1
+- [x] EST F4.1 removeu o `Swal` de dentro do `useBudgetForm` (`removeProduct` só remove; a confirmação foi para `ProductsSection` via `confirmDialog`).
+- [x] Wrapper `src/ui/Feedback` estendido: `confirmDialog` ganhou `danger?: boolean` (confirma em vermelho / cancela em marca — preserva a affordance destrutiva sem hex) e um novo `notifyWarning` tokenizado.
+- [x] **Todos os `Swal.fire` crus migrados para os átomos:** `useBudgetActions` (warning→`notifyWarning`, sucesso→`notifySuccess`, sucesso-com-escolha→`confirmDialog icon:"success"`, erro→`notifyError`), `BudgetFormPage` (erro→`notifyError`), e os **2 confirms de logout** (`Sidebar` + `UserMenu`) → `confirmDialog({ danger: true })`. Removido o `customClass: swal-popup-custom` órfão (sem CSS que o definisse). `sweetalert2` agora só é importado dentro de `src/ui/Feedback.ts`.
+- **Aceite:** ✔ zero `Swal.fire` fora do wrapper; todos os diálogos seguem o tema (cores via `tokens`, adaptam ao dark). `tsc`+`lint` verdes.
 
-### U3.5 — Lint `no-color-literals` ⬜
-- [ ] Regra ESLint/stylelint barrando novo hex/`style` inline fora de `src/theme/`.
-- **Aceite:** CI falha ao introduzir cor literal; allowlist documentada (ex.: `tokens.ts`).
+### U3.5 — Lint `no-color-literals` ✅ (2026-07-11)
+- [x] Regra `no-restricted-syntax` no `.eslintrc.cjs` (nível **error**) barrando cor hex literal — dois seletores: `Literal[value=/#[0-9a-fA-F]{3,8}/]:not([regex])` (strings, incl. gradientes) e `TemplateElement[value.raw=/#.../]` (template literals). Validada por probe via `--stdin`: pega tanto `"#ff8800"` quanto `` `...#123...` `` em arquivo não-allowlistado.
+- [x] **Allowlist documentada** (override por arquivo, com o porquê no comentário): `theme/tokens.ts` + `theme/index.ts` (fonte dos tokens/ponte `--ads-*`), `Login` (gradiente de marca), `BudgetPdf` (paleta do PDF, fora do MUI), `GlobalSearch`/`NotificationBell` (cores categóricas por entidade).
+- [x] **Único hex fora da allowlist corrigido no caminho:** `DefaultLayout` usava `backgroundColor: "#FAFAFA"` fixo → trocado por `"background.default"` (chave de palette), que **também conserta** um fundo que não adaptava ao dark mode.
+- **Aceite:** ✔ lint falha ao introduzir cor literal fora de `src/theme` (error → quebra `--max-warnings 0`); allowlist documentada; **0 novos problemas** no lint (segue nos 7 pré-existentes). `tsc`+`build:prod` verdes.
 
 ### U3.6 — Storybook dos átomos (opcional) ⬜
 - [ ] Catálogo de `src/ui` (light/dark) como base de regressão visual.

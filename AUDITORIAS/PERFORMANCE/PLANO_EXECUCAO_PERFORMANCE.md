@@ -113,7 +113,7 @@ Verificado: `GlobalSearch.tsx` filtrava 3 coleções a cada tecla, dentro de um 
 | PERF-T08 reload → reset | **EST F0.3** | ✅ **Resolvido (2026-07-11)** — `window.location.reload()` trocado por `form.reset()`; "Adicionar Outro" não refaz cold-load |
 | PERF-T13 timer de logout | **SEG S0.3** | ✅ **Resolvido (2026-07-10)** — `clearTimeout` + `useRef` em `ContextAuth.tsx` eliminam o empilhamento de timers (e o TTL passou de ~30 h para 2 h) |
 | PERF-T12 `kpiData` morto | **UI U0.1** | ✅ **Resolvido (2026-07-11)** — `kpiData.totalValue` e `kpiData.maxBudget` (reduces O(N) sem consumidor) removidos do `Home.tsx`, junto com o import morto `brMoneyMask`. |
-| Logger com nível por env | **EST F4.5** (o `esbuild.drop` de P0.2 é o complemento de build) | — |
+| Logger com nível por env (PERF-12) | **EST F4.5** (o `esbuild.drop` de P0.2 é o complemento de build) | ✅ **Resolvido (2026-07-11)** — `src/utils/logger.ts` silencioso em prod substituiu os 40 `console.*`; com o `esbuild.drop` de P0.2, **0 `console.*`** nos chunks da app (sem ruído/custo de log em prod) |
 | PERF-16 `brMoneyMask` | Radar — sem ação até listas grandes/virtualização | — |
 
 ---

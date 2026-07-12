@@ -10,6 +10,7 @@ import DeleteRepresentativeModal from "../../components/Modal/Delete/DeleteRepre
 import RepresentativeTable from "../../components/Tables/RepresentativeTable/RepresentativeTable";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError } from "../../ui";
+import { logger } from "../../utils/logger";
 
 const Representatives = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -61,7 +62,7 @@ const Representatives = () => {
         setOpenDeleteModal(false);
         setSelectedRepresentative(null);
       } catch (error) {
-        console.error("Erro ao excluir representante:", error);
+        logger.error("Erro ao excluir representante:", error);
         notifyError(
           "Não foi possível excluir o representante",
           "Tente novamente em instantes."

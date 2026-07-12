@@ -47,3 +47,5 @@ graphify-out/
 # Markdown and JSON
 *.md
 *.json
+# Exceção: documentação intencional versionada (ADRs em docs/) — análogo a AUDITORIAS/.
+!docs/**/*.md

@@ -8,6 +8,7 @@ import { useData } from "../../../../context/DataContext";
 import ncmData from "../../../../tabela_ncm.json";
 import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
 import { Modal, Button } from "../../../../ui";
+import { logger } from "../../../../utils/logger";
 import ProductForm from "../../../Forms/ProductForm";
 
 interface EditProductModalProps {
@@ -40,7 +41,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           setMaskedUnitValue(brMoneyMask(valueInReais));
         }
       } catch (error) {
-        console.error("Erro ao buscar produto:", error);
+        logger.error("Erro ao buscar produto:", error);
       }
     };
 
@@ -106,7 +107,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       setProduct({} as IProduct);
       setError(null);
     } catch (error) {
-      console.error("Erro ao editar produto:", error);
+      logger.error("Erro ao editar produto:", error);
       setError("Ocorreu um erro ao editar o produto. Tente novamente.");
     }
   };

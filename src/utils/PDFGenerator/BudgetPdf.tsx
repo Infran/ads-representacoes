@@ -9,6 +9,7 @@ import {
   pdf,
 } from "@react-pdf/renderer";
 import { IBudget } from "../../interfaces/ibudget";
+import { logger } from "../logger";
 
 // Desabilitar hyphenation para evitar erros com caracteres especiais
 Font.registerHyphenationCallback((word) => [word]);
@@ -389,7 +390,7 @@ export const openBudgetPdf = async (budget: IBudget): Promise<void> => {
     // Libera o objeto URL depois que a aba teve tempo de carregá-lo
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   } catch (error) {
-    console.error("Erro ao gerar PDF do orçamento:", error);
+    logger.error("Erro ao gerar PDF do orçamento:", error);
     if (newTab) {
       newTab.document.body.innerText =
         "Não foi possível gerar o PDF. Tente novamente.";

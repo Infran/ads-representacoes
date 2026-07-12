@@ -7,6 +7,7 @@ import {
 import { useData } from "../../../../context/DataContext";
 import { isValidCnpj } from "../../../../utils/validators";
 import { Modal, Button, ListSkeleton } from "../../../../ui";
+import { logger } from "../../../../utils/logger";
 import ClientForm from "../../../Forms/ClientForm";
 
 interface EditClientModalProps {
@@ -39,7 +40,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
         const clientData = await getClientById(id);
         setClient(clientData);
       } catch (error) {
-        console.error("Erro ao buscar cliente:", error);
+        logger.error("Erro ao buscar cliente:", error);
       } finally {
         setIsLoading(false);
       }
@@ -74,7 +75,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
       setClient({} as IClient);
       setError(null);
     } catch (error) {
-      console.error("Erro ao editar cliente:", error);
+      logger.error("Erro ao editar cliente:", error);
       setError("Ocorreu um erro ao editar o cliente. Tente novamente.");
     }
   };

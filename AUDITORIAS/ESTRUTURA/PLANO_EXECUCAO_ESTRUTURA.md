@@ -34,7 +34,7 @@
 | **F1** | Rede de segurança (testes) | 2 | ✅ Concluído (2026-07-11) |
 | **F2** | Desduplicação estrutural | 3 | ✅ Concluído (2026-07-11) |
 | **F3** | Quebra de God Components | 3 | ✅ Concluído (2026-07-11) — F3.1/F3.2/F3.3 |
-| **F4** | Refino & dívida técnica | 7 | 🟨 F4.3 ✅ (2026-07-10, fora de ordem) · demais ⬜ |
+| **F4** | Refino & dívida técnica | 7 | ✅ **Concluído** (2026-07-11) — F4.1–F4.6 ✅ · F4.7 ✅ (via UI U2.1) |
 
 ### Grafo de dependências
 ```
@@ -165,14 +165,16 @@ Confirmado: **0 imports** em `src/` (re-verificado via grep). Sidebar ativo é `
 
 **Meta:** baixar dívida de baixo risco/alto volume. **Pré-requisito:** F3 (F4.7 depende de UI-09).
 
-### F4.1 — Desacoplar `useBudgetForm` do `Swal` (S-01) ⬜
-- [ ] `removeProduct(index)` só remove; confirmação via `onConfirmRemove` injetado ou na UI (`ProductList`/página).
-- **Aceite:** hook testável sem `sweetalert2`; UX preservada.
+### F4.1 — Desacoplar `useBudgetForm` do `Swal` (S-01) ✅ (2026-07-11)
+- [x] `removeProduct(index)` agora **só remove** (`setSelectedProducts(prev => prev.filter(...))`); o `import Swal` saiu do `useBudgetForm.ts`. A confirmação foi para a UI (`ProductsSection`), que envolve `form.removeProduct` num `handleRemove` async usando o átomo tokenizado `confirmDialog` (U3.4).
+- [x] Teste do hook não mocka mais `sweetalert2` (mock removido); +1 characterization test provando que `removeProduct(0)` remove imediatamente, sem confirmação — o hook é testável sem Swal.
+- [x] **Coordenado com UI U3.4:** todos os `Swal.fire` crus restantes (useBudgetActions, BudgetFormPage, logouts de Sidebar/UserMenu) migraram para `confirmDialog`/`notify*`; `sweetalert2` só vive dentro de `src/ui/Feedback.ts`.
+- **Aceite:** ✔ hook testável sem `sweetalert2`; UX preservada (mesmos diálogos, agora tokenizados e dark-aware). `tsc` verde; **61 testes verdes**.
 
-### F4.2 — Config em vez de hardcode (S-02, S-03) ⬜
-- [ ] `REQUIRED_TERM_FIELDS` como constante exportada (de `useBudgetForm.ts:251–266`).
-- [ ] Mapa de comparadores (se não feito em F3.2).
-- **Aceite:** novos critérios/campos sem editar `switch`/`useMemo`.
+### F4.2 — Config em vez de hardcode (S-02, S-03) ✅ (2026-07-11)
+- [x] `REQUIRED_TERM_FIELDS` extraído como constante **exportada** de módulo em `useBudgetForm.ts` (tipada `ReadonlyArray<{ field: keyof IBudget; label: string }>`), consumida pelo `sectionValidation`. Adicionar/remover campo obrigatório = editar a lista, sem tocar na lógica. Bônus: o cast `as keyof IBudget` dentro do `useMemo` sumiu (o `field` já é tipado).
+- [x] Mapa de comparadores **já feito em F3.2** (`budgetComparators: Record<SortOption, …>` em `useBudgetFilters.ts`) — nada a fazer aqui.
+- **Aceite:** ✔ novos critérios/campos sem editar `switch`/`useMemo`. `tsc` verde.
 
 ### F4.3 — Fim do PDF legado nos 2 call sites (A-02 = SEG-12 = UI-33) ✅ (2026-07-10)
 Resolvido, porém **com mecanismo diferente do planejado**: em vez de uma rota React `/Orcamentos/PDF/:id`, foi criada a função `openBudgetPdf(budget)` em `src/utils/PDFGenerator/BudgetPdf.tsx` que gera o PDF como **Blob** (`pdf(...).toBlob()` do `@react-pdf/renderer`) e o abre no visualizador nativo (fallback de download se pop-up bloqueado; tratamento de erro). O aceite — sem API legada nos dois pontos — foi atingido.
@@ -181,26 +183,28 @@ Resolvido, porém **com mecanismo diferente do planejado**: em vez de uma rota R
 - [ ] (opcional, não feito) Rota React dedicada — decidiu-se pela função Blob compartilhada, mais simples e sem `ReactDOM.render`. Reabrir só se quiser deep-link para o PDF.
 - **Aceite:** "Ver PDF" sem API legada em ambos os pontos; nada de `ReactDOM.render`. ✔ **SEG-12 e UI-33 resolvidos** (anotados nas respectivas trilhas).
 
-### F4.4 — Remover funções `@deprecated` (M-02, D-06) ⬜
-- [ ] Excluir `searchRepresentatives`/equivalentes já substituídas por `searchXLocal`; conferir 0 imports.
-- **Aceite:** build/lint verdes; nenhum import quebra.
+### F4.4 — Remover funções `@deprecated` (M-02, D-06) ✅ (2026-07-11)
+- [x] Conferido 0 imports externos (grep) de `searchClients`/`searchProducts`/`searchRepresentatives` — só apareciam nas próprias definições; as versões em uso são as `search*Local` do `DataContext` (fonte diferente). `budgetServices` não tinha função deprecated.
+- [x] Removidas as 3 funções deprecated dos services (Client/Product/Representative) + o import de `logger` que ficou órfão em cada um (o `logger.warn` de deprecação sumiu junto). O único `@deprecated` restante é o wrapper `CustomTable` (dono UI U2.1, fora deste escopo).
+- **Aceite:** ✔ build/lint verdes; nenhum import quebrou (`tsc` exit 0; **60 testes verdes**).
 
-### F4.5 — Logger por env (83 `console.*` = SEG-11 = PERF-12) ⬜
-- [ ] Criar `src/utils/logger.ts` com nível controlado por `import.meta.env` (silencioso em produção).
-- [ ] Substituir os `console.*` (27 arquivos) pelo logger.
-- [ ] Nota de coesão: o `esbuild.drop: ['console']` no build de produção é **complemento** executado por **PERF P0.2** (defesa em profundidade — não substitui o logger).
-- **Aceite:** produção sem ruído/vazamento; dev mantém logs; SEG-11 e PERF-12 marcados como resolvidos.
+### F4.5 — Logger por env (`console.*` = SEG-11 = PERF-12) ✅ (2026-07-11)
+- [x] Criado `src/utils/logger.ts`: `logger.{debug,info,warn,error}` com nível resolvido por `import.meta.env` — `PROD` → `silent` por padrão; dev/test → `debug` (loga tudo). Sobrescrevível por `VITE_LOG_LEVEL` (`debug|info|warn|error|silent`) para depurar um build de prod pontualmente. Cada método chama `console.*` **no momento da invocação** (sem guardar referência), para que `vi.spyOn(console,…)` e o `esbuild.drop` sigam funcionando.
+- [x] Substituídos **todos os 40 `console.*`** de código de produção (21 arquivos) pelo logger: verbosos do cache/`useEntityStore` → `logger.debug`; deprecations e quota → `logger.warn`; catches → `logger.error`. Restam só os 4 `console.*` internos do `logger.ts` (intencionais) e um comentário em `ErrorState.tsx`.
+- [x] Nota de coesão preservada: o `esbuild.drop: ['console','debugger']` no build de produção (PERF P0.2) continua ativo e **complementa** o logger — remove fisicamente até os `console.*` internos do logger do bundle (grep confirmou **0 `console.*`** nos chunks da aplicação).
+- [x] `cacheService.test.ts` ajustado: o `beforeEach` passa a silenciar `console.debug` (era `console.log`) porque os logs verbosos do cache agora saem por `logger.debug`; o teste de `QuotaExceededError` (`expect(warn).toHaveBeenCalled()`) segue verde — em modo teste `import.meta.env.PROD` é `false`, então `logger.warn` → `console.warn` é capturado pelo spy.
+- **Aceite:** ✔ produção sem ruído/vazamento (logger `silent` em prod + `esbuild.drop`); dev mantém os logs; **SEG-11 e PERF-12 resolvidos** (anotados nas duas trilhas). `tsc`+`build:prod` verdes; **60 testes jsdom verdes**; lint nos mesmos 7 pré-existentes (0 novos).
 
-### F4.6 — ADR de denormalização (A-05) ⬜
-- [ ] Escrever ADR curto: embutidos em `IBudget`/`IRepresentative` são snapshots intencionais; como/quando (não) sincronizar; referência a SEG (validação server-side) e PERF (leituras).
-- **Aceite:** decisão registrada.
+### F4.6 — ADR de denormalização (A-05) ✅ (2026-07-11)
+- [x] Criado `docs/adr/0001-denormalizacao-de-embutidos.md`: registra que os objetos embutidos em `IBudget` (`IClient`/`IRepresentative`/snapshots de `IProduct`) e em `IRepresentative` (`IClient`) são **snapshots imutáveis intencionais** — não referências. Cobre: não cascatear updates para histórico; fonte de verdade do "atual" é a coleção; trade-offs (duplicação/tamanho do doc) e o gancho para **PERF P2.1 ("budget summary")**; nota de que as `firestore.rules` validam a forma, não a consistência da cópia (**SEG**); alternativas rejeitadas (normalizar / cascata via Cloud Functions).
+- **Aceite:** ✔ decisão registrada. **Desbloqueia PERF P2.1.**
 
-### F4.7 — Tokenizar `modalStyles` (D-01, parte 2) 🔀 TRANSFERIDO → UI U2.1 ⬜
+### F4.7 — Tokenizar `modalStyles` (D-01, parte 2) 🔀 TRANSFERIDO → UI U2.1 ✅ (2026-07-11)
 > **Consolidação entre trilhas (2026-07-09):** este item foi **absorvido pela trilha UI/UX (U2.1 — biblioteca atômica)**.
 > Quando `src/ui/Modal` + `TextField` tokenizados nascerem (após o `ThemeProvider` de U1.1), os 6 modais migram
 > de `modalStyles.ts` direto para os átomos — tokenizar `modalStyles.ts` antes disso seria retrabalho.
-- [ ] **[REF]** Acompanhar UI U2.1 e marcar D-01 como 100% resolvido quando `modalStyles.ts` for removido/reduzido.
-- **Aceite:** (via UI U2.1) modais consomem o tema; nenhum hex hardcoded restante.
+- [x] **[REF]** UI U2.1 migrou os 6 modais para os átomos `src/ui` e **removeu `modalStyles.ts`** (2026-07-11, ver `SUMARIO_CONSOLIDADO.md` parte 6) — **D-01 100% resolvido**.
+- **Aceite:** ✔ (via UI U2.1) modais consomem o tema; `modalStyles.ts` não existe mais.
 
 ---
 
@@ -294,6 +298,33 @@ Resolvido, porém **com mecanismo diferente do planejado**: em vez de uma rota R
 - **Por que foi feito:** transformar os 3 God Components (501/498/421 linhas originais) em orquestração enxuta + peças testáveis isoladas, sobre a rede de testes de F1 e os átomos de U2.1. F3.2 resolve S-02 (mapa no lugar do switch). F3.3 fecha E-04/E-05 (duplicação Create/Edit).
 - **Arquivos (novos):** `src/components/Budget/{EntityInfoCard,RepresentativeSection,ProductsSection,TermsSection,BudgetFormActions}.tsx`, `src/hooks/useBudgetActions.ts`, `src/pages/Budgets/{useBudgetFilters.ts,BudgetFilters.tsx,BudgetListItem.tsx}`, `src/components/Forms/{ClientForm,RepresentativeForm,ProductForm}.tsx`. **(reescritos):** `BudgetFormPage.tsx`, `Budgets.tsx`, os 6 modais Create/Edit; `useBudgetForm.ts` (export do tipo de retorno).
 - **Verificação:** `tsc --noEmit` verde; `npm run lint` **7 problemas** (0 novos); **49 testes jsdom verdes** (`Budgets.filter`/`DeleteBudgetModal` intactos); `npm run build` verde. Smoke visual manual recomendado (form de orçamento, lista de orçamentos, os 6 modais em light/dark).
+
+### 2026-07-11 · F4.5 · Logger por env (resolve SEG-11 e PERF-12) — início da Onda 5
+- **O que foi feito:**
+  - Criado `src/utils/logger.ts` — `logger.{debug,info,warn,error}` com nível por ambiente: `import.meta.env.PROD` → `silent` (silencioso); dev/test → `debug` (loga tudo). Override opcional por `VITE_LOG_LEVEL` (`debug|info|warn|error|silent`). Ranking de níveis (`debug<info<warn<error<silent`) filtra o que passa. **Detalhe deliberado:** cada método chama `console.*` na hora da invocação (sem guardar referência) → spies de teste e o `esbuild.drop` continuam funcionando.
+  - Trocados **os 40 `console.*`** de produção (21 arquivos) pelo logger, preservando a semântica: verbosos do `cacheService` (HIT/MISS/SET/INVALIDATED/migração) e do `useEntityStore` (Fetching/Fetched) → `logger.debug`; deprecations dos `search*` e `QuotaExceededError` → `logger.warn`; `getById` com ID inválido → `logger.warn`; todos os catches (`Erro ao …`, login, PDF) → `logger.error`. Sobram apenas os 4 `console.*` internos do próprio `logger.ts`.
+  - `cacheService.test.ts`: `beforeEach` passou a silenciar `console.debug` (era `console.log`), pois os logs do cache agora saem por `logger.debug`. O teste de quota (`expect(warn).toHaveBeenCalled()`) segue verde — em teste `PROD` é `false`, logo `logger.warn` chama `console.warn` e o spy captura.
+- **Por que foi feito:** centralizar a decisão de logar num único ponto controlado por ambiente — produção silenciosa (sem vazar nomes de coleção/IDs/mensagens do Firebase) e dev com logs completos. Fecha SEG-11 (vazamento de info por `console.*`) e PERF-12 (ruído/custo de log em prod) pelo dono único. O `esbuild.drop` de prod (PERF P0.2) permanece como defesa em profundidade — remove fisicamente até os `console.*` internos do logger.
+- **Arquivos (novo):** `src/utils/logger.ts`. **(editados):** `src/services/{cacheService,createCrudService,client,product,representative}Services.ts`, `src/context/{useEntityStore,ContextAuth}.tsx`, `src/hooks/useBudgetActions.ts`, `src/pages/{Clients,Products,Representatives}/*.tsx`, `src/pages/BudgetFormPage/BudgetFormPage.tsx`, `src/components/Login/Login.tsx`, `src/utils/PDFGenerator/BudgetPdf.tsx`, os 7 modais Create/Edit/Delete (Client/Representative/Product/Budget), `src/services/cacheService.test.ts`.
+- **Verificação:** `npx tsc --noEmit` exit 0; `npm run test:run` **60/60 jsdom verdes**; `npm run build:prod` verde; `npm run lint` nos **mesmos 7 pré-existentes** (0 novos); `grep` nos chunks de `dist/` confirmou **0 `console.*`** no código da aplicação.
+
+### 2026-07-11 · F4.4 · F4.2 · F4.6 · Refino da Onda 5 (deprecated · config · ADR)
+- **O que foi feito:**
+  - **F4.4 — remover funções `@deprecated`:** grep confirmou **0 imports externos** de `searchClients`/`searchProducts`/`searchRepresentatives` (só se auto-referenciavam; o que o app usa são as `search*Local` do `DataContext`). Removidas as 3 funções dos services + o import de `logger` que ficou órfão em cada um (o `logger.warn` de deprecação, recém-introduzido em F4.5, saiu junto). `budgetServices` não tinha função deprecated. Sobra só o `@deprecated` do wrapper `CustomTable` (dono UI U2.1).
+  - **F4.2 — config em vez de hardcode:** `REQUIRED_TERM_FIELDS` extraído do corpo do `useMemo` (`sectionValidation`) para uma **constante exportada** de módulo em `useBudgetForm.ts`, tipada `ReadonlyArray<{ field: keyof IBudget; label: string }>`. Adicionar/remover campo obrigatório vira edição de lista; o cast `as keyof IBudget` interno sumiu. O mapa de comparadores de ordenação (S-02) já havia sido feito em F3.2 (`budgetComparators`).
+  - **F4.6 — ADR de denormalização:** criado `docs/adr/0001-denormalizacao-de-embutidos.md` — registra a decisão de tratar os objetos embutidos em `IBudget`/`IRepresentative` como snapshots imutáveis intencionais (não referências), com trade-offs, quando (não) sincronizar, ganchos para SEG (validação de forma nas rules) e PERF P2.1 (budget summary), e alternativas rejeitadas. **Desbloqueia PERF P2.1.**
+- **Por que foi feito:** baixar dívida de baixo risco/alto valor da Onda 5. F4.4 tira código morto que ainda fazia reads no Firestore se chamado; F4.2 elimina hardcode de validação; F4.6 registra por escrito a decisão de modelagem que sustenta tanto a otimização de leitura (PERF) quanto o requisito de histórico fiel do orçamento (domínio).
+- **Arquivos (novo):** `docs/adr/0001-denormalizacao-de-embutidos.md`. **(editados):** `src/services/{client,product,representative}Services.ts` (remoção), `src/hooks/useBudgetForm.ts` (constante).
+- **Verificação:** `npx tsc --noEmit` exit 0; `npm run test:run` **60/60 jsdom verdes**; `npm run build:prod` verde; `npm run lint` nos **mesmos 7 pré-existentes** (0 novos).
+
+### 2026-07-11 · F4.1 + UI U3.4 · Desacoplar `useBudgetForm` do `Swal` + migrar confirms restantes ao wrapper
+> F4.1 (dono EST) e U3.4 (dono UI) foram feitos juntos por serem o mesmo código — `⛔ coordenar` no plano de UI.
+- **O que foi feito:**
+  - **F4.1:** `removeProduct(index)` do `useBudgetForm` agora **só remove** (sem `Swal`); `import Swal` saiu do hook. A confirmação migrou para `ProductsSection` (`handleRemove` async → `confirmDialog` do átomo `Feedback`, depois `form.removeProduct`). O teste do hook perdeu o mock de `sweetalert2` (órfão) e ganhou 1 characterization test provando remoção imediata sem confirmação — **hook testável sem Swal** (61 testes).
+  - **U3.4:** o wrapper `src/ui/Feedback` ganhou `confirmDialog({ danger })` (confirma em vermelho/cancela em marca — preserva affordance destrutiva sem hex) e `notifyWarning`. **Todos os `Swal.fire` crus** foram migrados: `useBudgetActions` (warning/sucesso/sucesso-com-escolha/erro), `BudgetFormPage` (erro), e os 2 confirms de logout (`Sidebar` + `UserMenu`, agora `danger: true`). Removido o `customClass: swal-popup-custom` órfão. **`sweetalert2` só é importado dentro de `src/ui/Feedback.ts`** agora.
+- **Por que foi feito:** tirar o `Swal` do hook (S-01) o torna testável e apresentacional-agnóstico; centralizar todos os diálogos no wrapper tokenizado fecha U3.4 (cores por `tokens`, adaptam ao dark; fim dos `#3085d6`/`#d33` implícitos do Swal default).
+- **Arquivos:** `src/hooks/useBudgetForm.ts` (+`.test.tsx`), `src/components/Budget/ProductsSection.tsx`, `src/hooks/useBudgetActions.ts`, `src/pages/BudgetFormPage/BudgetFormPage.tsx`, `src/components/Layout/Sidebar/Sidebar.tsx`, `src/components/Layout/AppHeader/UserMenu.tsx`, `src/ui/Feedback.ts`, `src/ui/index.ts`.
+- **Verificação:** `npx tsc --noEmit` exit 0; `npm run test:run` **61/61 jsdom verdes**; `npm run build:prod` verde; `npm run lint` nos **mesmos 7 pré-existentes** (0 novos); grep confirma `Swal.fire` só em `Feedback.ts`. Smoke visual manual recomendado (remover produto no form; logout pelo Sidebar e pelo UserMenu; salvar orçamento create/edit — em light e dark).
 
 <!--
 ### AAAA-MM-DD · Fx.y · <título curto>

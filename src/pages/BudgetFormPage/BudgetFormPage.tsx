@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Container, Grid, Typography, Box, CircularProgress } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import Swal from "sweetalert2";
 
 import { useBudgetForm } from "../../hooks/useBudgetForm";
 import { useBudgetActions } from "../../hooks/useBudgetActions";
 import { IBudget } from "../../interfaces/ibudget";
 import { getBudgetById } from "../../services/budgetServices";
 import { BudgetTemplate } from "../../utils/PDFGenerator/BudgetPdf";
+import { logger } from "../../utils/logger";
+import { notifyError } from "../../ui";
 
 import {
   BudgetAccordion,
@@ -50,12 +51,10 @@ const BudgetFormPage: React.FC<BudgetFormPageProps> = ({ mode }) => {
           setInitialData(data);
         })
         .catch((error) => {
-          console.error("Erro ao carregar orçamento:", error);
-          Swal.fire({
-            icon: "error",
-            title: "Erro",
-            text: "Não foi possível carregar o orçamento.",
-          }).then(() => navigate("/Orcamentos"));
+          logger.error("Erro ao carregar orçamento:", error);
+          notifyError("Erro", "Não foi possível carregar o orçamento.").then(
+            () => navigate("/Orcamentos")
+          );
         })
         .finally(() => {
           setIsLoading(false);

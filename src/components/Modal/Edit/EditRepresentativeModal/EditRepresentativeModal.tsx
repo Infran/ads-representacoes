@@ -8,6 +8,7 @@ import {
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
 import { Modal, Button } from "../../../../ui";
+import { logger } from "../../../../utils/logger";
 import RepresentativeForm from "../../../Forms/RepresentativeForm";
 
 interface EditRepresentativeModalProps {
@@ -50,7 +51,7 @@ const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
           setClientSearchTerm(representativeData.client.name);
         }
       } catch (error) {
-        console.error("Erro ao buscar representante:", error);
+        logger.error("Erro ao buscar representante:", error);
       }
     };
 
@@ -91,7 +92,7 @@ const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
       setRepresentative({} as IRepresentative);
       setError(null);
     } catch (error) {
-      console.error("Erro ao editar representante:", error);
+      logger.error("Erro ao editar representante:", error);
       setError("Ocorreu um erro ao editar o representante. Tente novamente.");
     }
   };

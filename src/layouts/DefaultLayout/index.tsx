@@ -29,8 +29,8 @@ export default function DefaultLayout() {
             marginTop: { xs: "56px", sm: "64px" },
             // Padding para o conteúdo
             padding: { xs: 2, sm: 3 },
-            // Background suave
-            backgroundColor: "#FAFAFA",
+            // Background suave (token do tema — adapta ao modo claro/escuro)
+            backgroundColor: "background.default",
             // Transição suave quando sidebar abre/fecha
             transition: "margin-left 225ms cubic-bezier(0.4, 0, 0.6, 1) 0ms",
             // Overflow para conteúdo longo

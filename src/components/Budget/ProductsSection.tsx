@@ -2,6 +2,7 @@ import React from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { UseBudgetFormReturn } from "../../hooks/useBudgetForm";
 import { brMoneyMask } from "../../utils/Masks";
+import { confirmDialog } from "../../ui";
 import ProductSelector from "./ProductSelector";
 import ProductList from "./ProductList";
 
@@ -13,7 +14,19 @@ interface ProductsSectionProps {
  * Seção "Produtos" do formulário de orçamento (EST F3.1).
  * Seletor de produtos + lista selecionada + total.
  */
-const ProductsSection: React.FC<ProductsSectionProps> = ({ form }) => (
+const ProductsSection: React.FC<ProductsSectionProps> = ({ form }) => {
+  // F4.1/U3.4: a confirmação de remoção vive aqui (na UI), via átomo
+  // tokenizado `confirmDialog` — o hook `useBudgetForm` só remove.
+  const handleRemove = async (index: number) => {
+    const confirmed = await confirmDialog({
+      title: "Tem certeza?",
+      text: "Tem certeza que deseja remover este produto?",
+      confirmText: "Sim, remover!",
+    });
+    if (confirmed) form.removeProduct(index);
+  };
+
+  return (
   <Box>
     <ProductSelector
       productList={form.productList}
@@ -24,7 +37,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({ form }) => (
 
     <ProductList
       products={form.selectedProducts}
-      onRemove={form.removeProduct}
+      onRemove={handleRemove}
       onQuantityChange={form.updateProductQuantity}
       onSetQuantity={form.setProductQuantity}
       onValueChange={form.updateProductCustomValue}
@@ -49,6 +62,7 @@ const ProductsSection: React.FC<ProductsSectionProps> = ({ form }) => (
       </Paper>
     )}
   </Box>
-);
+  );
+};
 
 export default ProductsSection;

@@ -12,9 +12,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Logout } from "@mui/icons-material";
-import Swal from "sweetalert2";
 
-import { tokens } from "../../../theme/tokens";
+import { confirmDialog } from "../../../ui";
 import { useLayout } from "../LayoutContext";
 import { useAuth } from "../../../context/ContextAuth";
 import SidebarHeader from "./SidebarHeader";
@@ -69,24 +68,15 @@ const Sidebar: React.FC = () => {
   const { sidebarOpen, toggleSidebar } = useLayout();
   const { logout } = useAuth();
 
-  const handleLogout = () => {
-    Swal.fire({
+  const handleLogout = async () => {
+    const confirmed = await confirmDialog({
       title: "Deseja sair?",
       text: "Você precisará fazer login novamente.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: tokens.color.error,
-      cancelButtonColor: tokens.color.brand.main,
-      confirmButtonText: "Sim, sair",
-      cancelButtonText: "Cancelar",
-      customClass: {
-        popup: "swal-popup-custom",
-      },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        logout();
-      }
+      confirmText: "Sim, sair",
+      cancelText: "Cancelar",
+      danger: true,
     });
+    if (confirmed) logout();
   };
 
   const logoutButton = (

@@ -8,6 +8,7 @@ import {
   browserSessionPersistence,
   User,
 } from 'firebase/auth';
+import { logger } from '../utils/logger';
 
 // Tempo de vida da sessão antes do logout automático (2 horas).
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return user;
     } catch (error: any) {
-      console.error('Error logging in:', error.code, error.message);
+      logger.error('Error logging in:', error.code, error.message);
       throw error;
     }
   };

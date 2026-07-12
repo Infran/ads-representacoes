@@ -4,7 +4,6 @@ import { IProduct } from "../interfaces/iproduct";
 import { IRepresentative } from "../interfaces/irepresentative";
 import { IClient } from "../interfaces/iclient";
 import useDebounce from "./useDebounce";
-import Swal from "sweetalert2";
 import { useData } from "../context/DataContext";
 
 const DEFAULT_BUDGET: Partial<IBudget> = {
@@ -12,6 +11,22 @@ const DEFAULT_BUDGET: Partial<IBudget> = {
   guarantee:
     "06 MESES P/ PEÇAS REPOSIÇÃO / SERVIÇOS - 18 MESES DA ENTREGA / 12 MESES DA INSTALAÇÃO P/ PRODUTO ",
 };
+
+/**
+ * Campos de termos/condições exigidos para o orçamento ser considerado completo.
+ * Constante de configuração (F4.2): adicionar/remover um campo obrigatório é
+ * editar esta lista — não a lógica de `sectionValidation`.
+ */
+export const REQUIRED_TERM_FIELDS: ReadonlyArray<{
+  field: keyof IBudget;
+  label: string;
+}> = [
+  { field: "estimatedDate", label: "Prazo para Entrega" },
+  { field: "maxDealDate", label: "Validade da Proposta" },
+  { field: "guarantee", label: "Garantia" },
+  { field: "shippingTerms", label: "Condição de Entrega" },
+  { field: "reference", label: "Referência" },
+];
 
 interface UseBudgetFormOptions {
   initialData?: IBudget | null;
@@ -180,20 +195,10 @@ export const useBudgetForm = (
     setProductSearchTerm("");
   }, []);
 
+  // F4.1: apenas remove — a confirmação (Swal/confirmDialog) fica na UI
+  // (ProductsSection), deixando o hook testável sem `sweetalert2`.
   const removeProduct = useCallback((index: number) => {
-    Swal.fire({
-      title: "Tem certeza?",
-      text: "Tem certeza que deseja remover este produto?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sim, remover!",
-      cancelButtonText: "Cancelar",
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
-      }
-    });
+    setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const updateProductQuantity = useCallback((index: number, delta: number) => {
@@ -250,27 +255,19 @@ export const useBudgetForm = (
       message: productCount > 0 ? undefined : "Adicione pelo menos um produto",
     };
 
-    // Seção Termos/Condições
-    const requiredTermFields = [
-      { field: "estimatedDate", label: "Prazo para Entrega" },
-      { field: "maxDealDate", label: "Validade da Proposta" },
-      { field: "guarantee", label: "Garantia" },
-      { field: "shippingTerms", label: "Condição de Entrega" },
-      { field: "reference", label: "Referência" },
-    ];
-
-    const filledTerms = requiredTermFields.filter(({ field }) =>
-      Boolean(budget?.[field as keyof IBudget])
+    // Seção Termos/Condições (campos obrigatórios em REQUIRED_TERM_FIELDS — F4.2)
+    const filledTerms = REQUIRED_TERM_FIELDS.filter(({ field }) =>
+      Boolean(budget?.[field])
     );
 
-    const missingFields = requiredTermFields
-      .filter(({ field }) => !budget?.[field as keyof IBudget])
-      .map(({ label }) => label);
+    const missingFields = REQUIRED_TERM_FIELDS.filter(
+      ({ field }) => !budget?.[field]
+    ).map(({ label }) => label);
 
     const termsSection = {
-      isComplete: filledTerms.length === requiredTermFields.length,
+      isComplete: filledTerms.length === REQUIRED_TERM_FIELDS.length,
       filledCount: filledTerms.length,
-      totalRequired: requiredTermFields.length,
+      totalRequired: REQUIRED_TERM_FIELDS.length,
       message:
         missingFields.length > 0
           ? `Campos obrigatórios: ${missingFields.join(", ")}`

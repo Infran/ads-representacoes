@@ -10,6 +10,7 @@ import SearchBar from "../../components/SearchBar/SearchBar";
 import DeleteProductModal from "../../components/Modal/Delete/DeleteProductModal";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError } from "../../ui";
+import { logger } from "../../utils/logger";
 
 const Products = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -51,7 +52,7 @@ const Products = () => {
         setOpenDeleteModal(false);
         setSelectedProduct(null);
       } catch (error) {
-        console.error("Erro ao excluir produto:", error);
+        logger.error("Erro ao excluir produto:", error);
         notifyError(
           "Não foi possível excluir o produto",
           "Tente novamente em instantes."

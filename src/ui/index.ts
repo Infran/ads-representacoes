@@ -10,4 +10,9 @@ export { default as ErrorState } from "./ErrorState";
 export { default as DataTable } from "./DataTable";
 export type { DataTableProps } from "./DataTable";
 export { ListSkeleton, CardGridSkeleton, TableSkeleton } from "./Skeletons";
-export { confirmDialog, notifySuccess, notifyError } from "./Feedback";
+export {
+  confirmDialog,
+  notifySuccess,
+  notifyWarning,
+  notifyError,
+} from "./Feedback";

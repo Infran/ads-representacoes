@@ -19,8 +19,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../../context/ContextAuth";
 import { useColorMode } from "../../../theme/ColorModeContext";
-import { tokens } from "../../../theme/tokens";
-import Swal from "sweetalert2";
+import { confirmDialog } from "../../../ui";
 
 const UserMenu: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -39,22 +38,16 @@ const UserMenu: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleClose();
-    Swal.fire({
+    const confirmed = await confirmDialog({
       title: "Deseja sair?",
       text: "Você precisará fazer login novamente.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: tokens.color.error,
-      cancelButtonColor: tokens.color.brand.main,
-      confirmButtonText: "Sim, sair",
-      cancelButtonText: "Cancelar",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        logout();
-      }
+      confirmText: "Sim, sair",
+      cancelText: "Cancelar",
+      danger: true,
     });
+    if (confirmed) logout();
   };
 
   // Pegar iniciais do nome

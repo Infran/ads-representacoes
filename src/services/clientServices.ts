@@ -58,28 +58,3 @@ export const updateClient = (client: IClient): Promise<void> =>
 
 /** Exclui um cliente pelo ID. */
 export const deleteClient = clientCrud.remove;
-
-/**
- * @deprecated Use useData().searchClientsLocal() para busca com cache local.
- * Esta função ainda faz chamadas ao Firestore - evite usá-la.
- */
-export const searchClients = async (searchTerm: string): Promise<IClient[]> => {
-  console.warn(
-    "[DEPRECATED] searchClients está deprecated. Use searchClientsLocal do DataContext para evitar reads no Firestore."
-  );
-
-  const clients = await getClients();
-
-  if (!searchTerm?.trim()) {
-    return clients;
-  }
-
-  const term = searchTerm.toLowerCase();
-  return clients.filter(
-    (client) =>
-      client.name?.toLowerCase().includes(term) ||
-      client.email?.toLowerCase().includes(term) ||
-      client.phone?.toLowerCase().includes(term) ||
-      client.cnpj?.toLowerCase().includes(term)
-  );
-};

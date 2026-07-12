@@ -4,6 +4,7 @@ import { deleteBudget } from "../../../services/budgetServices";
 import { IBudget } from "../../../interfaces/ibudget";
 import { brMoneyMask } from "../../../utils/Masks";
 import { notifyError } from "../../../ui";
+import { logger } from "../../../utils/logger";
 
 interface DeleteBudgetModalProps {
   open: boolean;
@@ -18,7 +19,7 @@ const DeleteBudgetModal: React.FC<DeleteBudgetModalProps> = ({ open, onClose, on
       await deleteBudget(id);
       onDeleted();
     } catch (error) {
-      console.error("Erro ao excluir orçamento:", error);
+      logger.error("Erro ao excluir orçamento:", error);
       notifyError(
         "Não foi possível excluir o orçamento",
         "Tente novamente em instantes."

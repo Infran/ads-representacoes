@@ -5,6 +5,7 @@ import { addRepresentative } from "../../../../services/representativeServices";
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
 import { Modal, Button } from "../../../../ui";
+import { logger } from "../../../../utils/logger";
 import RepresentativeForm from "../../../Forms/RepresentativeForm";
 
 interface CreateRepresentativeModalProps {
@@ -68,7 +69,7 @@ const CreateRepresentativeModal: React.FC<CreateRepresentativeModalProps> = ({
       setRepresentative({} as IRepresentative);
       setError(null);
     } catch (error) {
-      console.error("Erro ao adicionar representante:", error);
+      logger.error("Erro ao adicionar representante:", error);
       setError(
         "Ocorreu um erro ao adicionar o representante. Tente novamente."
       );

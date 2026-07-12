@@ -9,6 +9,7 @@ import { IBudget } from "../interfaces/ibudget";
 import { IClient } from "../interfaces/iclient";
 import { IProduct } from "../interfaces/iproduct";
 import { IRepresentative } from "../interfaces/irepresentative";
+import { logger } from "../utils/logger";
 
 // Tipos de dados que podem ser cacheados
 export type CacheKey = "budgets" | "clients" | "products" | "representatives";
@@ -81,21 +82,21 @@ export const getCache = <T>(key: CacheKey): T | null => {
   const memoryEntry = memoryCache[key] as CacheEntry<T> | null;
 
   if (memoryEntry && !isExpired(key)) {
-    console.log(`[Cache] HIT (memory): ${key}`);
+    logger.debug(`[Cache] HIT (memory): ${key}`);
     return memoryEntry.data;
   }
 
   // Se não está em memória, tenta localStorage
   const storageEntry = loadFromStorage(key);
   if (storageEntry && Date.now() < storageEntry.expiresAt) {
-    console.log(`[Cache] HIT (storage): ${key}`);
+    logger.debug(`[Cache] HIT (storage): ${key}`);
     // Restaura para memória (type assertion necessária devido à natureza dinâmica)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (memoryCache as any)[key] = storageEntry;
     return storageEntry.data as T;
   }
 
-  console.log(`[Cache] MISS: ${key}`);
+  logger.debug(`[Cache] MISS: ${key}`);
   return null;
 };
 
@@ -120,7 +121,7 @@ export const setCache = <T>(
   // Persiste no localStorage
   persistToStorage(key, entry);
 
-  console.log(`[Cache] SET: ${key} (expires in ${ttl / 1000}s)`);
+  logger.debug(`[Cache] SET: ${key} (expires in ${ttl / 1000}s)`);
 };
 
 /**
@@ -132,10 +133,10 @@ export const invalidateCache = (key: CacheKey): void => {
   try {
     localStorage.removeItem(storageKeyFor(key));
   } catch (error) {
-    console.error(`[Cache] Error invalidating ${key}:`, error);
+    logger.error(`[Cache] Error invalidating ${key}:`, error);
   }
 
-  console.log(`[Cache] INVALIDATED: ${key}`);
+  logger.debug(`[Cache] INVALIDATED: ${key}`);
 };
 
 /**
@@ -153,10 +154,10 @@ export const invalidateAllCache = (): void => {
     CACHE_KEYS.forEach((key) => localStorage.removeItem(storageKeyFor(key)));
     localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch (error) {
-    console.error("[Cache] Error clearing all cache:", error);
+    logger.error("[Cache] Error clearing all cache:", error);
   }
 
-  console.log("[Cache] ALL INVALIDATED");
+  logger.debug("[Cache] ALL INVALIDATED");
 };
 
 /**
@@ -169,12 +170,12 @@ const persistToStorage = <T>(key: CacheKey, entry: CacheEntry<T>): void => {
     localStorage.setItem(storageKeyFor(key), JSON.stringify(entry));
   } catch (error) {
     if (isQuotaExceeded(error)) {
-      console.warn(
+      logger.warn(
         `[Cache] Quota do localStorage excedida ao persistir "${key}". ` +
           "Seguindo apenas em memória."
       );
     } else {
-      console.error(`[Cache] Error persisting ${key}:`, error);
+      logger.error(`[Cache] Error persisting ${key}:`, error);
     }
   }
 };
@@ -188,7 +189,7 @@ const loadFromStorage = <T>(key: CacheKey): CacheEntry<T> | null => {
     if (!stored) return null;
     return (JSON.parse(stored) as CacheEntry<T>) || null;
   } catch (error) {
-    console.error(`[Cache] Error loading ${key}:`, error);
+    logger.error(`[Cache] Error loading ${key}:`, error);
     return null;
   }
 };
@@ -213,9 +214,9 @@ const migrateLegacyStorage = (): void => {
       }
     });
     localStorage.removeItem(LEGACY_STORAGE_KEY);
-    console.log("[Cache] Blob legado migrado para chaves por coleção.");
+    logger.debug("[Cache] Blob legado migrado para chaves por coleção.");
   } catch (error) {
-    console.error("[Cache] Erro migrando blob legado:", error);
+    logger.error("[Cache] Erro migrando blob legado:", error);
   }
 };
 

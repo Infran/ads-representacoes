@@ -13,6 +13,12 @@ interface ConfirmOptions {
   confirmText?: string;
   cancelText?: string;
   icon?: "warning" | "error" | "success" | "info" | "question";
+  /**
+   * Ação destrutiva (logout, excluir): pinta o botão de confirmar com a cor de
+   * erro (vermelho) e o de cancelar com a de marca — preserva a affordance de
+   * "cuidado" sem hardcode de hex.
+   */
+  danger?: boolean;
 }
 
 /** Diálogo de confirmação (sim/não) com cores de marca. Resolve `true` se confirmado. */
@@ -22,6 +28,7 @@ export const confirmDialog = async ({
   confirmText = "Confirmar",
   cancelText = "Cancelar",
   icon = "warning",
+  danger = false,
 }: ConfirmOptions): Promise<boolean> => {
   const result: SweetAlertResult = await Swal.fire({
     title,
@@ -31,8 +38,8 @@ export const confirmDialog = async ({
     confirmButtonText: confirmText,
     cancelButtonText: cancelText,
     reverseButtons: true,
-    confirmButtonColor: tokens.color.brand.main,
-    cancelButtonColor: tokens.color.error,
+    confirmButtonColor: danger ? tokens.color.error : tokens.color.brand.main,
+    cancelButtonColor: danger ? tokens.color.brand.main : tokens.color.error,
   });
   return result.isConfirmed;
 };
@@ -41,6 +48,15 @@ export const confirmDialog = async ({
 export const notifySuccess = (title: string, text?: string) =>
   Swal.fire({
     icon: "success",
+    title,
+    text,
+    confirmButtonColor: tokens.color.brand.main,
+  });
+
+/** Alerta de aviso tokenizado (validação/atenção, sem ação destrutiva). */
+export const notifyWarning = (title: string, text?: string) =>
+  Swal.fire({
+    icon: "warning",
     title,
     text,
     confirmButtonColor: tokens.color.brand.main,

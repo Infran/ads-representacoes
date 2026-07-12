@@ -20,6 +20,7 @@ import {
   removeItemFromCache,
   CacheKey,
 } from "../services/cacheService";
+import { logger } from "../utils/logger";
 
 /** Lê um campo por caminho com ponto (ex.: "client.name"). */
 const getByPath = (obj: unknown, path: string): unknown =>
@@ -66,13 +67,13 @@ export function useEntityStore<T extends { id: string | number }>(
 
     setLoading(true);
     try {
-      console.log(`[DataContext] Fetching ${key} from Firestore...`);
+      logger.debug(`[DataContext] Fetching ${key} from Firestore...`);
       const data = await fetcher();
       setItems(data);
       setCache(key, data);
-      console.log(`[DataContext] Fetched ${data.length} ${key}`);
+      logger.debug(`[DataContext] Fetched ${data.length} ${key}`);
     } catch (error) {
-      console.error(`[DataContext] Error fetching ${key}:`, error);
+      logger.error(`[DataContext] Error fetching ${key}:`, error);
     } finally {
       setLoading(false);
     }

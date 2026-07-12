@@ -34,11 +34,6 @@ vi.mock("../context/DataContext", () => ({
   }),
 }));
 
-// Evita abrir o SweetAlert de confirmação em removeProduct durante o teste.
-vi.mock("sweetalert2", () => ({
-  default: { fire: vi.fn().mockResolvedValue({ isConfirmed: true }) },
-}));
-
 import { useBudgetForm } from "./useBudgetForm";
 
 describe("useBudgetForm — totalValue", () => {
@@ -139,6 +134,24 @@ describe("useBudgetForm — reset (usado por 'Adicionar Outro')", () => {
     act(() => result.current.reset());
     expect(result.current.selectedProducts).toHaveLength(0);
     expect(result.current.totalValue).toBe(0);
+  });
+});
+
+describe("useBudgetForm — removeProduct (F4.1: sem Swal no hook)", () => {
+  it("remove o produto do índice imediatamente, sem depender de confirmação", () => {
+    const initialData = {
+      selectedProducts: [
+        { product: mockProducts[0], quantity: 1 },
+        { product: mockProducts[1], quantity: 1 },
+      ],
+    } as IBudget;
+
+    const { result } = renderHook(() => useBudgetForm({ initialData }));
+    expect(result.current.selectedProducts).toHaveLength(2);
+
+    act(() => result.current.removeProduct(0));
+    expect(result.current.selectedProducts).toHaveLength(1);
+    expect(result.current.selectedProducts[0].product.id).toBe("p2");
   });
 });
 
