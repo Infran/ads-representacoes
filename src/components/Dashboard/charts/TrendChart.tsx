@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography, useTheme, Alert } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { MonthlyPoint } from "../../../pages/Home/dashboardMetrics";
 
@@ -53,7 +53,11 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, height = 300 }) => {
   }
 
   return (
-    <LineChart
+    <Box>
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Esta é uma implementação em fase de testes. Os dados e visualizações podem sofrer alterações.
+      </Alert>
+      <LineChart
       height={height}
       series={[
         {
@@ -74,6 +78,7 @@ const TrendChart: React.FC<TrendChartProps> = ({ data, height = 300 }) => {
         "& .MuiAreaElement-root": { fillOpacity: 0.12 },
       }}
     />
+    </Box>
   );
 };
 

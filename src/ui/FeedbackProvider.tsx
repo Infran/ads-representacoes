@@ -300,11 +300,11 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({
         onMouseLeave={() => setIsHovered(false)}
         sx={{
           position: "fixed",
-          top: 24,
-          right: 24,
+          bottom: 24,
+          left: 24,
           zIndex: 9999,
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "column", // newest toast renders at the bottom, nearest the corner
           gap: 1.5,
           width: { xs: "calc(100% - 48px)", sm: "380px" },
           pointerEvents: "none", // click through spacing
@@ -322,32 +322,56 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({
               : tokens.color.info;
 
           return (
-            <Slide key={toast.id} direction="left" in={true} mountOnEnter unmountOnExit>
-              <Box
-                sx={{
-                  pointerEvents: "auto", // clickable toast
-                  display: "flex",
-                  alignItems: "flex-start",
-                  p: 2,
-                  borderRadius: `${tokens.radius.md}px`,
-                  borderLeft: `4px solid ${borderLeftColor}`,
-                  boxShadow: tokens.elevation.e4,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "rgba(255, 255, 255, 0.92)"
-                      : "rgba(17, 24, 39, 0.92)",
-                  backdropFilter: "blur(12px)",
-                  border: "1px solid",
-                  borderColor: (theme) =>
-                    theme.palette.mode === "light"
-                      ? "rgba(0, 0, 0, 0.05)"
-                      : "rgba(255, 255, 255, 0.05)",
-                  transition: "transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  width: "100%",
-                }}
-                role="status"
-                aria-live="polite"
-              >
+            <Slide key={toast.id} direction="right" in={true} mountOnEnter unmountOnExit>
+              {/* Wrapper carries the Slide transform; the inner card runs its own
+                  attention animation so the two transforms never fight each other. */}
+              <Box sx={{ pointerEvents: "auto", width: "100%" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    p: 2,
+                    borderRadius: `${tokens.radius.md}px`,
+                    borderLeft: `4px solid ${borderLeftColor}`,
+                    boxShadow: tokens.elevation.e4,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "light"
+                        ? "rgba(255, 255, 255, 0.92)"
+                        : "rgba(17, 24, 39, 0.92)",
+                    backdropFilter: "blur(12px)",
+                    border: "1px solid",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "light"
+                        ? "rgba(0, 0, 0, 0.05)"
+                        : "rgba(255, 255, 255, 0.05)",
+                    width: "100%",
+                    transformOrigin: "center",
+                    // Entrance attention grabber: a light shake plus a glowing ring
+                    // pulse in the toast's status color, kicking in just after the
+                    // slide-in settles (~0.35s).
+                    "@keyframes toastShake": {
+                      "0%, 100%": { transform: "translateX(0)" },
+                      "20%": { transform: "translateX(-5px)" },
+                      "40%": { transform: "translateX(5px)" },
+                      "60%": { transform: "translateX(-3px)" },
+                      "80%": { transform: "translateX(3px)" },
+                    },
+                    "@keyframes toastGlow": {
+                      "0%, 100%": { boxShadow: tokens.elevation.e4 },
+                      "50%": {
+                        boxShadow: `0 0 0 4px ${borderLeftColor}55, ${tokens.elevation.e4}`,
+                      },
+                    },
+                    animation:
+                      "toastShake 0.5s ease 0.35s 1, toastGlow 1s ease 0.35s 1",
+                    "@media (prefers-reduced-motion: reduce)": {
+                      // respect reduced-motion: keep the gentle glow, drop the shake
+                      animation: "toastGlow 1s ease 0.35s 1",
+                    },
+                  }}
+                  role="status"
+                  aria-live="polite"
+                >
                 {/* Status Icon */}
                 <Box
                   sx={{
@@ -406,6 +430,7 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({
                 >
                   <CloseIcon sx={{ fontSize: 16 }} />
                 </IconButton>
+                </Box>
               </Box>
             </Slide>
           );

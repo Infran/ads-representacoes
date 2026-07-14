@@ -1,5 +1,5 @@
 import React, { Suspense, useMemo } from "react";
-import { Box, Typography, Grid, Divider, Skeleton } from "@mui/material";
+import { Box, Typography, Grid, Divider, Skeleton, Alert } from "@mui/material";
 import {
   Description,
   Inventory2,
@@ -96,6 +96,11 @@ export const Home = () => {
       </Box>
 
       {/* KPIs — hero "Valor Total" + secundários */}
+      {!loading && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Os indicadores de KPI (Valor Total, Orçamentos, Produtos, Clientes) estão em fase de testes. Os valores e cálculos podem sofrer alterações.
+        </Alert>
+      )}
       {loading ? (
         <CardGridSkeleton count={4} />
       ) : (
