@@ -1,166 +1,295 @@
+import { useMemo, useState } from "react";
 import { Box } from "@mui/material";
-import PageHeader from "./../../components/PageHeader/PageHeader";
-import { PersonAdd } from "@mui/icons-material";
-import { useState, useMemo } from "react";
-import { deleteClient } from "../../services/clientServices";
-import { IClient } from "../../interfaces/iclient";
-import { ClientsTable } from "../../components/Tables/ClientsTable/ClientsTable";
+import { Apartment } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import PageHeader from "../../components/PageHeader/PageHeader";
 import CreateClientModal from "../../components/Modal/Create/CreateClientModal/CreateClientModal";
-import ClientsFilter, { ClientFilters } from "../../components/Filters/ClientsFilter";
+import EditClientModal from "../../components/Modal/Edit/EditClientModal/EditClientModal";
 import DeleteClientModal from "../../components/Modal/Delete/DeleteClientModal";
+import CockpitFilterBar, {
+  CockpitSelect,
+  CockpitToggle,
+} from "../../components/Cockpit/CockpitFilterBar";
+import CockpitResultsTable, {
+  CockpitColumns,
+} from "../../components/Cockpit/CockpitResultsTable";
+import CockpitDetailPanel, {
+  CockpitDetailConfig,
+} from "../../components/Cockpit/CockpitDetailPanel";
+import { distinctSorted, downloadCsv } from "../../components/Cockpit/cockpitUtils";
+import { useCockpit } from "../../components/Cockpit/useCockpit";
+import {
+  EMPTY_CLIENT_FILTERS,
+  ClientCockpitFilters,
+  applyClientFilters,
+  buildClientChips,
+  formatCnpj,
+} from "./clientCockpit";
+import { IClient } from "../../interfaces/iclient";
+import { deleteClient } from "../../services/clientServices";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
 import { logger } from "../../utils/logger";
 
+const PER_PAGE = 8;
+
 const Clients = () => {
-  const [openModal, setOpenModal] = useState(false);
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [filters, setFilters] = useState<ClientFilters>({
-    name: "",
-    email: "",
-    phone: "",
-    cnpj: "",
-    cep: "",
-    address: "",
-    city: "",
-    state: "",
-  });
-  const [selectedClient, setSelectedClient] = useState<IClient | null>(null);
+  const navigate = useNavigate();
+  const { clients, budgets, loading, removeClientFromCache } = useData();
+  const cockpit = useCockpit<ClientCockpitFilters>(EMPTY_CLIENT_FILTERS);
+  const { filters, patchFilters } = cockpit;
 
-  // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
-  const {
-    clients: clientList,
-    loading,
-    removeClientFromCache,
-  } = useData();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<IClient | null>(null);
 
-  // Filtragem local dos clientes com filtros complexos
-  const filteredClients = useMemo(() => {
-    return clientList.filter((client) => {
-      const matchesName =
-        !filters.name ||
-        client.name?.toLowerCase().includes(filters.name.toLowerCase());
-      const matchesEmail =
-        !filters.email ||
-        client.email?.toLowerCase().includes(filters.email.toLowerCase());
-      const matchesPhone =
-        !filters.phone ||
-        client.phone?.toLowerCase().includes(filters.phone.toLowerCase());
-      const matchesCnpj =
-        !filters.cnpj ||
-        client.cnpj?.toLowerCase().includes(filters.cnpj.toLowerCase());
-      const matchesAddress =
-        !filters.address ||
-        client.address?.toLowerCase().includes(filters.address.toLowerCase());
-      const matchesCep =
-        !filters.cep ||
-        client.cep?.toLowerCase().includes(filters.cep.toLowerCase());
-      const matchesCity =
-        !filters.city ||
-        client.city?.toLowerCase().includes(filters.city.toLowerCase());
-      const matchesState =
-        !filters.state ||
-        client.state?.toLowerCase().includes(filters.state.toLowerCase());
-
-      return (
-        matchesName &&
-        matchesEmail &&
-        matchesPhone &&
-        matchesCnpj &&
-        matchesAddress &&
-        matchesCep &&
-        matchesCity &&
-        matchesState
-      );
+  // Contagem de orçamentos por cliente (dos budgets do cache) — alimenta o badge
+  // "Orçamentos" e o filtro "Com orçamento".
+  const budgetCountByClient = useMemo(() => {
+    const m = new Map<string, number>();
+    budgets.forEach((b) => {
+      const id = b.client?.id ? String(b.client.id) : "";
+      if (id) m.set(id, (m.get(id) ?? 0) + 1);
     });
-  }, [clientList, filters]);
+    return m;
+  }, [budgets]);
 
-  const handleClose = () => setOpenModal(false);
-  const handleCloseDeleteModal = () => setOpenDeleteModal(false);
+  const filtered = useMemo(
+    () => applyClientFilters(clients, filters, budgetCountByClient),
+    [clients, filters, budgetCountByClient]
+  );
+  const stateOptions = useMemo(
+    () => distinctSorted(clients.map((c) => c.state)),
+    [clients]
+  );
+  const cityOptions = useMemo(
+    () =>
+      distinctSorted(
+        clients.filter((c) => !filters.state || c.state === filters.state).map((c) => c.city)
+      ),
+    [clients, filters.state]
+  );
+  const chips = useMemo(
+    () => buildClientChips(filters, patchFilters),
+    [filters, patchFilters]
+  );
+  const selected = useMemo(
+    () => clients.find((c) => c.id === cockpit.selectedId) ?? null,
+    [clients, cockpit.selectedId]
+  );
 
-  const onDelete = (client: IClient) => {
-    setSelectedClient(client);
-    setOpenDeleteModal(true);
+  const selects: CockpitSelect[] = [
+    {
+      key: "state",
+      label: "Estado",
+      value: filters.state,
+      placeholder: "Todos",
+      allLabel: "Todos os estados",
+      options: stateOptions,
+      width: 150,
+      onPick: (v) => patchFilters({ state: v, city: "" }),
+    },
+    {
+      key: "city",
+      label: "Cidade",
+      value: filters.city,
+      placeholder: "Todas",
+      allLabel: "Todas as cidades",
+      options: cityOptions,
+      width: 180,
+      onPick: (v) => patchFilters({ city: v }),
+    },
+  ];
+
+  const toggles: CockpitToggle[] = [
+    {
+      key: "hasCnpj",
+      caption: "Documento",
+      label: "Com CNPJ",
+      checked: filters.hasCnpj,
+      onToggle: (v) => patchFilters({ hasCnpj: v }),
+    },
+    {
+      key: "hasBudget",
+      caption: "Comercial",
+      label: "Com orçamento",
+      checked: filters.hasBudget,
+      onToggle: (v) => patchFilters({ hasBudget: v }),
+    },
+  ];
+
+  const columns: CockpitColumns<IClient> = {
+    getRowId: (c) => c.id,
+    primaryHeader: "Empresa",
+    getPrimary: (c) => c.name || "Sem nome",
+    getSubtitle: (c) => c.email || "Sem e-mail",
+    middleHeader: "Cidade/UF",
+    renderMiddle: (c) => (
+      <>
+        {c.city || "—"}
+        {c.state ? (
+          <Box component="span" sx={{ color: "text.secondary" }}>
+            {" · "}
+            {c.state}
+          </Box>
+        ) : null}
+      </>
+    ),
+    badgeHeader: "Orçamentos",
+    getBadge: (c) => {
+      const n = budgetCountByClient.get(c.id) ?? 0;
+      return { label: String(n), active: n > 0 };
+    },
+  };
+
+  const detailConfig: CockpitDetailConfig<IClient> = {
+    getRowId: (c) => c.id,
+    getTitle: (c) => c.name || "Sem nome",
+    getSubtitle: (c) =>
+      c.city && c.state ? `${c.city} · ${c.state}` : c.email || "—",
+    getFields: (c) => [
+      { label: "E-mail", value: c.email || "Não informado" },
+      { label: "Telefone", value: c.phone || "Não informado" },
+      { label: "CNPJ", value: formatCnpj(c.cnpj) || "Não informado", mono: true },
+      {
+        label: "Localização",
+        value: [c.city, c.state].filter(Boolean).join(" · ") || "Não informada",
+      },
+      { label: "Endereço", value: c.address || "Não informado" },
+      { label: "CEP", value: c.cep || "Não informado", mono: true },
+    ],
+    getTimestamps: (c) => ({ createdAt: c.createdAt, updatedAt: c.updatedAt }),
+    statusLabel: "Cliente ativo",
+    railLabel: "DETALHES DO CLIENTE",
+    emptyTitle: "Nenhum cliente selecionado",
+    emptyDescription: "Clique em uma linha da tabela para ver os detalhes aqui.",
+    emptyIcon: Apartment,
+    primaryActionLabel: "Novo orçamento",
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedClient) {
-      try {
-        await deleteClient(selectedClient.id.toString());
-        // Atualiza o cache local em vez de recarregar a página
-        removeClientFromCache(selectedClient.id);
-        setOpenDeleteModal(false);
-        setSelectedClient(null);
-        notifySuccess("Sucesso!", "Cliente excluído com sucesso!");
-      } catch (error) {
-        logger.error("Erro ao excluir cliente:", error);
-        notifyError(
-          "Não foi possível excluir o cliente",
-          error
-        );
-      }
+    if (!deleting) return;
+    try {
+      await deleteClient(deleting.id.toString());
+      removeClientFromCache(deleting.id);
+      if (cockpit.selectedId === deleting.id) cockpit.setSelectedId(null);
+      setDeleting(null);
+      notifySuccess("Sucesso!", "Cliente excluído com sucesso!");
+    } catch (error) {
+      logger.error("Erro ao excluir cliente:", error);
+      notifyError("Não foi possível excluir o cliente", error);
     }
   };
 
-  const isEmpty = !loading && filteredClients.length === 0;
-  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
+  const handleExport = () =>
+    downloadCsv(
+      "clientes.csv",
+      ["ID", "Nome", "E-mail", "Telefone", "CNPJ", "Cidade", "UF", "Orçamentos"],
+      filtered.map((c) => [
+        c.id,
+        c.name ?? "",
+        c.email ?? "",
+        c.phone ?? "",
+        formatCnpj(c.cnpj),
+        c.city ?? "",
+        c.state ?? "",
+        String(budgetCountByClient.get(c.id) ?? 0),
+      ])
+    );
+
+  const headerDescription =
+    clients.length === 1
+      ? "1 empresa cadastrada · gerencie, filtre e exporte registros."
+      : `${clients.length} empresas cadastradas · gerencie, filtre e exporte registros.`;
 
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Clientes"
-          description="Gerencie os clientes cadastrados: busque, edite ou exclua registros."
-          icon={PersonAdd}
+          description={headerDescription}
+          icon={Apartment}
           actionLabel="Adicionar cliente"
-          onAction={() => setOpenModal(true)}
+          onAction={() => setCreateOpen(true)}
         />
-        <ClientsFilter
-          filters={filters}
-          onFilterChange={setFilters}
-          onReset={() =>
-            setFilters({
-              name: "",
-              email: "",
-              phone: "",
-              cnpj: "",
-              cep: "",
-              address: "",
-              city: "",
-              state: "",
-            })
-          }
-        />
+
         {loading ? (
           <TableSkeleton />
-        ) : isEmpty ? (
-          hasActiveFilters ? (
-            <EmptyState
-              title="Nenhum cliente encontrado"
-              description="Nenhum cliente corresponde aos filtros aplicados."
-            />
-          ) : (
-            <EmptyState
-              title="Nenhum cliente cadastrado"
-              description="Comece cadastrando o primeiro cliente."
-              icon={PersonAdd}
-              actionLabel="Cadastrar cliente"
-              onAction={() => setOpenModal(true)}
-            />
-          )
+        ) : clients.length === 0 ? (
+          <EmptyState
+            title="Nenhum cliente cadastrado"
+            description="Comece cadastrando o primeiro cliente."
+            icon={Apartment}
+            actionLabel="Cadastrar cliente"
+            onAction={() => setCreateOpen(true)}
+          />
         ) : (
-          <ClientsTable rows={filteredClients} onDelete={onDelete} />
+          <>
+            <CockpitFilterBar
+              search={filters.search}
+              onSearchChange={(v) => patchFilters({ search: v })}
+              searchPlaceholder="Nome, e-mail ou CNPJ"
+              selects={selects}
+              toggles={toggles}
+              onReset={cockpit.resetFilters}
+            />
+
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: { xs: "column", lg: "row" },
+                gap: 2,
+                alignItems: "stretch",
+                minHeight: 0,
+              }}
+            >
+              <CockpitResultsTable
+                rows={filtered}
+                columns={columns}
+                page={cockpit.page}
+                perPage={PER_PAGE}
+                onPageChange={cockpit.setPage}
+                density={cockpit.density}
+                onDensityChange={cockpit.setDensity}
+                chips={chips}
+                selectedId={cockpit.selectedId}
+                onSelect={(c) => cockpit.select(c.id)}
+                onEdit={(c) => setEditingId(c.id)}
+                onDelete={(c) => setDeleting(c)}
+                onExport={handleExport}
+                emptyLabel="Nenhum cliente encontrado com esses filtros."
+              />
+
+              <CockpitDetailPanel
+                item={selected}
+                config={detailConfig}
+                collapsed={cockpit.detailCollapsed}
+                collapsible={cockpit.isWide}
+                onCollapse={() => cockpit.setDetailCollapsed(true)}
+                onExpand={() => cockpit.setDetailCollapsed(false)}
+                onEdit={(c) => setEditingId(c.id)}
+                onPrimaryAction={() => navigate("/Orcamentos/Adicionar")}
+              />
+            </Box>
+          </>
         )}
       </Box>
 
-      {/* Modal de criação de cliente */}
-      <CreateClientModal open={openModal} handleClose={handleClose} />
+      <CreateClientModal open={createOpen} handleClose={() => setCreateOpen(false)} />
 
-      {/* Modal de exclusão de cliente */}
+      {editingId && (
+        <EditClientModal
+          open={Boolean(editingId)}
+          handleClose={() => setEditingId(null)}
+          id={editingId}
+        />
+      )}
+
       <DeleteClientModal
-        open={openDeleteModal}
-        onClose={handleCloseDeleteModal}
-        client={selectedClient}
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        client={deleting}
         onConfirm={handleConfirmDelete}
       />
     </>
