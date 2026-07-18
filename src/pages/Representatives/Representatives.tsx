@@ -1,197 +1,297 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Box } from "@mui/material";
-import PageHeader from "./../../components/PageHeader/PageHeader";
+import { Groups } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import PageHeader from "../../components/PageHeader/PageHeader";
 import CreateRepresentativeModal from "../../components/Modal/Create/CreateRepresentativeModal/CreateRepresentativeModal";
-import { PersonAdd } from "@mui/icons-material";
+import EditRepresentativeModal from "../../components/Modal/Edit/EditRepresentativeModal/EditRepresentativeModal";
+import DeleteRepresentativeModal from "../../components/Modal/Delete/DeleteRepresentativeModal";
+import CockpitFilterBar, {
+  CockpitSelect,
+  CockpitToggle,
+} from "../../components/Cockpit/CockpitFilterBar";
+import CockpitResultsTable, {
+  CockpitColumns,
+} from "../../components/Cockpit/CockpitResultsTable";
+import CockpitDetailPanel, {
+  CockpitDetailConfig,
+} from "../../components/Cockpit/CockpitDetailPanel";
+import { distinctSorted, downloadCsv } from "../../components/Cockpit/cockpitUtils";
+import { useCockpit } from "../../components/Cockpit/useCockpit";
+import {
+  EMPTY_REPRESENTATIVE_FILTERS,
+  RepresentativeCockpitFilters,
+  applyRepresentativeFilters,
+  buildRepresentativeChips,
+} from "./representativeCockpit";
 import { IRepresentative } from "../../interfaces/irepresentative";
 import { deleteRepresentative } from "../../services/representativeServices";
-import RepresentativesFilter, { RepresentativeFilters } from "../../components/Filters/RepresentativesFilter";
-import DeleteRepresentativeModal from "../../components/Modal/Delete/DeleteRepresentativeModal";
-import RepresentativeTable from "../../components/Tables/RepresentativeTable/RepresentativeTable";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
 import { logger } from "../../utils/logger";
 
+const PER_PAGE = 8;
+
 const Representatives = () => {
-  const [openModal, setOpenModal] = useState(false);
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [filters, setFilters] = useState<RepresentativeFilters>({
-    name: "",
-    email: "",
-    phone: "",
-    mobilePhone: "",
-    cep: "",
-    address: "",
-    city: "",
-    state: "",
-    role: "",
-    clientName: "",
-  });
-  const [selectedRepresentative, setSelectedRepresentative] =
-    useState<IRepresentative | null>(null);
+  const navigate = useNavigate();
+  const { representatives, budgets, loading, removeRepresentativeFromCache } = useData();
+  const cockpit = useCockpit<RepresentativeCockpitFilters>(EMPTY_REPRESENTATIVE_FILTERS);
+  const { filters, patchFilters } = cockpit;
 
-  // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
-  const {
-    representatives: representativesList,
-    loading,
-    removeRepresentativeFromCache,
-  } = useData();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<IRepresentative | null>(null);
 
-  // Filtragem local dos representantes com filtros complexos
-  const filteredRepresentativesList = useMemo(() => {
-    return representativesList.filter((representative) => {
-      const matchesName =
-        !filters.name ||
-        representative.name?.toLowerCase().includes(filters.name.toLowerCase());
-      const matchesEmail =
-        !filters.email ||
-        representative.email
-          ?.toLowerCase()
-          .includes(filters.email.toLowerCase());
-      const matchesPhone =
-        !filters.phone ||
-        representative.phone
-          ?.toLowerCase()
-          .includes(filters.phone.toLowerCase());
-      const matchesMobilePhone =
-        !filters.mobilePhone ||
-        representative.mobilePhone
-          ?.toLowerCase()
-          .includes(filters.mobilePhone.toLowerCase());
-      const matchesAddress =
-        !filters.address ||
-        representative.address
-          ?.toLowerCase()
-          .includes(filters.address.toLowerCase());
-      const matchesCep =
-        !filters.cep ||
-        representative.cep?.toLowerCase().includes(filters.cep.toLowerCase());
-      const matchesCity =
-        !filters.city ||
-        representative.city?.toLowerCase().includes(filters.city.toLowerCase());
-      const matchesState =
-        !filters.state ||
-        representative.state
-          ?.toLowerCase()
-          .includes(filters.state.toLowerCase());
-      const matchesRole =
-        !filters.role ||
-        representative.role
-          ?.toLowerCase()
-          .includes(filters.role.toLowerCase());
-      const matchesClientName =
-        !filters.clientName ||
-        representative.client?.name
-          ?.toLowerCase()
-          .includes(filters.clientName.toLowerCase());
-
-      return (
-        matchesName &&
-        matchesEmail &&
-        matchesPhone &&
-        matchesMobilePhone &&
-        matchesAddress &&
-        matchesCep &&
-        matchesCity &&
-        matchesState &&
-        matchesRole &&
-        matchesClientName
-      );
+  // Contagem de orçamentos por representante (dos budgets do cache) — alimenta o
+  // badge "Orçamentos" e o filtro "Com orçamento".
+  const budgetCountByRep = useMemo(() => {
+    const m = new Map<string, number>();
+    budgets.forEach((b) => {
+      const id = b.representative?.id ? String(b.representative.id) : "";
+      if (id) m.set(id, (m.get(id) ?? 0) + 1);
     });
-  }, [representativesList, filters]);
+    return m;
+  }, [budgets]);
 
-  const handleOpen = () => setOpenModal(true);
-  const handleClose = () => setOpenModal(false);
-  const handleCloseDeleteModal = () => setOpenDeleteModal(false);
+  const filtered = useMemo(
+    () => applyRepresentativeFilters(representatives, filters, budgetCountByRep),
+    [representatives, filters, budgetCountByRep]
+  );
+  const stateOptions = useMemo(
+    () => distinctSorted(representatives.map((r) => r.state)),
+    [representatives]
+  );
+  const cityOptions = useMemo(
+    () =>
+      distinctSorted(
+        representatives
+          .filter((r) => !filters.state || r.state === filters.state)
+          .map((r) => r.city)
+      ),
+    [representatives, filters.state]
+  );
+  const chips = useMemo(
+    () => buildRepresentativeChips(filters, patchFilters),
+    [filters, patchFilters]
+  );
+  const selected = useMemo(
+    () => representatives.find((r) => r.id === cockpit.selectedId) ?? null,
+    [representatives, cockpit.selectedId]
+  );
 
-  const handleDelete = (representative: IRepresentative) => {
-    setSelectedRepresentative(representative);
-    setOpenDeleteModal(true);
+  const selects: CockpitSelect[] = [
+    {
+      key: "state",
+      label: "Estado",
+      value: filters.state,
+      placeholder: "Todos",
+      allLabel: "Todos os estados",
+      options: stateOptions,
+      width: 150,
+      onPick: (v) => patchFilters({ state: v, city: "" }),
+    },
+    {
+      key: "city",
+      label: "Cidade",
+      value: filters.city,
+      placeholder: "Todas",
+      allLabel: "Todas as cidades",
+      options: cityOptions,
+      width: 180,
+      onPick: (v) => patchFilters({ city: v }),
+    },
+  ];
+
+  const toggles: CockpitToggle[] = [
+    {
+      key: "hasEmail",
+      caption: "Contato",
+      label: "Com e-mail",
+      checked: filters.hasEmail,
+      onToggle: (v) => patchFilters({ hasEmail: v }),
+    },
+    {
+      key: "hasBudget",
+      caption: "Comercial",
+      label: "Com orçamento",
+      checked: filters.hasBudget,
+      onToggle: (v) => patchFilters({ hasBudget: v }),
+    },
+  ];
+
+  const columns: CockpitColumns<IRepresentative> = {
+    getRowId: (r) => r.id,
+    primaryHeader: "Nome",
+    getPrimary: (r) => r.name || "Sem nome",
+    getSubtitle: (r) => r.email || r.role || "Sem contato",
+    middleHeader: "Cidade/UF",
+    renderMiddle: (r) => (
+      <>
+        {r.city || "—"}
+        {r.state ? (
+          <Box component="span" sx={{ color: "text.secondary" }}>
+            {" · "}
+            {r.state}
+          </Box>
+        ) : null}
+      </>
+    ),
+    badgeHeader: "Orçamentos",
+    getBadge: (r) => {
+      const n = budgetCountByRep.get(r.id) ?? 0;
+      return { label: String(n), active: n > 0 };
+    },
+  };
+
+  const detailConfig: CockpitDetailConfig<IRepresentative> = {
+    getRowId: (r) => r.id,
+    getTitle: (r) => r.name || "Sem nome",
+    getSubtitle: (r) => r.role || r.client?.name || "—",
+    getFields: (r) => [
+      { label: "Função", value: r.role || "Não informada" },
+      { label: "E-mail", value: r.email || "Não informado" },
+      { label: "Telefone", value: r.phone || "Não informado" },
+      { label: "Celular", value: r.mobilePhone || "Não informado" },
+      { label: "Cliente", value: r.client?.name || "Não vinculado" },
+      {
+        label: "Localização",
+        value: [r.city, r.state].filter(Boolean).join(" · ") || "Não informada",
+      },
+    ],
+    getTimestamps: (r) => ({ createdAt: r.createdAt, updatedAt: r.updatedAt }),
+    statusLabel: "Representante ativo",
+    railLabel: "DETALHES DO REPRESENTANTE",
+    emptyTitle: "Nenhum representante selecionado",
+    emptyDescription: "Clique em uma linha da tabela para ver os detalhes aqui.",
+    emptyIcon: Groups,
+    primaryActionLabel: "Novo orçamento",
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedRepresentative) {
-      try {
-        await deleteRepresentative(selectedRepresentative.id);
-        // Atualiza o cache local em vez de recarregar a página
-        removeRepresentativeFromCache(selectedRepresentative.id);
-        setOpenDeleteModal(false);
-        setSelectedRepresentative(null);
-        notifySuccess("Sucesso!", "Representante excluído com sucesso!");
-      } catch (error) {
-        logger.error("Erro ao excluir representante:", error);
-        notifyError(
-          "Não foi possível excluir o representante",
-          error
-        );
-      }
+    if (!deleting) return;
+    try {
+      await deleteRepresentative(deleting.id);
+      removeRepresentativeFromCache(deleting.id);
+      if (cockpit.selectedId === deleting.id) cockpit.setSelectedId(null);
+      setDeleting(null);
+      notifySuccess("Sucesso!", "Representante excluído com sucesso!");
+    } catch (error) {
+      logger.error("Erro ao excluir representante:", error);
+      notifyError("Não foi possível excluir o representante", error);
     }
   };
 
-  const isEmpty = !loading && filteredRepresentativesList.length === 0;
-  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
+  const handleExport = () =>
+    downloadCsv(
+      "representantes.csv",
+      ["ID", "Nome", "Função", "E-mail", "Telefone", "Celular", "Cliente", "Cidade", "UF", "Orçamentos"],
+      filtered.map((r) => [
+        r.id,
+        r.name ?? "",
+        r.role ?? "",
+        r.email ?? "",
+        r.phone ?? "",
+        r.mobilePhone ?? "",
+        r.client?.name ?? "",
+        r.city ?? "",
+        r.state ?? "",
+        String(budgetCountByRep.get(r.id) ?? 0),
+      ])
+    );
+
+  const headerDescription =
+    representatives.length === 1
+      ? "1 representante · gerencie a equipe comercial."
+      : `${representatives.length} representantes · gerencie a equipe comercial.`;
 
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Representantes"
-          description="Gerencie os representantes: busque, edite ou exclua registros."
-          icon={PersonAdd}
+          description={headerDescription}
+          icon={Groups}
           actionLabel="Adicionar representante"
-          onAction={handleOpen}
+          onAction={() => setCreateOpen(true)}
         />
-        <RepresentativesFilter
-          filters={filters}
-          onFilterChange={setFilters}
-          onReset={() =>
-            setFilters({
-              name: "",
-              email: "",
-              phone: "",
-              mobilePhone: "",
-              cep: "",
-              address: "",
-              city: "",
-              state: "",
-              role: "",
-              clientName: "",
-            })
-          }
-        />
+
         {loading ? (
           <TableSkeleton />
-        ) : isEmpty ? (
-          hasActiveFilters ? (
-            <EmptyState
-              title="Nenhum representante encontrado"
-              description="Nenhum representante corresponde aos filtros aplicados."
-            />
-          ) : (
-            <EmptyState
-              title="Nenhum representante cadastrado"
-              description="Comece cadastrando o primeiro representante."
-              icon={PersonAdd}
-              actionLabel="Cadastrar representante"
-              onAction={handleOpen}
-            />
-          )
-        ) : (
-          <RepresentativeTable
-            rows={filteredRepresentativesList}
-            onDelete={handleDelete}
+        ) : representatives.length === 0 ? (
+          <EmptyState
+            title="Nenhum representante cadastrado"
+            description="Comece cadastrando o primeiro representante."
+            icon={Groups}
+            actionLabel="Cadastrar representante"
+            onAction={() => setCreateOpen(true)}
           />
+        ) : (
+          <>
+            <CockpitFilterBar
+              search={filters.search}
+              onSearchChange={(v) => patchFilters({ search: v })}
+              searchPlaceholder="Nome, função ou cliente"
+              selects={selects}
+              toggles={toggles}
+              onReset={cockpit.resetFilters}
+            />
+
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: { xs: "column", lg: "row" },
+                gap: 2,
+                alignItems: "stretch",
+                minHeight: 0,
+              }}
+            >
+              <CockpitResultsTable
+                rows={filtered}
+                columns={columns}
+                page={cockpit.page}
+                perPage={PER_PAGE}
+                onPageChange={cockpit.setPage}
+                density={cockpit.density}
+                onDensityChange={cockpit.setDensity}
+                chips={chips}
+                selectedId={cockpit.selectedId}
+                onSelect={(r) => cockpit.select(r.id)}
+                onEdit={(r) => setEditingId(r.id)}
+                onDelete={(r) => setDeleting(r)}
+                onExport={handleExport}
+                emptyLabel="Nenhum representante encontrado com esses filtros."
+              />
+
+              <CockpitDetailPanel
+                item={selected}
+                config={detailConfig}
+                collapsed={cockpit.detailCollapsed}
+                collapsible={cockpit.isWide}
+                onCollapse={() => cockpit.setDetailCollapsed(true)}
+                onExpand={() => cockpit.setDetailCollapsed(false)}
+                onEdit={(r) => setEditingId(r.id)}
+                onPrimaryAction={() => navigate("/Orcamentos/Adicionar")}
+              />
+            </Box>
+          </>
         )}
       </Box>
 
-      {/* Modal de criação de representante */}
-      <CreateRepresentativeModal open={openModal} handleClose={handleClose} />
+      <CreateRepresentativeModal open={createOpen} handleClose={() => setCreateOpen(false)} />
 
-      {/* Modal de exclusão de representante */}
+      {editingId && (
+        <EditRepresentativeModal
+          open={Boolean(editingId)}
+          handleClose={() => setEditingId(null)}
+          id={editingId}
+        />
+      )}
+
       <DeleteRepresentativeModal
-        open={openDeleteModal}
-        onClose={handleCloseDeleteModal}
-        representative={selectedRepresentative}
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        representative={deleting}
         onConfirm={handleConfirmDelete}
       />
     </>
