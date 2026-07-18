@@ -1,149 +1,269 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Box } from "@mui/material";
-import PageHeader from "./../../components/PageHeader/PageHeader";
-import { ProductTable } from "../../components/Tables/ProductTable/ProductTable";
+import { Inventory2 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import PageHeader from "../../components/PageHeader/PageHeader";
 import CreateProductModal from "../../components/Modal/Create/CreateProductModal/CreateProductModal";
-import { Storefront } from "@mui/icons-material";
+import EditProductModal from "../../components/Modal/Edit/EditProductModal/EditProductModal";
+import DeleteProductModal from "../../components/Modal/Delete/DeleteProductModal";
+import CockpitFilterBar, {
+  CockpitSelect,
+  CockpitToggle,
+} from "../../components/Cockpit/CockpitFilterBar";
+import CockpitResultsTable, {
+  CockpitColumns,
+} from "../../components/Cockpit/CockpitResultsTable";
+import CockpitDetailPanel, {
+  CockpitDetailConfig,
+} from "../../components/Cockpit/CockpitDetailPanel";
+import { distinctSorted, downloadCsv } from "../../components/Cockpit/cockpitUtils";
+import { useCockpit } from "../../components/Cockpit/useCockpit";
+import {
+  EMPTY_PRODUCT_FILTERS,
+  ProductCockpitFilters,
+  applyProductFilters,
+  buildProductChips,
+  formatCents,
+  formatIcms,
+} from "./productCockpit";
 import { IProduct } from "../../interfaces/iproduct";
 import { deleteProduct } from "../../services/productServices";
-import ProductsFilter, { ProductFilters } from "../../components/Filters/ProductsFilter";
-import DeleteProductModal from "../../components/Modal/Delete/DeleteProductModal";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
 import { logger } from "../../utils/logger";
 
+const PER_PAGE = 8;
+
 const Products = () => {
-  const [openModal, setOpenModal] = useState(false);
-  const [filters, setFilters] = useState<ProductFilters>({
-    name: "",
-    description: "",
-    ncm: "",
-    icms: "",
-    minValue: "",
-    maxValue: "",
-  });
-  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const navigate = useNavigate();
+  const { products, loading, removeProductFromCache } = useData();
+  const cockpit = useCockpit<ProductCockpitFilters>(EMPTY_PRODUCT_FILTERS);
+  const { filters, patchFilters } = cockpit;
 
-  // Usa dados do cache via DataContext - SEM chamadas diretas ao Firestore!
-  const { products: productsList, loading, removeProductFromCache } = useData();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<IProduct | null>(null);
 
-  // Filtragem local dos produtos com filtros complexos
-  const filteredProductsList = useMemo(() => {
-    return productsList.filter((product) => {
-      const matchesName =
-        !filters.name ||
-        product.name?.toLowerCase().includes(filters.name.toLowerCase());
-      const matchesDescription =
-        !filters.description ||
-        product.description
-          ?.toLowerCase()
-          .includes(filters.description.toLowerCase());
-      const matchesNcm =
-        !filters.ncm ||
-        product.ncm?.toLowerCase().includes(filters.ncm.toLowerCase());
-      const matchesIcms =
-        !filters.icms ||
-        product.icms?.toLowerCase().includes(filters.icms.toLowerCase());
-      const matchesMinValue =
-        !filters.minValue || (product.unitValue || 0) >= parseInt(filters.minValue);
-      const matchesMaxValue =
-        !filters.maxValue || (product.unitValue || 0) <= parseInt(filters.maxValue);
+  const filtered = useMemo(
+    () => applyProductFilters(products, filters),
+    [products, filters]
+  );
+  const ncmOptions = useMemo(() => distinctSorted(products.map((p) => p.ncm)), [products]);
+  const icmsOptions = useMemo(() => distinctSorted(products.map((p) => p.icms)), [products]);
+  const chips = useMemo(
+    () => buildProductChips(filters, patchFilters),
+    [filters, patchFilters]
+  );
+  const selected = useMemo(
+    () => products.find((p) => p.id === cockpit.selectedId) ?? null,
+    [products, cockpit.selectedId]
+  );
 
-      return (
-        matchesName &&
-        matchesDescription &&
-        matchesNcm &&
-        matchesIcms &&
-        matchesMinValue &&
-        matchesMaxValue
-      );
-    });
-  }, [productsList, filters]);
+  const selects: CockpitSelect[] = [
+    {
+      key: "ncm",
+      label: "NCM",
+      value: filters.ncm,
+      placeholder: "Todos",
+      allLabel: "Todos os NCM",
+      options: ncmOptions,
+      width: 160,
+      onPick: (v) => patchFilters({ ncm: v }),
+    },
+    {
+      key: "icms",
+      label: "ICMS",
+      value: filters.icms,
+      placeholder: "Todas",
+      allLabel: "Todas as alíquotas",
+      options: icmsOptions,
+      formatOption: formatIcms,
+      width: 150,
+      onPick: (v) => patchFilters({ icms: v }),
+    },
+  ];
 
-  const handleOpen = () => setOpenModal(true);
-  const handleClose = () => setOpenModal(false);
-  const handleCloseDeleteModal = () => setOpenDeleteModal(false);
+  const toggles: CockpitToggle[] = [
+    {
+      key: "hasDescription",
+      caption: "Descrição",
+      label: "Com descrição",
+      checked: filters.hasDescription,
+      onToggle: (v) => patchFilters({ hasDescription: v }),
+    },
+    {
+      key: "hasPrice",
+      caption: "Valor",
+      label: "Com valor",
+      checked: filters.hasPrice,
+      onToggle: (v) => patchFilters({ hasPrice: v }),
+    },
+  ];
 
-  const handleDelete = (product: IProduct) => {
-    setSelectedProduct(product);
-    setOpenDeleteModal(true);
+  const columns: CockpitColumns<IProduct> = {
+    getRowId: (p) => p.id,
+    primaryHeader: "Produto",
+    getPrimary: (p) => p.name || "Sem nome",
+    getSubtitle: (p) => p.description || "Sem descrição",
+    middleHeader: "NCM / ICMS",
+    renderMiddle: (p) => (
+      <>
+        {p.ncm || "—"}
+        {p.icms ? (
+          <Box component="span" sx={{ color: "text.secondary" }}>
+            {" · "}
+            {formatIcms(p.icms)}
+          </Box>
+        ) : null}
+      </>
+    ),
+    badgeHeader: "Valor",
+    getBadge: (p) => ({
+      label: formatCents(p.unitValue),
+      active: !!(p.unitValue && p.unitValue > 0),
+    }),
+  };
+
+  const detailConfig: CockpitDetailConfig<IProduct> = {
+    getRowId: (p) => p.id,
+    getTitle: (p) => p.name || "Sem nome",
+    getSubtitle: (p) => p.description || "Sem descrição",
+    getFields: (p) => [
+      { label: "NCM", value: p.ncm || "Não informado", mono: true },
+      { label: "ICMS", value: formatIcms(p.icms) || "Não informado" },
+      { label: "Valor unitário", value: formatCents(p.unitValue), mono: true },
+      { label: "Descrição", value: p.description || "Não informada" },
+    ],
+    getTimestamps: (p) => ({ createdAt: p.createdAt, updatedAt: p.updatedAt }),
+    statusLabel: "Produto ativo",
+    railLabel: "DETALHES DO PRODUTO",
+    emptyTitle: "Nenhum produto selecionado",
+    emptyDescription: "Clique em uma linha da tabela para ver os detalhes aqui.",
+    emptyIcon: Inventory2,
+    primaryActionLabel: "Novo orçamento",
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedProduct) {
-      try {
-        await deleteProduct(selectedProduct.id.toString());
-        // Atualiza o cache local em vez de recarregar a página
-        removeProductFromCache(selectedProduct.id);
-        setOpenDeleteModal(false);
-        setSelectedProduct(null);
-        notifySuccess("Sucesso!", "Produto excluído com sucesso!");
-      } catch (error) {
-        logger.error("Erro ao excluir produto:", error);
-        notifyError(
-          "Não foi possível excluir o produto",
-          error
-        );
-      }
+    if (!deleting) return;
+    try {
+      await deleteProduct(deleting.id.toString());
+      removeProductFromCache(deleting.id);
+      if (cockpit.selectedId === deleting.id) cockpit.setSelectedId(null);
+      setDeleting(null);
+      notifySuccess("Sucesso!", "Produto excluído com sucesso!");
+    } catch (error) {
+      logger.error("Erro ao excluir produto:", error);
+      notifyError("Não foi possível excluir o produto", error);
     }
   };
 
-  const isEmpty = !loading && filteredProductsList.length === 0;
-  const hasActiveFilters = Object.values(filters).some((v) => v !== "");
+  const handleExport = () =>
+    downloadCsv(
+      "produtos.csv",
+      ["ID", "Nome", "Descrição", "NCM", "ICMS", "Valor"],
+      filtered.map((p) => [
+        p.id,
+        p.name ?? "",
+        p.description ?? "",
+        p.ncm ?? "",
+        formatIcms(p.icms),
+        formatCents(p.unitValue),
+      ])
+    );
+
+  const headerDescription =
+    products.length === 1
+      ? "1 produto no catálogo · gerencie preços e detalhes."
+      : `${products.length} produtos no catálogo · gerencie preços e detalhes.`;
 
   return (
     <>
       <Box display="flex" flexDirection="column" gap={2} flex={1}>
         <PageHeader
           title="Produtos"
-          description="Gerencie o catálogo de produtos: busque, edite ou exclua registros."
-          icon={Storefront}
+          description={headerDescription}
+          icon={Inventory2}
           actionLabel="Adicionar produto"
-          onAction={handleOpen}
+          onAction={() => setCreateOpen(true)}
         />
-        <ProductsFilter
-          filters={filters}
-          onFilterChange={setFilters}
-          onReset={() =>
-            setFilters({
-              name: "",
-              description: "",
-              ncm: "",
-              icms: "",
-              minValue: "",
-              maxValue: "",
-            })
-          }
-        />
+
         {loading ? (
           <TableSkeleton />
-        ) : isEmpty ? (
-          hasActiveFilters ? (
-            <EmptyState
-              title="Nenhum produto encontrado"
-              description="Nenhum produto corresponde aos filtros aplicados."
-            />
-          ) : (
-            <EmptyState
-              title="Nenhum produto cadastrado"
-              description="Comece cadastrando o primeiro produto."
-              icon={Storefront}
-              actionLabel="Cadastrar produto"
-              onAction={handleOpen}
-            />
-          )
+        ) : products.length === 0 ? (
+          <EmptyState
+            title="Nenhum produto cadastrado"
+            description="Comece cadastrando o primeiro produto."
+            icon={Inventory2}
+            actionLabel="Cadastrar produto"
+            onAction={() => setCreateOpen(true)}
+          />
         ) : (
-          <ProductTable rows={filteredProductsList} onDelete={handleDelete} />
+          <>
+            <CockpitFilterBar
+              search={filters.search}
+              onSearchChange={(v) => patchFilters({ search: v })}
+              searchPlaceholder="Nome, descrição ou NCM"
+              selects={selects}
+              toggles={toggles}
+              onReset={cockpit.resetFilters}
+            />
+
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: { xs: "column", lg: "row" },
+                gap: 2,
+                alignItems: "stretch",
+                minHeight: 0,
+              }}
+            >
+              <CockpitResultsTable
+                rows={filtered}
+                columns={columns}
+                page={cockpit.page}
+                perPage={PER_PAGE}
+                onPageChange={cockpit.setPage}
+                density={cockpit.density}
+                onDensityChange={cockpit.setDensity}
+                chips={chips}
+                selectedId={cockpit.selectedId}
+                onSelect={(p) => cockpit.select(p.id)}
+                onEdit={(p) => setEditingId(p.id)}
+                onDelete={(p) => setDeleting(p)}
+                onExport={handleExport}
+                emptyLabel="Nenhum produto encontrado com esses filtros."
+              />
+
+              <CockpitDetailPanel
+                item={selected}
+                config={detailConfig}
+                collapsed={cockpit.detailCollapsed}
+                collapsible={cockpit.isWide}
+                onCollapse={() => cockpit.setDetailCollapsed(true)}
+                onExpand={() => cockpit.setDetailCollapsed(false)}
+                onEdit={(p) => setEditingId(p.id)}
+                onPrimaryAction={() => navigate("/Orcamentos/Adicionar")}
+              />
+            </Box>
+          </>
         )}
       </Box>
 
-      <CreateProductModal open={openModal} handleClose={handleClose} />
+      <CreateProductModal open={createOpen} handleClose={() => setCreateOpen(false)} />
+
+      {editingId && (
+        <EditProductModal
+          open={Boolean(editingId)}
+          handleClose={() => setEditingId(null)}
+          id={editingId}
+        />
+      )}
 
       <DeleteProductModal
-        open={openDeleteModal}
-        onClose={handleCloseDeleteModal}
-        product={selectedProduct}
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        product={deleting}
         onConfirm={handleConfirmDelete}
       />
     </>
