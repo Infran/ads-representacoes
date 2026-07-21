@@ -10,6 +10,25 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
     }
 
+    // Papel do usuário, lido do próprio doc da allowlist. Trocar `exists()` por
+    // `get()` é neutro em custo: as regras deduplicam acessos ao MESMO documento
+    // dentro de uma avaliação, e `isStaff()` já toca esse path.
+    // Um doc sem `role` resolve como staff comum — provisionar admin é explícito.
+    function staffData() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return isStaff() && staffData().role == 'admin';
+    }
+
+    // Perfil próprio: `get` individual para o cliente descobrir seu papel e
+    // decidir se renderiza o painel de administração. `list` continua negado
+    // (ninguém enumera a allowlist) e a escrita segue exclusiva do Console.
+    match /staff/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, create, update, delete: if false;
+    }
+
     // Coleções de negócio: leitura/escrita apenas para staff.
     match /clients/{id}         { allow read, write: if isStaff(); }
     match /products/{id}        { allow read, write: if isStaff(); }
@@ -26,6 +45,40 @@ service cloud.firestore {
         && request.resource.data.totalValue >= 0
         && request.resource.data.selectedProducts is list;
       allow delete:         if isStaff();
+    }
+
+    // Registro de auditoria: append-only. Qualquer staff escreve (é o que
+    // instrumenta o CRUD), só admin lê. `actorUid == request.auth.uid` impede
+    // forjar a identidade de outro usuário — sem isso o registro não vale nada.
+    match /auditLogs/{id} {
+      allow read:   if isAdmin();
+      allow create: if isStaff()
+        && request.resource.data.actorUid == request.auth.uid
+        // `== request.time`, e não só `is timestamp`: sem isso um staff podia
+        // datar a entrada como quisesse, e um registro de auditoria que aceita
+        // carimbo de hora forjado não serve para auditar nada.
+        && request.resource.data.at == request.time;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Lixeira: `bin/{entity}/items/{binId}`. Excluir um registro de negócio é
+    // uma escrita AQUI + um delete na coleção de origem, na mesma batch — por
+    // isso `create` é liberado para staff. Só admin lê, restaura ou descarta.
+    match /bin/{entity}/items/{binId} {
+      allow read:   if isAdmin();
+      allow create: if isStaff()
+        // `entity` é curinga de path: sem esta lista, um staff podia despejar
+        // documentos em `bin/qualquer-coisa/items/*` — uma coleção fora de
+        // qualquer tela, que ninguém veria crescer.
+        && entity in ['clients', 'products', 'representatives', 'budgets']
+        // E o envelope tem que declarar a MESMA entidade do path, senão a
+        // restauração escreveria na coleção errada.
+        && request.resource.data.entity == entity
+        && request.resource.data.originalId is string
+        && request.resource.data.deletedAt is timestamp;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // Nega tudo o que não foi explicitamente permitido (inclui a própria `staff`,
