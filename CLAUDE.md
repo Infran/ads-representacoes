@@ -89,3 +89,8 @@ CRUD modals are organized by verb under `src/components/Modal/{Create,Edit,Delet
 - ESLint config (`.eslintrc.cjs`) extends `eslint:recommended`, `@typescript-eslint/recommended`, `react-hooks/recommended`, plus `react-refresh/only-export-components`. Run with `--max-warnings 0`, so warnings fail CI-equivalent checks.
 - Env vars are Vite-style (`VITE_FIREBASE_*`) and loaded per-mode from `.env.development` / `.env.production` / `.env.local`; `src/firebase.ts` reads them via `import.meta.env`.
 - User-facing strings, comments in service files, and confirmation dialogs (via `sweetalert2`) are written in Portuguese — match this when adding new UI text.
+- **Commit Messages**: Use Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `chore`, `style`, `test`) with optional scope: `type(scope): description`.
+  - Start the commit title in lowercase (e.g., `refactor(produtos): migrate Products to...` or `feat(onboarding): adiciona indicador visual para...`).
+  - For complex changes, add a body separated by a blank line explaining what and why.
+  - **CRITICAL:** Do NOT under any circumstances include "Co-Authored-By" attribution or reference any AI/model name (e.g., Claude, Gemini) in the commit header, body, or footer.
+
