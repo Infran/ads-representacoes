@@ -26,6 +26,7 @@ import {
   formatCnpj,
 } from "./clientCockpit";
 import { IClient } from "../../interfaces/iclient";
+import { getEstadoNome, getUf } from "../../utils/ufs";
 import { deleteClient } from "../../services/clientServices";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
@@ -58,16 +59,22 @@ const Clients = () => {
     () => applyClientFilters(clients, filters, budgetCountByClient),
     [clients, filters, budgetCountByClient]
   );
-  const stateOptions = useMemo(
-    () => distinctSorted(clients.map((c) => c.state)),
+  // Opções guardam a sigla como valor; o nome completo é só rótulo (formatOption)
+  // — e é por ele que a lista precisa ser ordenada.
+  const ufOptions = useMemo(
+    () =>
+      distinctSorted(
+        clients.map((c) => getUf(c)),
+        (uf) => getEstadoNome({ uf })
+      ),
     [clients]
   );
   const cityOptions = useMemo(
     () =>
       distinctSorted(
-        clients.filter((c) => !filters.state || c.state === filters.state).map((c) => c.city)
+        clients.filter((c) => !filters.uf || getUf(c) === filters.uf).map((c) => c.city)
       ),
-    [clients, filters.state]
+    [clients, filters.uf]
   );
   const chips = useMemo(
     () => buildClientChips(filters, patchFilters),
@@ -80,14 +87,15 @@ const Clients = () => {
 
   const selects: CockpitSelect[] = [
     {
-      key: "state",
+      key: "uf",
       label: "Estado",
-      value: filters.state,
+      value: filters.uf,
       placeholder: "Todos",
       allLabel: "Todos os estados",
-      options: stateOptions,
-      width: 150,
-      onPick: (v) => patchFilters({ state: v, city: "" }),
+      options: ufOptions,
+      formatOption: (uf) => getEstadoNome({ uf }),
+      width: 190,
+      onPick: (v) => patchFilters({ uf: v, city: "" }),
     },
     {
       key: "city",
@@ -123,18 +131,21 @@ const Clients = () => {
     primaryHeader: "Empresa",
     getPrimary: (c) => c.name || "Sem nome",
     getSubtitle: (c) => c.email || "Sem e-mail",
-    middleHeader: "Cidade/UF",
-    renderMiddle: (c) => (
-      <>
-        {c.city || "—"}
-        {c.state ? (
-          <Box component="span" sx={{ color: "text.secondary" }}>
-            {" · "}
-            {c.state}
-          </Box>
-        ) : null}
-      </>
-    ),
+    middleHeader: "Cidade/Estado",
+    renderMiddle: (c) => {
+      const estado = getEstadoNome(c);
+      return (
+        <>
+          {c.city || "—"}
+          {estado ? (
+            <Box component="span" sx={{ color: "text.secondary" }}>
+              {" · "}
+              {estado}
+            </Box>
+          ) : null}
+        </>
+      );
+    },
     badgeHeader: "Orçamentos",
     getBadge: (c) => {
       const n = budgetCountByClient.get(c.id) ?? 0;
@@ -145,15 +156,19 @@ const Clients = () => {
   const detailConfig: CockpitDetailConfig<IClient> = {
     getRowId: (c) => c.id,
     getTitle: (c) => c.name || "Sem nome",
-    getSubtitle: (c) =>
-      c.city && c.state ? `${c.city} · ${c.state}` : c.email || "—",
+    getSubtitle: (c) => {
+      const estado = getEstadoNome(c);
+      return c.city && estado ? `${c.city} · ${estado}` : c.email || "—";
+    },
     getFields: (c) => [
       { label: "E-mail", value: c.email || "Não informado" },
       { label: "Telefone", value: c.phone || "Não informado" },
       { label: "CNPJ", value: formatCnpj(c.cnpj) || "Não informado", mono: true },
       {
         label: "Localização",
-        value: [c.city, c.state].filter(Boolean).join(" · ") || "Não informada",
+        value:
+          [c.city, getEstadoNome(c)].filter(Boolean).join(" · ") ||
+          "Não informada",
       },
       { label: "Endereço", value: c.address || "Não informado" },
       { label: "CEP", value: c.cep || "Não informado", mono: true },
@@ -192,7 +207,7 @@ const Clients = () => {
         c.phone ?? "",
         formatCnpj(c.cnpj),
         c.city ?? "",
-        c.state ?? "",
+        getUf(c),
         String(budgetCountByClient.get(c.id) ?? 0),
       ])
     );

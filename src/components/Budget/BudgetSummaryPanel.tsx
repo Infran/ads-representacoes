@@ -17,6 +17,7 @@ import {
 import { IBudget } from "../../interfaces/ibudget";
 import { SectionValidation } from "../../hooks/useBudgetForm";
 import { brMoneyMask } from "../../utils/Masks";
+import { getEstadoNome } from "../../utils/ufs";
 
 interface BudgetSummaryPanelProps {
   budget: IBudget;
@@ -137,7 +138,7 @@ const BudgetSummaryPanel: React.FC<BudgetSummaryPanelProps> = ({
           </Typography>
           {budget.client.city && (
             <Typography variant="caption" color="text.secondary">
-              {budget.client.city} - {budget.client.state}
+              {budget.client.city} - {getEstadoNome(budget.client)}
             </Typography>
           )}
         </Box>

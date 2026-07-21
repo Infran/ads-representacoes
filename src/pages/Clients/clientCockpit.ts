@@ -2,13 +2,14 @@
 // A estrutura visual (barra/tabela/painel) vem de src/components/Cockpit.
 import { IClient } from "../../interfaces/iclient";
 import { cnpjMask } from "../../utils/Masks";
+import { getEstadoNome, getUf } from "../../utils/ufs";
 import { CountById, FilterChip } from "../../components/Cockpit/cockpitUtils";
 
 export interface ClientCockpitFilters {
   /** Busca livre por nome / e-mail / CNPJ. */
   search: string;
-  /** UF exata ("" = todas). */
-  state: string;
+  /** Sigla da UF ("SP"), exata ("" = todas). Exibida como nome completo. */
+  uf: string;
   /** Cidade exata ("" = todas). */
   city: string;
   /** Somente clientes com CNPJ preenchido. */
@@ -19,7 +20,7 @@ export interface ClientCockpitFilters {
 
 export const EMPTY_CLIENT_FILTERS: ClientCockpitFilters = {
   search: "",
-  state: "",
+  uf: "",
   city: "",
   hasCnpj: false,
   hasBudget: false,
@@ -39,7 +40,7 @@ export const applyClientFilters = (
       const haystack = `${c.name ?? ""} ${c.email ?? ""} ${c.cnpj ?? ""}`.toLowerCase();
       if (!haystack.includes(term)) return false;
     }
-    if (f.state && c.state !== f.state) return false;
+    if (f.uf && getUf(c) !== f.uf) return false;
     if (f.city && c.city !== f.city) return false;
     if (f.hasCnpj && !c.cnpj) return false;
     if (f.hasBudget && !(budgetCount.get(c.id) ?? 0)) return false;
@@ -54,8 +55,8 @@ export const buildClientChips = (
   const chips: FilterChip[] = [];
   if (f.search)
     chips.push({ key: "search", label: `Busca: "${f.search}"`, onRemove: () => patch({ search: "" }) });
-  if (f.state)
-    chips.push({ key: "state", label: `Estado: ${f.state}`, onRemove: () => patch({ state: "", city: "" }) });
+  if (f.uf)
+    chips.push({ key: "uf", label: `Estado: ${getEstadoNome({ uf: f.uf })}`, onRemove: () => patch({ uf: "", city: "" }) });
   if (f.city)
     chips.push({ key: "city", label: `Cidade: ${f.city}`, onRemove: () => patch({ city: "" }) });
   if (f.hasCnpj)

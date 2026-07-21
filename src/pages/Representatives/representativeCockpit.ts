@@ -1,13 +1,14 @@
 // Lógica específica de Representantes para o cockpit (filtros, chips).
 // A estrutura visual (barra/tabela/painel) vem de src/components/Cockpit.
 import { IRepresentative } from "../../interfaces/irepresentative";
+import { getEstadoNome, getUf } from "../../utils/ufs";
 import { FilterChip, CountById } from "../../components/Cockpit/cockpitUtils";
 
 export interface RepresentativeCockpitFilters {
   /** Busca livre por nome / função / e-mail / cliente. */
   search: string;
-  /** UF exata ("" = todas). */
-  state: string;
+  /** Sigla da UF ("SP"), exata ("" = todas). Exibida como nome completo. */
+  uf: string;
   /** Cidade exata ("" = todas). */
   city: string;
   /** Somente representantes com e-mail preenchido. */
@@ -18,7 +19,7 @@ export interface RepresentativeCockpitFilters {
 
 export const EMPTY_REPRESENTATIVE_FILTERS: RepresentativeCockpitFilters = {
   search: "",
-  state: "",
+  uf: "",
   city: "",
   hasEmail: false,
   hasBudget: false,
@@ -37,7 +38,7 @@ export const applyRepresentativeFilters = (
       }`.toLowerCase();
       if (!haystack.includes(term)) return false;
     }
-    if (f.state && r.state !== f.state) return false;
+    if (f.uf && getUf(r) !== f.uf) return false;
     if (f.city && r.city !== f.city) return false;
     if (f.hasEmail && !r.email) return false;
     if (f.hasBudget && !(budgetCount.get(r.id) ?? 0)) return false;
@@ -52,8 +53,8 @@ export const buildRepresentativeChips = (
   const chips: FilterChip[] = [];
   if (f.search)
     chips.push({ key: "search", label: `Busca: "${f.search}"`, onRemove: () => patch({ search: "" }) });
-  if (f.state)
-    chips.push({ key: "state", label: `Estado: ${f.state}`, onRemove: () => patch({ state: "", city: "" }) });
+  if (f.uf)
+    chips.push({ key: "uf", label: `Estado: ${getEstadoNome({ uf: f.uf })}`, onRemove: () => patch({ uf: "", city: "" }) });
   if (f.city)
     chips.push({ key: "city", label: `Cidade: ${f.city}`, onRemove: () => patch({ city: "" }) });
   if (f.hasEmail)

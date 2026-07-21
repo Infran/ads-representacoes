@@ -1,6 +1,7 @@
 import React from "react";
 import { Autocomplete, Box, Grid, TextField, Typography } from "@mui/material";
 import { UseBudgetFormReturn } from "../../hooks/useBudgetForm";
+import { getEstadoNome } from "../../utils/ufs";
 import EntityInfoCard from "./EntityInfoCard";
 
 interface RepresentativeSectionProps {
@@ -26,11 +27,8 @@ const RepresentativeSection: React.FC<RepresentativeSectionProps> = ({
         onInputChange={(_, value) => form.setRepresentativeSearchInput(value)}
         value={budget.representative?.name ? budget.representative : null}
         onChange={(_, value) => form.handleSelectRepresentative(value)}
-        noOptionsText={
-          form.representativeSearchInput
-            ? "Nenhum representante encontrado"
-            : "Digite para buscar"
-        }
+        openOnFocus
+        noOptionsText="Nenhum representante encontrado"
         renderInput={(params) => (
           <TextField
             {...params}
@@ -71,9 +69,9 @@ const RepresentativeSection: React.FC<RepresentativeSectionProps> = ({
                   {budget.client.address}
                 </Typography>
               )}
-              {(budget.client?.city || budget.client?.state) && (
+              {(budget.client?.city || getEstadoNome(budget.client)) && (
                 <Typography variant="body2" color="text.secondary">
-                  {[budget.client?.city, budget.client?.state]
+                  {[budget.client?.city, getEstadoNome(budget.client)]
                     .filter(Boolean)
                     .join(" - ")}
                 </Typography>

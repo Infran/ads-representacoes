@@ -49,3 +49,5 @@ graphify-out/
 *.json
 # Exceção: documentação intencional versionada (ADRs em docs/) — análogo a AUDITORIAS/.
 !docs/**/*.md
+# Scripts de migração — histórico executável local, deliberadamente não versionado
+scripts/

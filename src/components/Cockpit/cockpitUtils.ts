@@ -43,12 +43,20 @@ export const initials = (text?: string): string => {
   return result || "?";
 };
 
-/** Valores distintos e ordenados (pt-BR, numérico), ignorando vazios. */
+/**
+ * Valores distintos e ordenados (pt-BR, numérico), ignorando vazios.
+ *
+ * `sortKey` ordena pelo **rótulo exibido** quando ele difere do valor: o filtro
+ * de Estado guarda a sigla ("MG", "MS", "MT") mas mostra o nome — sem isso, o
+ * menu renderiza "Minas Gerais, Mato Grosso do Sul, Mato Grosso", fora de ordem
+ * para quem lê.
+ */
 export const distinctSorted = (
-  values: (string | undefined | null)[]
+  values: (string | undefined | null)[],
+  sortKey: (value: string) => string = (v) => v
 ): string[] =>
   [...new Set(values.filter((v): v is string => !!v))].sort((a, b) =>
-    a.localeCompare(b, "pt-BR", { numeric: true })
+    sortKey(a).localeCompare(sortKey(b), "pt-BR", { numeric: true })
   );
 
 /** Baixa um CSV (separador `;`, BOM p/ acentos abrirem certo no Excel BR). */

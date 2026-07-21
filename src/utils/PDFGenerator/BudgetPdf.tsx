@@ -16,6 +16,7 @@ Font.registerHyphenationCallback((word) => [word]);
 
 import { format } from "date-fns";
 import { brMoneyMask } from "../Masks";
+import { getEstadoNome } from "../ufs";
 
 const getClientFirstName = (clientName: string) => {
   return clientName.split(" ")[0];
@@ -186,7 +187,9 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
   const clientAddress = budget?.client?.address || "";
   const clientCep = budget?.client?.cep || "";
   const clientCity = budget?.client?.city || "";
-  const clientState = budget?.client?.state || "";
+  // Snapshots antigos de orçamento gravavam a sigla em `state` e não têm `uf`;
+  // getEstadoNome resolve as duas formas para o nome completo.
+  const clientState = getEstadoNome(budget?.client);
   const representativeName =
     budget?.representative?.name || "REPRESENTANTE NÃO SELECIONADO";
   const representativeRole = budget?.representative?.role || "";

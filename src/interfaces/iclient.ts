@@ -9,7 +9,10 @@ export interface IClient {
   cep: string;
   address?: string;
   city?: string;
+  /** Nome do estado ("São Paulo"). Escrito junto com `uf` via `estadoPatch`. */
   state?: string;
+  /** Sigla da UF ("SP") — campo usado para filtrar/exportar. */
+  uf?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

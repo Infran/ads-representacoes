@@ -25,6 +25,7 @@ import {
   buildRepresentativeChips,
 } from "./representativeCockpit";
 import { IRepresentative } from "../../interfaces/irepresentative";
+import { getEstadoNome, getUf } from "../../utils/ufs";
 import { deleteRepresentative } from "../../services/representativeServices";
 import { useData } from "../../context/DataContext";
 import { TableSkeleton, EmptyState, notifyError, notifySuccess } from "../../ui";
@@ -57,18 +58,24 @@ const Representatives = () => {
     () => applyRepresentativeFilters(representatives, filters, budgetCountByRep),
     [representatives, filters, budgetCountByRep]
   );
-  const stateOptions = useMemo(
-    () => distinctSorted(representatives.map((r) => r.state)),
+  // Opções guardam a sigla como valor; o nome completo é só rótulo (formatOption)
+  // — e é por ele que a lista precisa ser ordenada.
+  const ufOptions = useMemo(
+    () =>
+      distinctSorted(
+        representatives.map((r) => getUf(r)),
+        (uf) => getEstadoNome({ uf })
+      ),
     [representatives]
   );
   const cityOptions = useMemo(
     () =>
       distinctSorted(
         representatives
-          .filter((r) => !filters.state || r.state === filters.state)
+          .filter((r) => !filters.uf || getUf(r) === filters.uf)
           .map((r) => r.city)
       ),
-    [representatives, filters.state]
+    [representatives, filters.uf]
   );
   const chips = useMemo(
     () => buildRepresentativeChips(filters, patchFilters),
@@ -81,14 +88,15 @@ const Representatives = () => {
 
   const selects: CockpitSelect[] = [
     {
-      key: "state",
+      key: "uf",
       label: "Estado",
-      value: filters.state,
+      value: filters.uf,
       placeholder: "Todos",
       allLabel: "Todos os estados",
-      options: stateOptions,
-      width: 150,
-      onPick: (v) => patchFilters({ state: v, city: "" }),
+      options: ufOptions,
+      formatOption: (uf) => getEstadoNome({ uf }),
+      width: 190,
+      onPick: (v) => patchFilters({ uf: v, city: "" }),
     },
     {
       key: "city",
@@ -124,18 +132,21 @@ const Representatives = () => {
     primaryHeader: "Nome",
     getPrimary: (r) => r.name || "Sem nome",
     getSubtitle: (r) => r.email || r.role || "Sem contato",
-    middleHeader: "Cidade/UF",
-    renderMiddle: (r) => (
-      <>
-        {r.city || "—"}
-        {r.state ? (
-          <Box component="span" sx={{ color: "text.secondary" }}>
-            {" · "}
-            {r.state}
-          </Box>
-        ) : null}
-      </>
-    ),
+    middleHeader: "Cidade/Estado",
+    renderMiddle: (r) => {
+      const estado = getEstadoNome(r);
+      return (
+        <>
+          {r.city || "—"}
+          {estado ? (
+            <Box component="span" sx={{ color: "text.secondary" }}>
+              {" · "}
+              {estado}
+            </Box>
+          ) : null}
+        </>
+      );
+    },
     badgeHeader: "Orçamentos",
     getBadge: (r) => {
       const n = budgetCountByRep.get(r.id) ?? 0;
@@ -155,7 +166,9 @@ const Representatives = () => {
       { label: "Cliente", value: r.client?.name || "Não vinculado" },
       {
         label: "Localização",
-        value: [r.city, r.state].filter(Boolean).join(" · ") || "Não informada",
+        value:
+          [r.city, getEstadoNome(r)].filter(Boolean).join(" · ") ||
+          "Não informada",
       },
     ],
     getTimestamps: (r) => ({ createdAt: r.createdAt, updatedAt: r.updatedAt }),
@@ -194,7 +207,7 @@ const Representatives = () => {
         r.mobilePhone ?? "",
         r.client?.name ?? "",
         r.city ?? "",
-        r.state ?? "",
+        getUf(r),
         String(budgetCountByRep.get(r.id) ?? 0),
       ])
     );
