@@ -209,10 +209,18 @@ const AdminActivity: FC = () => {
         </>
       )}
 
+      {/*
+        zIndex explícito: este app sobe o AppBar para `drawer + 1` (para a
+        gaveta de navegação passar por baixo dele), e um Drawer temporário
+        renderiza em `drawer` — ou seja, o header pintava por cima do topo
+        deste painel e escondia o título. Como aqui é um overlay modal, o
+        correto é ficar acima de tudo, no nível de modal.
+      */}
       <Drawer
         anchor="right"
         open={selected !== null}
         onClose={() => setSelected(null)}
+        sx={{ zIndex: (t) => t.zIndex.modal }}
         PaperProps={{ sx: { width: { xs: "100%", sm: 460 }, p: 3 } }}
       >
         {selected && (
