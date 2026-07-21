@@ -8,6 +8,7 @@ export const tokens = {
     success: "#059669",
     warning: "#F59E0B",
     error: "#D32F2F",
+    errorDark: "#B71C1C", // hover de ações destrutivas
     info: "#2196F3",
   },
   // Tons decorativos p/ avatares de iniciais (listas de clientes/produtos).

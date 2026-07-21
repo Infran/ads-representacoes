@@ -27,14 +27,23 @@ export const registerFeedbackMethods = (
   addToastFn = addToast;
 };
 
+/** Forma que interessa de um erro capturado (Firebase, Firestore ou Error nativo). */
+interface ErroConhecido {
+  code?: string;
+  cause?: { code?: string };
+  message?: string;
+}
+
 // Mapeamento e parser inteligente de erros do Firebase/Firestore e Javascript
-const getErrorMessage = (error: any): string => {
+const getErrorMessage = (error: unknown): string => {
   if (!error) return "Ocorreu um erro inesperado. Por favor, tente novamente.";
 
   if (typeof error === "string") return error;
 
+  const erro = error as ErroConhecido;
+
   // Extração de códigos do Firebase (incluindo causa aninhada)
-  const code = error.code || (error.cause && error.cause.code);
+  const code = erro.code || erro.cause?.code;
   if (code) {
     switch (code) {
       case "permission-denied":
@@ -62,7 +71,7 @@ const getErrorMessage = (error: any): string => {
   }
 
   // Erros comuns baseados em mensagens conhecidas
-  const message = error.message || "";
+  const message = erro.message || "";
   if (message) {
     if (message.includes("network") || message.includes("offline")) {
       return "Sem conexão com a internet. Verifique sua rede e tente novamente.";
@@ -98,7 +107,7 @@ export const notifySuccess = (title: string, text?: string): Promise<void> => {
 /** Alerta de aviso com tradutor de erros para a descrição. */
 export const notifyWarning = (
   title: string,
-  textOrError?: string | any
+  textOrError?: unknown
 ): Promise<void> => {
   if (addToastFn) {
     const text =
@@ -113,7 +122,7 @@ export const notifyWarning = (
 /** Alerta de erro com tradutor de erros para a descrição. */
 export const notifyError = (
   title: string,
-  textOrError?: string | any
+  textOrError?: unknown
 ): Promise<void> => {
   if (addToastFn) {
     const text =

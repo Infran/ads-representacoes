@@ -10,7 +10,6 @@ import {
   keyframes,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { alpha } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowForward } from "@mui/icons-material";
 import { useHelpOnboarding } from "../../../hooks/useHelpOnboarding";

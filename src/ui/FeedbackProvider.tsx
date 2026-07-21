@@ -275,12 +275,14 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({
                   fontFamily: "'Poppins', sans-serif",
                   fontWeight: 500,
                   bgcolor: confirmState.options.danger ? tokens.color.error : tokens.color.brand.main,
-                  color: "#FFFFFF",
+                  color: "common.white",
                   py: 1.25,
                   borderRadius: `${tokens.radius.sm}px`,
                   transition: "transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease",
                   "&:hover": {
-                    bgcolor: confirmState.options.danger ? "#B71C1C" : tokens.color.brand.dark,
+                    bgcolor: confirmState.options.danger
+                      ? tokens.color.errorDark
+                      : tokens.color.brand.dark,
                   },
                   "&:active": {
                     transform: "scale(0.97)",
