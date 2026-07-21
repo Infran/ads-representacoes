@@ -30,6 +30,11 @@ const SESSION_CAP = 25;
 const MIN_INTERVAL_MS = 2000;
 const STORAGE_KEY = "ads_error_reporter";
 
+/** Marca que já recarregamos por chunk obsoleto — impede loop de reload. */
+const STALE_RELOAD_KEY = "ads_stale_chunk_reload";
+/** Relato adiado do chunk obsoleto, gravado só depois do reload (ver abaixo). */
+const STALE_PENDING_KEY = "ads_stale_chunk_pending";
+
 export interface CapturedError {
   source: "render" | "window" | "promise" | "notify";
   error: unknown;
@@ -207,9 +212,66 @@ let installed = false;
  * Registra os handlers globais e liga o gancho do `notifyError`. Idempotente —
  * o StrictMode monta o Root duas vezes em dev.
  */
+/**
+ * Chunk obsoleto depois de um deploy.
+ *
+ * O `index.html` que a aba carregou aponta para `assets/Home-<hash>.js`. Um
+ * deploy novo troca os hashes e apaga os arquivos antigos, então o import
+ * dinâmico do `React.lazy` toma 404 e a tela quebra — para qualquer usuário
+ * que estivesse com a aba aberta. Recarregar busca o `index.html` novo e
+ * resolve, que é exatamente o que o usuário faz na mão hoje.
+ *
+ * O relato é ADIADO de propósito: gravar no Firestore é assíncrono e o reload
+ * cancelaria a escrita no meio. Guardamos a intenção em sessionStorage e
+ * registramos no carregamento seguinte, quando a página já está estável.
+ */
+const installStaleChunkRecovery = (): void => {
+  // Vite dispara este evento quando um preload/import dinâmico falha.
+  window.addEventListener("vite:preloadError", (event) => {
+    const message =
+      (event as unknown as { payload?: { message?: string } }).payload
+        ?.message ?? "Falha ao carregar módulo da aplicação";
+
+    // Só uma vez por sessão: se recarregar não resolveu, o problema é outro
+    // (rede, arquivo realmente ausente) e um loop de reload esconderia isso.
+    if (sessionStorage.getItem(STALE_RELOAD_KEY)) return;
+
+    try {
+      sessionStorage.setItem(STALE_RELOAD_KEY, "1");
+      sessionStorage.setItem(STALE_PENDING_KEY, message);
+    } catch {
+      // Sem storage não dá para garantir o anti-loop — melhor não recarregar.
+      return;
+    }
+
+    event.preventDefault();
+    window.location.reload();
+  });
+};
+
+/** Registra o chunk obsoleto da carga anterior, agora que a página está de pé. */
+const reportPendingStaleChunk = (): void => {
+  try {
+    const pending = sessionStorage.getItem(STALE_PENDING_KEY);
+    if (!pending) return;
+
+    sessionStorage.removeItem(STALE_PENDING_KEY);
+    captureError({
+      source: "window",
+      error: new Error(pending),
+      title: "Versão desatualizada recarregada após deploy",
+    });
+  } catch {
+    // Nada a fazer.
+  }
+};
+
 export const installGlobalErrorHandlers = (): void => {
   if (installed) return;
   installed = true;
+
+  installStaleChunkRecovery();
+  reportPendingStaleChunk();
 
   // Erros assíncronos, que um ErrorBoundary estruturalmente não enxerga.
   window.addEventListener("error", (event) => {
