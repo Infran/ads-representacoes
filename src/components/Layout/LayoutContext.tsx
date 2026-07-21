@@ -5,6 +5,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import { usePreferences } from "../../context/PreferencesContext";
 
 interface LayoutContextType {
   sidebarOpen: boolean;
@@ -31,19 +32,36 @@ interface LayoutProviderProps {
 }
 
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { preferences, setPreference } = usePreferences();
+  // Estado inicial vem da preferência apenas quando "lembrar o menu" está ligado.
+  const [sidebarOpen, setSidebarOpen] = useState(
+    preferences.rememberSidebar ? preferences.sidebarOpen : false
+  );
+
+  // Persiste o estado da sidebar como preferência quando "lembrar" está ativo.
+  const remember = useCallback(
+    (open: boolean) => {
+      if (preferences.rememberSidebar) setPreference("sidebarOpen", open);
+    },
+    [preferences.rememberSidebar, setPreference]
+  );
 
   const toggleSidebar = useCallback(() => {
-    setSidebarOpen((prev) => !prev);
-  }, []);
+    setSidebarOpen((prev) => {
+      remember(!prev);
+      return !prev;
+    });
+  }, [remember]);
 
   const openSidebar = useCallback(() => {
     setSidebarOpen(true);
-  }, []);
+    remember(true);
+  }, [remember]);
 
   const closeSidebar = useCallback(() => {
     setSidebarOpen(false);
-  }, []);
+    remember(false);
+  }, [remember]);
 
   return (
     <LayoutContext.Provider

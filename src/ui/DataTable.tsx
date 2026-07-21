@@ -4,9 +4,11 @@ import {
   GridColDef,
   GridValidRowModel,
   GridInitialState,
+  GridDensity,
 } from "@mui/x-data-grid";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { usePreferences } from "../context/PreferencesContext";
 
 export interface DataTableProps<T extends GridValidRowModel> {
   rows: T[];
@@ -46,6 +48,10 @@ function DataTable<T extends GridValidRowModel>({
   loading = false,
 }: DataTableProps<T>): ReactElement {
   const autoHeight = height === undefined;
+  // Densidade guiada pela preferência do usuário (módulo Configurações).
+  const { preferences } = usePreferences();
+  const density: GridDensity =
+    preferences.density === "compact" ? "compact" : "standard";
   const actionColumn: GridColDef<T> = {
     field: "actions",
     headerName: "",
@@ -100,6 +106,7 @@ function DataTable<T extends GridValidRowModel>({
         rows={rows}
         columns={finalColumns}
         loading={loading}
+        density={density}
         autoHeight={autoHeight}
         initialState={initialState}
         pageSizeOptions={pageSizeOptions}

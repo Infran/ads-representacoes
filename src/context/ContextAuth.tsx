@@ -24,6 +24,8 @@ interface AuthContextType {
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<void | User>;
   logout: () => void;
+  /** Recarrega o usuário do Firebase (nome/foto) e repinta a UI. */
+  refreshUser: () => Promise<void>;
   loading: boolean;
 }
 
@@ -34,6 +36,7 @@ export const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   login: () => Promise.resolve(),
   logout: () => {},
+  refreshUser: () => Promise.resolve(),
   loading: true,
 });
 
@@ -49,6 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [role, setRole] = useState<StaffRole>('staff');
   const [loading, setLoading] = useState(true);
+  // Bump usado só para forçar re-render após `reload()` (o objeto User é
+  // mutado no lugar, então a mesma referência não dispararia atualização).
+  const [, setUserTick] = useState(0);
   // Guarda o handle do timer de logout para poder cancelá-lo (evita empilhamento).
   const logoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -107,6 +113,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sessionStorage.removeItem('loginTime'); // Limpa o horário do login
       window.location.href = '/Login'; // Redireciona para a página de login
     });
+  }, []);
+
+  // Recarrega o usuário do Firebase (após updateProfile) e força re-render.
+  // `updateProfile` NÃO dispara onAuthStateChanged, então sem isto o novo
+  // nome/foto só apareceria no próximo login.
+  const refreshUser = useCallback(async () => {
+    if (!auth.currentUser) return;
+    await auth.currentUser.reload();
+    setCurrentUser(auth.currentUser);
+    setUserTick((t) => t + 1);
   }, []);
 
   // Função para agendar o logout automático
@@ -185,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin: currentUser !== null && role === 'admin',
     login,
     logout,
+    refreshUser,
     loading,
   };
 
