@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { Timestamp } from "firebase/firestore";
 import {
   getCache,
   setCache,
@@ -144,6 +145,59 @@ describe("cacheService — invalidação", () => {
     expect(getCache<Row[]>("products")).toBeNull();
     expect(localStorage.getItem("ads_representacoes_cache:clients")).toBeNull();
     expect(localStorage.getItem("ads_representacoes_cache:products")).toBeNull();
+  });
+});
+
+describe("cacheService — Timestamps sobrevivem ao localStorage", () => {
+  // Regressão: `JSON.stringify` achata um Timestamp em `{seconds, nanoseconds}`.
+  // Sem reidratar na leitura, o objeto volta sem `.toDate()` e o primeiro
+  // consumidor que chamar esse método (o PDF do orçamento) estoura em runtime.
+  //
+  // Só reproduz na leitura vinda do STORAGE — quando os dados acabaram de ser
+  // buscados do Firestore e ainda estão em memória, o objeto é o original. Daí
+  // semear o localStorage direto: é exatamente o estado após um reload.
+  const semearStorage = (key: string, data: unknown) =>
+    localStorage.setItem(
+      `ads_representacoes_cache:${key}`,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+        expiresAt: Date.now() + 5 * 60 * 1000,
+      })
+    );
+
+  it("devolve um Timestamp de verdade ao ler do storage", () => {
+    const createdAt = Timestamp.fromDate(new Date("2026-07-20T12:00:00Z"));
+    semearStorage("budgets", [{ id: "1", createdAt }]);
+
+    const lido = getCache<{ id: string; createdAt: Timestamp }[]>("budgets");
+    const lidoCreatedAt = lido?.[0].createdAt;
+
+    expect(lidoCreatedAt).toBeInstanceOf(Timestamp);
+    expect(typeof lidoCreatedAt?.toDate).toBe("function");
+    expect(lidoCreatedAt?.toDate().toISOString()).toBe(
+      "2026-07-20T12:00:00.000Z"
+    );
+  });
+
+  it("reidrata Timestamps aninhados (snapshots embutidos)", () => {
+    const createdAt = Timestamp.fromDate(new Date("2026-01-02T03:04:05Z"));
+    semearStorage("budgets", [{ id: "1", client: { id: "9", createdAt } }]);
+
+    const lido =
+      getCache<{ id: string; client: { createdAt: Timestamp } }[]>("budgets");
+
+    expect(lido?.[0].client.createdAt).toBeInstanceOf(Timestamp);
+  });
+
+  it("não confunde um objeto comum de duas chaves numéricas com Timestamp", () => {
+    semearStorage("products", [{ id: "1", medidas: { largura: 10, altura: 20 } }]);
+
+    const lido =
+      getCache<{ id: string; medidas: Record<string, number> }[]>("products");
+
+    expect(lido?.[0].medidas).toEqual({ largura: 10, altura: 20 });
+    expect(lido?.[0].medidas).not.toBeInstanceOf(Timestamp);
   });
 });
 

@@ -5,6 +5,7 @@
  * drasticamente o número de reads no plano gratuito do Firestore.
  */
 
+import { Timestamp } from "firebase/firestore";
 import { IBudget } from "../interfaces/ibudget";
 import { IClient } from "../interfaces/iclient";
 import { IProduct } from "../interfaces/iproduct";
@@ -181,13 +182,52 @@ const persistToStorage = <T>(key: CacheKey, entry: CacheEntry<T>): void => {
 };
 
 /**
- * Carrega um item do localStorage (chave própria da coleção — P1.3).
+ * `JSON.stringify` achata um `Timestamp` do Firestore em `{seconds, nanoseconds}`
+ * — um objeto simples, **sem** o método `.toDate()`.
+ *
+ * Sem esta reidratação, tudo que volta do localStorage mente sobre o próprio
+ * tipo: `IBudget.createdAt` é declarado `Timestamp`, mas chega como objeto cru,
+ * e a primeira chamada a `.toDate()` estoura em runtime. O sintoma é
+ * intermitente por natureza — só aparece quando a leitura vem do storage (após
+ * um reload dentro da TTL de 5 min), nunca quando os dados acabaram de ser
+ * buscados do Firestore e ainda estão em memória.
+ */
+const isSerializedTimestamp = (
+  value: object
+): value is { seconds: number; nanoseconds: number } => {
+  const v = value as { seconds?: unknown; nanoseconds?: unknown };
+  return (
+    Object.keys(value).length === 2 &&
+    typeof v.seconds === "number" &&
+    typeof v.nanoseconds === "number"
+  );
+};
+
+const reviveTimestamps = <T>(value: T): T => {
+  if (Array.isArray(value)) return value.map(reviveTimestamps) as T;
+
+  if (value && typeof value === "object") {
+    if (isSerializedTimestamp(value)) {
+      return new Timestamp(value.seconds, value.nanoseconds) as T;
+    }
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, reviveTimestamps(v)])
+    ) as T;
+  }
+
+  return value;
+};
+
+/**
+ * Carrega um item do localStorage (chave própria da coleção — P1.3),
+ * reidratando os Timestamps achatados pela serialização.
  */
 const loadFromStorage = <T>(key: CacheKey): CacheEntry<T> | null => {
   try {
     const stored = localStorage.getItem(storageKeyFor(key));
     if (!stored) return null;
-    return (JSON.parse(stored) as CacheEntry<T>) || null;
+    const parsed = JSON.parse(stored) as CacheEntry<T> | null;
+    return parsed ? reviveTimestamps(parsed) : null;
   } catch (error) {
     logger.error(`[Cache] Error loading ${key}:`, error);
     return null;

@@ -60,4 +60,27 @@ describe("BudgetPdf", () => {
 
     expect(blob.size).toBeGreaterThan(0);
   }, 60_000);
+
+  // Regressão do bug relatado em produção: o orçamento vindo do localStorage
+  // trazia `createdAt` como `{seconds, nanoseconds}` (JSON achata o Timestamp),
+  // e o `.toDate()` do template derrubava a geração inteira. A causa é corrigida
+  // no cacheService; aqui garantimos que o PDF não quebra nem assim.
+  it("gera mesmo com createdAt achatado pela serialização JSON", async () => {
+    const { pdf } = await import("@react-pdf/renderer");
+    const { BudgetTemplate } = await import("./BudgetPdf");
+
+    const budget = {
+      id: "42",
+      client: { id: "1", name: "Cliente Teste LTDA", city: "Campinas", uf: "SP" },
+      representative: { id: "7", name: "Rep Teste", city: "Campinas", uf: "SP" },
+      selectedProducts: [],
+      totalValue: 0,
+      // Exatamente o que JSON.parse(JSON.stringify(timestamp)) devolve.
+      createdAt: { seconds: 1784721600, nanoseconds: 0 },
+    } as unknown as IBudget;
+
+    const blob = await pdf(<BudgetTemplate budget={budget} />).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  }, 60_000);
 });

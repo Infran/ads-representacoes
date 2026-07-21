@@ -18,6 +18,27 @@ import { format } from "date-fns";
 import { brMoneyMask } from "../Masks";
 import { getEstadoNome } from "../ufs";
 
+/**
+ * Converte um `createdAt` em Date, tolerando a forma achatada
+ * `{seconds, nanoseconds}` que sobra de uma serialização JSON.
+ *
+ * O contrato correto é responsabilidade do `cacheService` (que reidrata os
+ * Timestamps ao ler do localStorage); esta tolerância existe só para que um
+ * campo de data malformado não derrube a geração do PDF inteiro — o documento
+ * é útil mesmo sem a linha de data.
+ */
+const toDate = (value: unknown): Date | null => {
+  if (!value) return null;
+
+  if (typeof (value as { toDate?: unknown }).toDate === "function") {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  const seconds = (value as { seconds?: unknown }).seconds;
+  if (typeof seconds === "number") return new Date(seconds * 1000);
+
+  return null;
+};
+
 const getClientFirstName = (clientName: string) => {
   return clientName.split(" ")[0];
 };
@@ -230,10 +251,9 @@ const BudgetTemplate = ({ budget }: { budget: IBudget }) => {
             </Text>
           </div>
           <div style={styles.dateTime}>
-            {budget?.createdAt && (
+            {toDate(budget?.createdAt) && (
               <Text>
-                Data:{" "}
-                {format(new Date(budget.createdAt.toDate()), "dd/MM/yyyy")}
+                Data: {format(toDate(budget.createdAt) as Date, "dd/MM/yyyy")}
               </Text>
             )}
           </div>
