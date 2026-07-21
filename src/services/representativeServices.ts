@@ -1,5 +1,6 @@
 import { IRepresentative } from "../interfaces/irepresentative";
 import { createCrudService } from "./createCrudService";
+import { withAudit } from "./withAudit";
 
 /**
  * Valida os dados do representante antes de salvar.
@@ -13,11 +14,14 @@ const validateRepresentative = (
   }
 };
 
-const representativeCrud = createCrudService<IRepresentative>({
-  collectionName: "representatives",
-  metaIdDoc: "lastRepresentativeId",
-  validate: validateRepresentative,
-});
+const representativeCrud = withAudit(
+  createCrudService<IRepresentative>({
+    collectionName: "representatives",
+    metaIdDoc: "lastRepresentativeId",
+    validate: validateRepresentative,
+  }),
+  { entity: "representatives", label: (r) => r?.name ?? "Representante sem nome" }
+);
 
 // ============================================================================
 // API PÚBLICA (preservada)

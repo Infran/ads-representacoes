@@ -9,6 +9,7 @@ import {
 import { db } from "../firebase";
 import { IBudget } from "../interfaces/ibudget";
 import { createCrudService } from "./createCrudService";
+import { withAudit } from "./withAudit";
 
 /**
  * Valida os dados do orçamento antes de salvar (add e update).
@@ -29,12 +30,21 @@ const validateBudget = (budget: Partial<IBudget>): void => {
 // Factory (EST F2.1): CRUD genérico + criação atômica (SEG S2.1).
 // `idPattern: /^\d+$/` preserva a sanitização de ID de URL (SEG S1.2) —
 // IDs de orçamento são numéricos (getNextBudgetId().toString()).
-const budgetCrud = createCrudService<IBudget>({
-  collectionName: "budgets",
-  metaIdDoc: "lastBudgetId",
-  validate: validateBudget,
-  idPattern: /^\d+$/,
-});
+const budgetCrud = withAudit(
+  createCrudService<IBudget>({
+    collectionName: "budgets",
+    metaIdDoc: "lastBudgetId",
+    validate: validateBudget,
+    idPattern: /^\d+$/,
+  }),
+  {
+    entity: "budgets",
+    label: (b) =>
+      b?.client?.name
+        ? `Orçamento ${b.id ?? ""} — ${b.client.name}`.trim()
+        : `Orçamento ${b?.id ?? "sem número"}`,
+  }
+);
 
 // ============================================================================
 // API PÚBLICA (preservada — consumida por DataContext, BudgetFormPage, etc.)

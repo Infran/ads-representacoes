@@ -1,5 +1,6 @@
 import { IProduct } from "../interfaces/iproduct";
 import { createCrudService } from "./createCrudService";
+import { withAudit } from "./withAudit";
 
 /**
  * Valida os dados do produto antes de salvar.
@@ -17,11 +18,14 @@ const validateProduct = (product: Partial<IProduct>): void => {
   }
 };
 
-const productCrud = createCrudService<IProduct>({
-  collectionName: "products",
-  metaIdDoc: "lastProductId",
-  validate: validateProduct,
-});
+const productCrud = withAudit(
+  createCrudService<IProduct>({
+    collectionName: "products",
+    metaIdDoc: "lastProductId",
+    validate: validateProduct,
+  }),
+  { entity: "products", label: (p) => p?.name ?? "Produto sem nome" }
+);
 
 // ============================================================================
 // API PÚBLICA (preservada)

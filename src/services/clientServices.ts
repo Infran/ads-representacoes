@@ -1,5 +1,6 @@
 import { IClient } from "../interfaces/iclient";
 import { createCrudService } from "./createCrudService";
+import { withAudit } from "./withAudit";
 import { isValidCnpj } from "../utils/validators";
 
 /**
@@ -21,11 +22,14 @@ const validateClient = (client: Partial<IClient>): void => {
   }
 };
 
-const clientCrud = createCrudService<IClient>({
-  collectionName: "clients",
-  metaIdDoc: "lastClientId",
-  validate: validateClient,
-});
+const clientCrud = withAudit(
+  createCrudService<IClient>({
+    collectionName: "clients",
+    metaIdDoc: "lastClientId",
+    validate: validateClient,
+  }),
+  { entity: "clients", label: (c) => c?.name ?? "Cliente sem nome" }
+);
 
 // ============================================================================
 // API PÚBLICA (preservada)

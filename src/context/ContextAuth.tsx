@@ -9,6 +9,8 @@ import {
   User,
 } from 'firebase/auth';
 import { logger } from '../utils/logger';
+import { resolveRole, clearCachedRole, StaffRole } from '../services/staffService';
+import { registerAuditActor } from '../services/auditService';
 
 // Tempo de vida da sessão antes do logout automático (2 horas).
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
@@ -16,6 +18,10 @@ const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 // Definindo o tipo para o contexto de autenticação
 interface AuthContextType {
   currentUser: User | null;
+  /** Papel lido de `staff/{uid}`. Sem doc, sem campo ou com falha de leitura: "staff". */
+  role: StaffRole;
+  /** Atalho para gatear o painel de administração. */
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void | User>;
   logout: () => void;
   loading: boolean;
@@ -24,6 +30,8 @@ interface AuthContextType {
 // Criando o contexto de autenticação
 export const AuthContext = createContext<AuthContextType>({
   currentUser: null,
+  role: 'staff',
+  isAdmin: false,
   login: () => Promise.resolve(),
   logout: () => {},
   loading: true,
@@ -39,6 +47,7 @@ export function useAuth(): AuthContextType {
 // Componente provedor de autenticação
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [role, setRole] = useState<StaffRole>('staff');
   const [loading, setLoading] = useState(true);
   // Guarda o handle do timer de logout para poder cancelá-lo (evita empilhamento).
   const logoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,6 +61,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Realiza o login
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      // Resolve o papel ANTES de expor o usuário. `onAuthStateChanged` também
+      // resolveria, mas só depois de um render — o que faria a UI de admin
+      // piscar de ausente para presente logo após o login.
+      //
+      // Esta é a ÚNICA leitura de papel por sessão: `resolveRole` grava em
+      // sessionStorage, então o `onAuthStateChanged` que dispara logo atrás
+      // já encontra o valor em cache em vez de repetir a consulta.
+      const resolvedRole = await resolveRole(user.uid);
+      setRole(resolvedRole);
+      registerAuditActor({
+        uid: user.uid,
+        email: user.email ?? '',
+        role: resolvedRole,
+      });
       setCurrentUser(user);
 
       // Armazena o horário do login na sessão do navegador
@@ -77,6 +101,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     signOut(auth).then(() => {
       setCurrentUser(null);
+      setRole('staff');
+      registerAuditActor(null);
+      clearCachedRole(); // Sem isto, o próximo login na aba herdaria o papel
       sessionStorage.removeItem('loginTime'); // Limpa o horário do login
       window.location.href = '/Login'; // Redireciona para a página de login
     });
@@ -105,19 +132,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Monitorar mudanças na autenticação do usuário
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // O callback agora aguarda a leitura do papel antes de liberar a árvore.
+    // Sem esta flag, o StrictMode (que invoca o efeito duas vezes em dev) faria
+    // a execução descartada gravar estado depois do cleanup.
+    let cancelled = false;
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // Resolver o papel AQUI — e não num efeito separado — é o que evita
+        // qualquer flash: `loading` só vira false depois, e o provider já
+        // segura a árvore inteira com `{!loading && children}`.
+        //
+        // Num reload de aba isto NÃO vai à rede: o papel está em sessionStorage
+        // (mesmo ciclo de vida da sessão do Firebase), então o boot não fica
+        // mais atrás de um round trip ao Firestore. Só o primeiro login da aba
+        // paga a leitura.
+        const resolvedRole = await resolveRole(user.uid);
+        if (cancelled) return;
+
+        setRole(resolvedRole);
+        registerAuditActor({
+          uid: user.uid,
+          email: user.email ?? '',
+          role: resolvedRole,
+        });
         setCurrentUser(user);
 
         // Agendar logout automático ao recarregar a página
         scheduleAutoLogout();
       } else {
+        if (cancelled) return;
+        setRole('staff');
+        registerAuditActor(null);
         setCurrentUser(null);
       }
       setLoading(false);
     });
 
     return () => {
+      cancelled = true;
       unsubscribe();
       if (logoutTimer.current) clearTimeout(logoutTimer.current);
     };
@@ -126,6 +179,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Contexto de valor para ser fornecido aos componentes descendentes
   const authContextValue: AuthContextType = {
     currentUser,
+    role,
+    // Exige usuário presente: `role` sobrevive a um render intermediário no
+    // logout, e admin sem sessão não deve existir nem por um frame.
+    isAdmin: currentUser !== null && role === 'admin',
     login,
     logout,
     loading,
