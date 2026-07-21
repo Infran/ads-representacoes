@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import App from './App.tsx'
 import { AuthProvider } from './context/ContextAuth.tsx'
 import { getTheme } from './theme'
 import { ColorModeContext, ColorMode } from './theme/ColorModeContext'
-import { FeedbackProvider } from './ui'
+import { FeedbackProvider, ErrorBoundary } from './ui'
+import { installGlobalErrorHandlers } from './utils/errorReporter'
 
 
 const COLOR_MODE_KEY = 'ads_color_mode'
@@ -22,6 +23,12 @@ const getInitialMode = (): ColorMode => {
 export default function Root() {
   const [mode, setMode] = useState<ColorMode>(getInitialMode)
   const theme = useMemo(() => getTheme(mode), [mode])
+
+  // Handlers globais (window.onerror / unhandledrejection) + gancho do
+  // notifyError. Idempotente, então o double-mount do StrictMode é inofensivo.
+  useEffect(() => {
+    installGlobalErrorHandlers()
+  }, [])
   const colorMode = useMemo(
     () => ({
       mode,
@@ -40,9 +47,16 @@ export default function Root() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <FeedbackProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
+          {/*
+            Rede de segurança final. Fica DENTRO do ThemeProvider para o
+            fallback sair tematizado, e FORA do AuthProvider para também pegar
+            um crash na resolução de sessão/papel.
+          */}
+          <ErrorBoundary message="O aplicativo encontrou um erro inesperado. O problema foi registrado.">
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </ErrorBoundary>
         </FeedbackProvider>
       </ThemeProvider>
     </ColorModeContext.Provider>

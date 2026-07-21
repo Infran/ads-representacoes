@@ -1,11 +1,14 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Suspense } from "react";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Sidebar, AppHeader, LayoutProvider } from "../../components/Layout";
+import { ErrorBoundary } from "../../ui";
 
 export default function DefaultLayout() {
+  const location = useLocation();
+
   return (
     <LayoutProvider>
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
@@ -38,20 +41,31 @@ export default function DefaultLayout() {
             overflowY: "auto",
           }}
         >
-          <Suspense
-            fallback={
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                minHeight="60vh"
-              >
-                <CircularProgress />
-              </Box>
-            }
+          {/*
+            Chaveado pela rota: um erro numa página não pode deixar o app preso
+            no fallback para sempre — navegar remonta o boundary. E como ele
+            está DENTRO do layout, a sidebar sobrevive ao crash, o que permite
+            chegar ao painel de administração e ver o erro registrado.
+          */}
+          <ErrorBoundary
+            key={location.pathname}
+            message="Não foi possível exibir esta página. O erro foi registrado e você pode tentar novamente ou navegar para outra tela."
           >
-            <Outlet />
-          </Suspense>
+            <Suspense
+              fallback={
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  minHeight="60vh"
+                >
+                  <CircularProgress />
+                </Box>
+              }
+            >
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </Box>
       </Box>
     </LayoutProvider>

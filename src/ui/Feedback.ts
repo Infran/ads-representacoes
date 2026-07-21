@@ -16,8 +16,11 @@ type AddToastFn = (
   type: "success" | "warning" | "error" | "info"
 ) => void;
 
+type ReportErrorFn = (title: string, error: unknown) => void;
+
 let openConfirmFn: OpenConfirmFn | null = null;
 let addToastFn: AddToastFn | null = null;
+let reportErrorFn: ReportErrorFn | null = null;
 
 export const registerFeedbackMethods = (
   openConfirm: OpenConfirmFn | null,
@@ -27,6 +30,20 @@ export const registerFeedbackMethods = (
   addToastFn = addToast;
 };
 
+/**
+ * Liga o coletor de erros ao `notifyError`.
+ *
+ * É um registry (e não um import direto de `errorReporter`) porque o reporter
+ * precisa de `getErrorMessage` DAQUI — importar nos dois sentidos seria um ciclo.
+ * Com o registry, a dependência corre só numa direção: errorReporter → Feedback.
+ *
+ * Efeito prático: instrumenta de graça os 12 pontos de escrita da UI, que já
+ * chamam `notifyError` ao falhar, sem tocar em nenhum deles.
+ */
+export const registerErrorReporter = (fn: ReportErrorFn | null) => {
+  reportErrorFn = fn;
+};
+
 /** Forma que interessa de um erro capturado (Firebase, Firestore ou Error nativo). */
 interface ErroConhecido {
   code?: string;
@@ -34,8 +51,11 @@ interface ErroConhecido {
   message?: string;
 }
 
-// Mapeamento e parser inteligente de erros do Firebase/Firestore e Javascript
-const getErrorMessage = (error: unknown): string => {
+// Mapeamento e parser inteligente de erros do Firebase/Firestore e Javascript.
+// Exportado para o `errorReporter` gravar no log a MESMA mensagem que o usuário
+// viu na tela — assim o relato ("deu erro de permissão") bate verbatim com a
+// entrada de auditoria, sem tradutor duplicado.
+export const getErrorMessage = (error: unknown): string => {
   if (!error) return "Ocorreu um erro inesperado. Por favor, tente novamente.";
 
   if (typeof error === "string") return error;
@@ -130,6 +150,16 @@ export const notifyError = (
     addToastFn(title, text, "error");
   } else {
     console.warn("FeedbackProvider não registrado para notifyError.");
+  }
+
+  // O toast é o caminho crítico; o registro é acessório e nunca pode
+  // atrapalhá-lo. Por isso o report vem depois e vai dentro de um try.
+  if (reportErrorFn && textOrError !== undefined) {
+    try {
+      reportErrorFn(title, textOrError);
+    } catch {
+      // Silêncio proposital: falar aqui reentraria no próprio notifyError.
+    }
   }
   return Promise.resolve();
 };

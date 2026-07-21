@@ -8,6 +8,7 @@ export { default as Card } from "./Card";
 export { default as StatCard } from "./StatCard";
 export { default as EmptyState } from "./EmptyState";
 export { default as ErrorState } from "./ErrorState";
+export { default as ErrorBoundary } from "./ErrorBoundary";
 export { default as DataTable } from "./DataTable";
 export type { DataTableProps } from "./DataTable";
 export { ListSkeleton, CardGridSkeleton, TableSkeleton } from "./Skeletons";
@@ -16,6 +17,7 @@ export {
   notifySuccess,
   notifyWarning,
   notifyError,
+  getErrorMessage,
 } from "./Feedback";
 export { FeedbackProvider } from "./FeedbackProvider";
 
