@@ -399,8 +399,15 @@ export const openBudgetPdf = async (budget: IBudget): Promise<void> => {
   } catch (error) {
     logger.error("Erro ao gerar PDF do orçamento:", error);
     if (newTab) {
-      newTab.document.body.innerText =
-        "Não foi possível gerar o PDF. Tente novamente.";
+      // Mostra a causa real na aba. Em produção o logger é silencioso e o
+      // `esbuild.drop: ['console']` remove os console.* do bundle, então esta
+      // é a única superfície onde a falha fica diagnosticável — sem ela, o
+      // usuário só vê "tente novamente" e não há o que investigar.
+      const causa =
+        error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : String(error);
+      newTab.document.body.innerText = `Não foi possível gerar o PDF. Tente novamente.\n\nDetalhe técnico: ${causa}`;
     }
   }
 };
