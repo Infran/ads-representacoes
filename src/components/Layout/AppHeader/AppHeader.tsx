@@ -1,7 +1,5 @@
 import React from "react";
-import { styled } from "@mui/material/styles";
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
-import { Toolbar, Box, Typography, IconButton, Divider } from "@mui/material";
+import { Toolbar, Box, Typography, IconButton, Divider, AppBar as MuiAppBar, AppBarProps as MuiAppBarProps, styled } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { useLocation } from "react-router-dom";
 

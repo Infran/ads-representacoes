@@ -1,6 +1,5 @@
 import React from "react";
-import { Box, IconButton, Modal as MuiModal, Typography } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { Box, IconButton, Modal as MuiModal, Typography, alpha } from "@mui/material";
 import { Close, ErrorOutline } from "@mui/icons-material";
 import { OverridableComponent } from "@mui/material/OverridableComponent";
 import { SvgIconTypeMap } from "@mui/material/SvgIcon";

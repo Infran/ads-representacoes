@@ -1,6 +1,5 @@
 import { FC } from "react";
-import { Box, Paper, Typography } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { Box, Paper, Typography, alpha } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { OverridableComponent } from "@mui/material/OverridableComponent";
 import { SvgIconTypeMap } from "@mui/material/SvgIcon";

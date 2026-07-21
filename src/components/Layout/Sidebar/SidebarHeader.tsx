@@ -1,7 +1,6 @@
 import React from "react";
-import { Box, Typography, IconButton, Collapse } from "@mui/material";
+import { Box, Typography, IconButton, Collapse, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight } from "@mui/icons-material";
-import { useTheme } from "@mui/material/styles";
 
 interface SidebarHeaderProps {
   open: boolean;

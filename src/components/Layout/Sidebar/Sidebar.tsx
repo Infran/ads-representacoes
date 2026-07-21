@@ -1,6 +1,4 @@
 import React from "react";
-import { styled, Theme, CSSObject } from "@mui/material/styles";
-import MuiDrawer from "@mui/material/Drawer";
 import {
   Box,
   List,
@@ -10,6 +8,10 @@ import {
   ListItemIcon,
   ListItemText,
   Tooltip,
+  Drawer as MuiDrawer,
+  styled,
+  Theme,
+  CSSObject,
 } from "@mui/material";
 import { Logout } from "@mui/icons-material";
 
