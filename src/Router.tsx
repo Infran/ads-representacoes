@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import DefaultLayout from "./layouts/DefaultLayout";
 import { Login } from "./components/Login/Login";
 import { AuthContext } from "./context/ContextAuth";
@@ -6,6 +11,7 @@ import ProtectedRoutes from "./utils/ProtectedRoutes";
 import AdminRoute from "./utils/AdminRoute";
 import { useContext, lazy } from "react";
 import { DataProvider } from "./context/DataContext";
+import { usePreferences } from "./context/PreferencesContext";
 
 // Rotas autenticadas carregadas sob demanda (code-splitting — PERF P0.2).
 // Tira o app autenticado (+ DataGrid/PDF) do bundle inicial do Login.
@@ -20,6 +26,14 @@ const Representatives = lazy(
 );
 const BudgetFormPage = lazy(() => import("./pages/BudgetFormPage"));
 const Help = lazy(() => import("./pages/Help"));
+const Settings = lazy(() => import("./pages/Settings/SettingsPage"));
+
+// Redireciona a raiz para a página inicial escolhida nas preferências (padrão
+// "/Home"). Componente próprio porque `usePreferences` só vale dentro do app.
+const LandingRedirect = () => {
+  const { preferences } = usePreferences();
+  return <Navigate to={preferences.defaultLanding} replace />;
+};
 
 // Painel de administração — só montado para `role: "admin"` (ver AdminRoute).
 const AdminOverview = lazy(() => import("./pages/Admin/AdminOverview"));
@@ -47,7 +61,7 @@ const AppRouter = () => {
           <Routes>
             <Route element={<ProtectedRoutes />}>
               <Route path="/" element={<DefaultLayout />}>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<LandingRedirect />} />
                 <Route path="/*" element={<Home />} />
                 <Route path="Home" element={<Home />} />
                 <Route path="Produtos" element={<Products />} />
@@ -62,6 +76,7 @@ const AppRouter = () => {
                   path="Orcamentos/Editar/:id"
                   element={<BudgetFormPage mode="edit" />}
                 />
+                <Route path="Configuracoes" element={<Settings />} />
                 <Route path="Ajuda" element={<Help />} />
 
                 {/*

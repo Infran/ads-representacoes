@@ -9,6 +9,7 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  useTheme,
 } from "@mui/material";
 import {
   EmailOutlined,
@@ -19,7 +20,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { logger } from "../../utils/logger";
 import { notifyWarning } from "../../ui/Feedback";
-import { useTheme } from "@mui/material/styles";
+import { usePreferences } from "../../context/PreferencesContext";
 
 // Traduz o código de erro do Firebase Auth para uma mensagem pt-BR ao usuário.
 const getLoginErrorMessage = (code?: string): string => {
@@ -47,6 +48,7 @@ export const Login = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+  const { preferences } = usePreferences();
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -73,7 +75,7 @@ export const Login = () => {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate("/Home");
+      navigate(preferences.defaultLanding);
     } catch (error) {
       const code = (error as { code?: string })?.code;
       logger.error("Erro ao fazer login:", code);

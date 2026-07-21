@@ -17,16 +17,20 @@ import {
   DarkMode,
   LightMode,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/ContextAuth";
 import { useColorMode } from "../../../theme/ColorModeContext";
+import { usePreferences } from "../../../context/PreferencesContext";
 import { confirmDialog } from "../../../ui";
 
 const UserMenu: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
   // U3.2: o toggle usa o ColorModeContext real (dirige getTheme + persiste),
   // não mais o LayoutContext.darkMode (que não trocava o tema).
   const { mode, toggle } = useColorMode();
+  const { preferences } = usePreferences();
   const darkMode = mode === "dark";
   const open = Boolean(anchorEl);
 
@@ -79,7 +83,7 @@ const UserMenu: React.FC = () => {
           sx={{
             width: 38,
             height: 38,
-            backgroundColor: "primary.main",
+            backgroundColor: preferences.avatarColor || "primary.main",
             fontSize: "0.875rem",
             fontWeight: 600,
             border: "2px solid rgba(25, 118, 210, 0.2)",
@@ -146,7 +150,7 @@ const UserMenu: React.FC = () => {
         <MenuItem
           onClick={() => {
             handleClose();
-            // Navegar para perfil quando implementado
+            navigate("/Configuracoes#perfil");
           }}
           sx={{ py: 1.5 }}
         >
@@ -159,7 +163,7 @@ const UserMenu: React.FC = () => {
         <MenuItem
           onClick={() => {
             handleClose();
-            // Navegar para configurações quando implementado
+            navigate("/Configuracoes");
           }}
           sx={{ py: 1.5 }}
         >
