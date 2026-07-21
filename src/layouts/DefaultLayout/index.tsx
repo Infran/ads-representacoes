@@ -1,10 +1,9 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { Suspense } from "react";
-import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
-import CssBaseline from "@mui/material/CssBaseline";
+import { Box, CircularProgress, CssBaseline } from "@mui/material";
 import { Sidebar, AppHeader, LayoutProvider } from "../../components/Layout";
 import { ErrorBoundary } from "../../ui";
+import VLibrasWidget from "../../components/Accessibility/VLibrasWidget";
 
 export default function DefaultLayout() {
   const location = useLocation();
@@ -13,6 +12,14 @@ export default function DefaultLayout() {
     <LayoutProvider>
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
         <CssBaseline />
+
+        {/* Pular para o conteúdo — primeiro foco por teclado (acessibilidade). */}
+        <Box component="a" href="#conteudo-principal" className="ads-skip-link">
+          Pular para o conteúdo
+        </Box>
+
+        {/* VLibras (Libras) — só carrega quando a preferência está ativa. */}
+        <VLibrasWidget />
 
         {/* AppHeader fixo no topo */}
         <AppHeader />
@@ -23,6 +30,8 @@ export default function DefaultLayout() {
         {/* Área de conteúdo principal */}
         <Box
           component="main"
+          id="conteudo-principal"
+          tabIndex={-1}
           sx={{
             flexGrow: 1,
             display: "flex",
