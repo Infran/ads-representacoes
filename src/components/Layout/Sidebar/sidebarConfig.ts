@@ -6,6 +6,7 @@ import {
   NoteAdd,
   Settings,
   HelpOutline,
+  AdminPanelSettings,
 } from "@mui/icons-material";
 import { SvgIconComponent } from "@mui/icons-material";
 
@@ -15,13 +16,33 @@ export interface MenuItem {
   icon: SvgIconComponent;
   path: string;
   badge?: number;
+  /** Só aparece para `role: "admin"` (ver `useAuth().isAdmin`). */
+  requiresAdmin?: boolean;
 }
 
 export interface MenuGroup {
   id: string;
   label: string;
   items: MenuItem[];
+  /** Grupo inteiro restrito a admin. */
+  requiresAdmin?: boolean;
 }
+
+/**
+ * Filtra o menu pelo papel. O grupo some quando é `requiresAdmin` ou quando
+ * todos os seus itens somem — assim não sobra um cabeçalho de grupo vazio.
+ */
+export const filterSidebarByRole = (
+  groups: MenuGroup[],
+  isAdmin: boolean
+): MenuGroup[] =>
+  groups
+    .filter((group) => !group.requiresAdmin || isAdmin)
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.requiresAdmin || isAdmin),
+    }))
+    .filter((group) => group.items.length > 0);
 
 export const sidebarConfig: MenuGroup[] = [
   {
@@ -56,6 +77,19 @@ export const sidebarConfig: MenuGroup[] = [
     ],
   },
   {
+    id: "admin",
+    label: "Administração",
+    requiresAdmin: true,
+    items: [
+      {
+        id: "admin",
+        label: "Painel Admin",
+        icon: AdminPanelSettings,
+        path: "/Admin",
+      },
+    ],
+  },
+  {
     id: "config",
     label: "Sistema",
     items: [
@@ -81,6 +115,13 @@ export const routeTitles: Record<string, string> = {
   "/Orcamentos/Adicionar": "Novo Orçamento",
   "/Configuracoes": "Configurações",
   "/Ajuda": "Ajuda",
+  // Todos os segmentos intermediários precisam estar aqui: `getBreadcrumbs`
+  // cai no segmento cru da URL quando não encontra o caminho.
+  "/Admin": "Painel Admin",
+  "/Admin/Atividade": "Atividades",
+  "/Admin/Erros": "Erros",
+  "/Admin/Lixeira": "Lixeira",
+  "/Admin/Sistema": "Sistema",
 };
 
 // Função para obter breadcrumbs baseado na rota

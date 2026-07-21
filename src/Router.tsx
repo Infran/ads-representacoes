@@ -3,6 +3,7 @@ import DefaultLayout from "./layouts/DefaultLayout";
 import { Login } from "./components/Login/Login";
 import { AuthContext } from "./context/ContextAuth";
 import ProtectedRoutes from "./utils/ProtectedRoutes";
+import AdminRoute from "./utils/AdminRoute";
 import { useContext, lazy } from "react";
 import { DataProvider } from "./context/DataContext";
 
@@ -19,6 +20,13 @@ const Representatives = lazy(
 );
 const BudgetFormPage = lazy(() => import("./pages/BudgetFormPage"));
 const Help = lazy(() => import("./pages/Help"));
+
+// Painel de administração — só montado para `role: "admin"` (ver AdminRoute).
+const AdminOverview = lazy(() => import("./pages/Admin/AdminOverview"));
+const AdminActivity = lazy(() => import("./pages/Admin/AdminActivity"));
+const AdminErrors = lazy(() => import("./pages/Admin/AdminErrors"));
+const AdminTrash = lazy(() => import("./pages/Admin/AdminTrash"));
+const AdminSystem = lazy(() => import("./pages/Admin/AdminSystem"));
 
 const AppRouter = () => {
   const { currentUser: user } = useContext(AuthContext);
@@ -55,6 +63,20 @@ const AppRouter = () => {
                   element={<BudgetFormPage mode="edit" />}
                 />
                 <Route path="Ajuda" element={<Help />} />
+
+                {/*
+                  Painel de administração. O `path="/*"` acima não atrapalha:
+                  o React Router v6 ranqueia segmentos estáticos acima de
+                  splats, então /Admin/... casa aqui e só um caminho realmente
+                  desconhecido cai no catch-all.
+                */}
+                <Route path="Admin" element={<AdminRoute />}>
+                  <Route index element={<AdminOverview />} />
+                  <Route path="Atividade" element={<AdminActivity />} />
+                  <Route path="Erros" element={<AdminErrors />} />
+                  <Route path="Lixeira" element={<AdminTrash />} />
+                  <Route path="Sistema" element={<AdminSystem />} />
+                </Route>
               </Route>
             </Route>
           </Routes>

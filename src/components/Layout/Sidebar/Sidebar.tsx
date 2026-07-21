@@ -18,7 +18,7 @@ import { useLayout } from "../LayoutContext";
 import { useAuth } from "../../../context/ContextAuth";
 import SidebarHeader from "./SidebarHeader";
 import SidebarGroup from "./SidebarGroup";
-import { sidebarConfig } from "./sidebarConfig";
+import { sidebarConfig, filterSidebarByRole } from "./sidebarConfig";
 
 const drawerWidth = 260;
 
@@ -66,7 +66,12 @@ const Drawer = styled(MuiDrawer, {
 
 const Sidebar: React.FC = () => {
   const { sidebarOpen, toggleSidebar } = useLayout();
-  const { logout } = useAuth();
+  const { logout, isAdmin } = useAuth();
+
+  const visibleGroups = React.useMemo(
+    () => filterSidebarByRole(sidebarConfig, isAdmin),
+    [isAdmin]
+  );
 
   const handleLogout = async () => {
     const confirmed = await confirmDialog({
@@ -143,10 +148,15 @@ const Sidebar: React.FC = () => {
           },
         }}
       >
-        {sidebarConfig.map((group, index) => (
+        {visibleGroups.map((group, index) => (
           <React.Fragment key={group.id}>
             <SidebarGroup group={group} open={sidebarOpen} />
-            {index < sidebarConfig.length - 1 && (
+            {/*
+              A conta usa `visibleGroups`, não `sidebarConfig`: com a lista
+              completa, um usuário sem acesso ao último grupo veria uma
+              divisória órfã no fim do menu.
+            */}
+            {index < visibleGroups.length - 1 && (
               <Divider sx={{ my: 1, mx: 2, opacity: 0.5 }} />
             )}
           </React.Fragment>
