@@ -5,6 +5,10 @@ import { IRepresentative } from "../interfaces/irepresentative";
 import { IClient } from "../interfaces/iclient";
 import useDebounce from "./useDebounce";
 import { useData } from "../context/DataContext";
+import {
+  INITIAL_SELECT_OPTIONS_LIMIT,
+  withSelected,
+} from "../utils/selectOptions";
 
 const DEFAULT_BUDGET: Partial<IBudget> = {
   tax: "NOS PREÇOS ACIMA JÁ ESTÃO INCLUSOS OS IMPOSTOS",
@@ -127,21 +131,27 @@ export const useBudgetForm = (
   }, [initialData]);
 
   // Filtrar representantes localmente do cache - SEM chamadas ao Firestore!
+  // `withSelected` mantém o representante do orçamento nas opções mesmo quando
+  // ele cai fora da janela truncada (ex.: edição de um orçamento antigo).
   const representativeList = useMemo(() => {
-    // Se não há busca, retorna todos os representantes
-    if (!debouncedRepresentativeSearch) return cachedRepresentatives;
+    // Se não há busca, retorna os primeiros representantes já carregados
+    const lista = !debouncedRepresentativeSearch
+      ? cachedRepresentatives.slice(0, INITIAL_SELECT_OPTIONS_LIMIT)
+      : cachedRepresentatives.filter((rep) =>
+          rep.name
+            ?.toLowerCase()
+            .includes(debouncedRepresentativeSearch.toLowerCase())
+        );
 
-    return cachedRepresentatives.filter((rep) =>
-      rep.name
-        ?.toLowerCase()
-        .includes(debouncedRepresentativeSearch.toLowerCase())
-    );
-  }, [debouncedRepresentativeSearch, cachedRepresentatives]);
+    return withSelected(lista, budget.representative);
+  }, [debouncedRepresentativeSearch, cachedRepresentatives, budget.representative]);
 
   // Filtrar produtos localmente do cache - SEM chamadas ao Firestore!
   const productList = useMemo(() => {
-    // Se não há busca, retorna todos os produtos
-    if (!debouncedProductSearch) return cachedProducts;
+    // Se não há busca, retorna os primeiros produtos já carregados
+    if (!debouncedProductSearch) {
+      return cachedProducts.slice(0, INITIAL_SELECT_OPTIONS_LIMIT);
+    }
 
     return cachedProducts.filter(
       (product) =>

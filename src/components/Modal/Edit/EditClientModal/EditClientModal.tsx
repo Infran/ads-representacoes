@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { CircularProgress } from "@mui/material";
+import { Apartment } from "@mui/icons-material";
 import { IClient } from "../../../../interfaces/iclient";
 import {
   getClientById,
@@ -24,6 +26,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
   const [client, setClient] = useState<IClient>({} as IClient);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Usa dados do cache
   const { updateClientInCache } = useData();
@@ -31,6 +34,18 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setClient({ ...client, [name]: value });
+  };
+
+  const handlePatch = (patch: Partial<IClient>) =>
+    setClient((prev) => ({ ...prev, ...patch }));
+
+  // Fecha e descarta as edições não salvas. Usado tanto pelo X/backdrop quanto
+  // pelo Cancelar, para que as duas formas de fechar tenham o mesmo efeito.
+  const closeAndReset = () => {
+    if (isSubmitting) return;
+    handleClose();
+    setClient({} as IClient);
+    setError(null);
   };
 
   useEffect(() => {
@@ -67,6 +82,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await updateClient(client);
       // Atualiza o cache local em vez de recarregar a página
@@ -78,6 +94,8 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
     } catch (error) {
       logger.error("Erro ao editar cliente:", error);
       setError("Ocorreu um erro ao editar o cliente. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -86,21 +104,32 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
   return (
     <Modal
       open={open}
-      onClose={handleClose}
+      onClose={closeAndReset}
       title="Editar Cliente"
+      icon={Apartment}
       error={error}
       actions={
         isLoading ? undefined : (
           <>
-            <Button variant="outlined" color="inherit" onClick={handleClose}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={closeAndReset}
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
             <Button
               variant="contained"
               onClick={handleEditClient}
-              disabled={!isFormValid}
+              disabled={!isFormValid || isSubmitting}
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : undefined
+              }
             >
-              Salvar
+              {isSubmitting ? "Salvando..." : "Salvar"}
             </Button>
           </>
         )
@@ -109,7 +138,11 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
       {isLoading ? (
         <ListSkeleton rows={4} />
       ) : (
-        <ClientForm client={client} onChange={handleChange} />
+        <ClientForm
+          client={client}
+          onChange={handleChange}
+          onPatch={handlePatch}
+        />
       )}
     </Modal>
   );

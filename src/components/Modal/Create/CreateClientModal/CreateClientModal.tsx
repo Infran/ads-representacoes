@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { CircularProgress } from "@mui/material";
+import { Apartment } from "@mui/icons-material";
 import { IClient } from "../../../../interfaces/iclient";
 import { addClient } from "../../../../services/clientServices";
 import { useData } from "../../../../context/DataContext";
@@ -18,6 +20,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
 }) => {
   const [client, setClient] = useState<IClient>({} as IClient);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Usa dados do cache
   const { addClientToCache } = useData();
@@ -25,6 +28,19 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setClient({ ...client, [name]: value });
+  };
+
+  const handlePatch = (patch: Partial<IClient>) =>
+    setClient((prev) => ({ ...prev, ...patch }));
+
+  // Fecha e zera o formulário. Usado tanto pelo X/backdrop quanto pelo Cancelar:
+  // sem isso as duas formas de fechar divergem e o Cancelar deixa os dados do
+  // cadastro abandonado pré-preenchidos na próxima abertura.
+  const closeAndReset = () => {
+    if (isSubmitting) return;
+    handleClose();
+    setClient({} as IClient);
+    setError(null);
   };
 
   const handleAddClient = async () => {
@@ -44,6 +60,7 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
     try {
       // addClient agora retorna o cliente criado com ID gerado
       const createdClient = await addClient(client);
@@ -57,6 +74,8 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
     } catch (error) {
       logger.error("Erro ao adicionar cliente:", error);
       setError("Ocorreu um erro ao adicionar o cliente. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -65,28 +84,40 @@ const CreateClientModal: React.FC<CreateClientModalProps> = ({
   return (
     <Modal
       open={open}
-      onClose={() => {
-        handleClose();
-        setClient({} as IClient);
-      }}
+      onClose={closeAndReset}
       title="Adicionar Cliente"
+      icon={Apartment}
       error={error}
       actions={
         <>
-          <Button variant="outlined" color="inherit" onClick={handleClose}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={closeAndReset}
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
           <Button
             variant="contained"
             onClick={handleAddClient}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isSubmitting}
+            startIcon={
+              isSubmitting ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
           >
-            Adicionar
+            {isSubmitting ? "Salvando..." : "Adicionar"}
           </Button>
         </>
       }
     >
-      <ClientForm client={client} onChange={handleChange} />
+      <ClientForm
+        client={client}
+        onChange={handleChange}
+        onPatch={handlePatch}
+      />
     </Modal>
   );
 };

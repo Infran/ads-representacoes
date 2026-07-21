@@ -1,13 +1,17 @@
 import React from "react";
-import { Autocomplete, Grid, TextField, Typography } from "@mui/material";
+import { Autocomplete, Grid, TextField } from "@mui/material";
+import { Apartment, Badge, Phone } from "@mui/icons-material";
 import { IClient } from "../../interfaces/iclient";
 import { IRepresentative } from "../../interfaces/irepresentative";
-import { cepMask, mobilePhoneMask, phoneMask } from "../../utils/Masks";
-import { Field } from "../../ui";
+import { mobilePhoneMask, phoneMask } from "../../utils/Masks";
+import { Field, FormSection } from "../../ui";
+import AddressFields from "./AddressFields";
 
 interface RepresentativeFormProps {
   representative: IRepresentative;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Atualização de múltiplos campos (busca por CEP / dropdowns de endereço). */
+  onPatch: (patch: Partial<IRepresentative>) => void;
   /** Opções do autocomplete de cliente (já filtradas/debounced no modal). */
   clientOptions: IClient[];
   onClientInputChange: (value: string) => void;
@@ -18,43 +22,41 @@ interface RepresentativeFormProps {
  * Campos compartilhados do formulário de Representante (EST F3.3) — consumidos
  * pelos modais Create e Edit. Autocomplete de cliente + dados + contato + endereço.
  * Aplica máscaras (telefone/celular/cep) em ambos os modos (reconciliação — ver
- * ClientForm). Tokenizado (átomo Field).
+ * ClientForm). Endereço via `AddressFields` (CEP/BrasilAPI + dropdowns). Tokenizado.
  */
 const RepresentativeForm: React.FC<RepresentativeFormProps> = ({
   representative,
   onChange,
+  onPatch,
   clientOptions,
   onClientInputChange,
   onSelectClient,
 }) => (
   <>
-    <Typography
-      variant="subtitle1"
-      sx={{ fontWeight: "bold", color: "text.secondary" }}
-    >
-      Selecione um cliente:
-    </Typography>
+    <FormSection icon={Apartment}>Selecione um Cliente</FormSection>
     <Autocomplete
       options={clientOptions}
       getOptionLabel={(option) => option.name}
       onInputChange={(_event, value) => onClientInputChange(value)}
       onChange={(_event, value) => onSelectClient(value)}
-      noOptionsText="Digite o nome do Cliente."
+      openOnFocus
+      noOptionsText="Nenhum cliente encontrado"
       value={representative.client || null}
       isOptionEqualToValue={(option, value) => option.id === value.id}
       renderInput={(params) => (
-        <TextField {...params} label="Cliente" variant="outlined" fullWidth />
+        <TextField
+          {...params}
+          label="Cliente"
+          variant="outlined"
+          fullWidth
+          sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+        />
       )}
     />
 
-    <Typography
-      variant="subtitle1"
-      sx={{ mt: 1, fontWeight: "bold", color: "text.secondary" }}
-    >
-      Informações:
-    </Typography>
+    <FormSection icon={Badge}>Informações</FormSection>
     <Grid container spacing={2}>
-      <Grid item xs={6}>
+      <Grid item xs={12} sm={6}>
         <Field
           id="name"
           name="name"
@@ -65,7 +67,7 @@ const RepresentativeForm: React.FC<RepresentativeFormProps> = ({
           required
         />
       </Grid>
-      <Grid item xs={6}>
+      <Grid item xs={12} sm={6}>
         <Field
           id="role"
           name="role"
@@ -77,14 +79,9 @@ const RepresentativeForm: React.FC<RepresentativeFormProps> = ({
       </Grid>
     </Grid>
 
-    <Typography
-      variant="subtitle1"
-      sx={{ mt: 1, fontWeight: "bold", color: "text.secondary" }}
-    >
-      Contato:
-    </Typography>
+    <FormSection icon={Phone}>Contato</FormSection>
     <Grid container spacing={2}>
-      <Grid item xs={6}>
+      <Grid item xs={12} sm={6}>
         <Field
           id="email"
           name="email"
@@ -95,7 +92,7 @@ const RepresentativeForm: React.FC<RepresentativeFormProps> = ({
           inputProps={{ maxLength: 80 }}
         />
       </Grid>
-      <Grid item xs={6}>
+      <Grid item xs={12} sm={6}>
         <Field
           id="phone"
           name="phone"
@@ -104,7 +101,7 @@ const RepresentativeForm: React.FC<RepresentativeFormProps> = ({
           onChange={onChange}
         />
       </Grid>
-      <Grid item xs={6}>
+      <Grid item xs={12} sm={6}>
         <Field
           id="mobilePhone"
           name="mobilePhone"
@@ -115,53 +112,11 @@ const RepresentativeForm: React.FC<RepresentativeFormProps> = ({
       </Grid>
     </Grid>
 
-    <Typography
-      variant="subtitle1"
-      sx={{ mt: 1, fontWeight: "bold", color: "text.secondary" }}
-    >
-      Endereço:
-    </Typography>
-    <Grid container spacing={2}>
-      <Grid item xs={6}>
-        <Field
-          id="cep"
-          name="cep"
-          label="CEP"
-          value={cepMask(representative.cep) || ""}
-          onChange={onChange}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Field
-          id="address"
-          name="address"
-          label="Endereço"
-          value={representative.address || ""}
-          onChange={onChange}
-          inputProps={{ maxLength: 80 }}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Field
-          id="state"
-          name="state"
-          label="Estado"
-          value={representative.state || ""}
-          onChange={onChange}
-          inputProps={{ maxLength: 2 }}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Field
-          id="city"
-          name="city"
-          label="Cidade"
-          value={representative.city || ""}
-          onChange={onChange}
-          inputProps={{ maxLength: 50 }}
-        />
-      </Grid>
-    </Grid>
+    <AddressFields
+      values={representative}
+      onChange={onChange}
+      onPatch={onPatch}
+    />
   </>
 );
 

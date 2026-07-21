@@ -1,28 +1,28 @@
 import React from "react";
-import { Grid, Typography } from "@mui/material";
+import { Grid } from "@mui/material";
+import { Person, Phone } from "@mui/icons-material";
 import { IClient } from "../../interfaces/iclient";
-import { cepMask, cnpjMask, mobilePhoneMask } from "../../utils/Masks";
-import { Field } from "../../ui";
+import { cnpjMask, mobilePhoneMask } from "../../utils/Masks";
+import { Field, FormSection } from "../../ui";
+import AddressFields from "./AddressFields";
 
 interface ClientFormProps {
   client: IClient;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Atualização de múltiplos campos (busca por CEP / dropdowns de endereço). */
+  onPatch: (patch: Partial<IClient>) => void;
 }
 
 /**
  * Campos compartilhados do formulário de Cliente (EST F3.3) — consumidos pelos
  * modais Create e Edit. Aplica máscaras (cnpj/telefone/cep) em ambos os modos:
  * **reconciliação deliberada** — o Edit antes gravava valores crus; agora segue
- * o Create (as máscaras são idempotentes, ver Masks.ts). Tokenizado (átomo Field).
+ * o Create (as máscaras são idempotentes, ver Masks.ts). Endereço é preenchido
+ * por CEP (BrasilAPI) ou dropdowns Estado/Cidade via `AddressFields`. Tokenizado.
  */
-const ClientForm: React.FC<ClientFormProps> = ({ client, onChange }) => (
+const ClientForm: React.FC<ClientFormProps> = ({ client, onChange, onPatch }) => (
   <>
-    <Typography
-      variant="subtitle1"
-      sx={{ fontWeight: "bold", color: "text.secondary" }}
-    >
-      Informações:
-    </Typography>
+    <FormSection icon={Person}>Informações</FormSection>
 
     <Field
       id="name"
@@ -41,14 +41,9 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onChange }) => (
       inputProps={{ maxLength: 18 }}
     />
 
-    <Typography
-      variant="subtitle1"
-      sx={{ mt: 1, fontWeight: "bold", color: "text.secondary" }}
-    >
-      Contato:
-    </Typography>
+    <FormSection icon={Phone}>Contato</FormSection>
     <Grid container spacing={2}>
-      <Grid item xs={6}>
+      <Grid item xs={12} sm={6}>
         <Field
           id="phone"
           name="phone"
@@ -57,7 +52,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onChange }) => (
           onChange={onChange}
         />
       </Grid>
-      <Grid item xs={6}>
+      <Grid item xs={12} sm={6}>
         <Field
           id="email"
           name="email"
@@ -70,50 +65,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ client, onChange }) => (
       </Grid>
     </Grid>
 
-    <Typography
-      variant="subtitle1"
-      sx={{ mt: 1, fontWeight: "bold", color: "text.secondary" }}
-    >
-      Endereço:
-    </Typography>
-    <Grid container spacing={2}>
-      <Grid item xs={6}>
-        <Field
-          id="cep"
-          name="cep"
-          label="CEP"
-          value={cepMask(client.cep || "")}
-          onChange={onChange}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Field
-          id="address"
-          name="address"
-          label="Endereço"
-          value={client.address || ""}
-          onChange={onChange}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Field
-          id="city"
-          name="city"
-          label="Cidade"
-          value={client.city || ""}
-          onChange={onChange}
-        />
-      </Grid>
-      <Grid item xs={6}>
-        <Field
-          id="state"
-          name="state"
-          label="Estado"
-          value={client.state || ""}
-          onChange={onChange}
-        />
-      </Grid>
-    </Grid>
+    <AddressFields
+      values={client}
+      onChange={onChange}
+      onPatch={onPatch}
+      cepRequired
+    />
   </>
 );
 
