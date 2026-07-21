@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { CircularProgress } from "@mui/material";
+import { Inventory2 } from "@mui/icons-material";
 import { IProduct } from "../../../../interfaces/iproduct";
 import { addProduct } from "../../../../services/productServices";
 import { useData } from "../../../../context/DataContext";
@@ -20,6 +22,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   const [product, setProduct] = useState<IProduct>({} as IProduct);
   const [error, setError] = useState<string | null>(null);
   const [maskedUnitValue, setMaskedUnitValue] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Usa dados do cache
   const { addProductToCache } = useData();
@@ -36,6 +39,17 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
     } else {
       handleGenericChange(name, value);
     }
+  };
+
+  // Fecha e zera o formulário. Usado tanto pelo X/backdrop quanto pelo Cancelar:
+  // sem isso as duas formas de fechar divergem e o Cancelar deixa os dados do
+  // cadastro abandonado pré-preenchidos na próxima abertura.
+  const closeAndReset = () => {
+    if (isSubmitting) return;
+    handleClose();
+    setProduct({} as IProduct);
+    setMaskedUnitValue("");
+    setError(null);
   };
 
   const handleUnitValueChange = (value: string) => {
@@ -71,6 +85,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
     try {
       // addProduct agora retorna o produto criado com ID gerado
       const createdProduct = await addProduct(product);
@@ -85,6 +100,8 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
     } catch (error) {
       logger.error("Erro ao adicionar produto:", error);
       setError("Ocorreu um erro ao adicionar o produto. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -93,23 +110,31 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   return (
     <Modal
       open={open}
-      onClose={() => {
-        handleClose();
-        setProduct({} as IProduct);
-      }}
+      onClose={closeAndReset}
       title="Adicionar Produto"
+      icon={Inventory2}
       error={error}
       actions={
         <>
-          <Button variant="outlined" color="inherit" onClick={handleClose}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={closeAndReset}
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
           <Button
             variant="contained"
             onClick={handleAddProduct}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isSubmitting}
+            startIcon={
+              isSubmitting ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
           >
-            Adicionar
+            {isSubmitting ? "Salvando..." : "Adicionar"}
           </Button>
         </>
       }

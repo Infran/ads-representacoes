@@ -20,7 +20,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
       <Autocomplete
         options={productList}
         getOptionLabel={(option) => option.name}
-        noOptionsText="Pesquise um produto cadastrado."
+        openOnFocus
+        noOptionsText="Nenhum produto encontrado"
         inputValue={searchTerm}
         onInputChange={(_e, value) => onSearchChange(value)}
         renderInput={(params) => (

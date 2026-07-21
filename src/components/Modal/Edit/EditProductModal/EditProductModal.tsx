@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { CircularProgress } from "@mui/material";
+import { Inventory2 } from "@mui/icons-material";
 import { IProduct } from "../../../../interfaces/iproduct";
 import {
   getProductById,
@@ -25,6 +27,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const [product, setProduct] = useState<IProduct>({} as IProduct);
   const [error, setError] = useState<string | null>(null);
   const [maskedUnitValue, setMaskedUnitValue] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Hook para atualizar o cache
   const { updateProductInCache } = useData();
@@ -64,6 +67,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   };
 
+  // Fecha e descarta as edições não salvas. Usado tanto pelo X/backdrop quanto
+  // pelo Cancelar, para que as duas formas de fechar tenham o mesmo efeito.
+  const closeAndReset = () => {
+    if (isSubmitting) return;
+    handleClose();
+    setProduct({} as IProduct);
+    setMaskedUnitValue("");
+    setError(null);
+  };
+
   const handleUnitValueChange = (value: string) => {
     const maskedValue = brMoneyMask(value);
     setMaskedUnitValue(maskedValue);
@@ -97,6 +110,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await updateProduct(product);
 
@@ -110,6 +124,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     } catch (error) {
       logger.error("Erro ao editar produto:", error);
       setError("Ocorreu um erro ao editar o produto. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -118,23 +134,31 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   return (
     <Modal
       open={open}
-      onClose={() => {
-        handleClose();
-        setProduct({} as IProduct);
-      }}
+      onClose={closeAndReset}
       title="Editar Produto"
+      icon={Inventory2}
       error={error}
       actions={
         <>
-          <Button variant="outlined" color="inherit" onClick={handleClose}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={closeAndReset}
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
           <Button
             variant="contained"
             onClick={handleEditProduct}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isSubmitting}
+            startIcon={
+              isSubmitting ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
           >
-            Salvar
+            {isSubmitting ? "Salvando..." : "Salvar"}
           </Button>
         </>
       }
