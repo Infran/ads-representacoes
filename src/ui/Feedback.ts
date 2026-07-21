@@ -22,6 +22,13 @@ let openConfirmFn: OpenConfirmFn | null = null;
 let addToastFn: AddToastFn | null = null;
 let reportErrorFn: ReportErrorFn | null = null;
 
+// Preferência do usuário (módulo Configurações): permite silenciar apenas os
+// toasts de sucesso. Erros/avisos ignoram esta flag — são sempre exibidos.
+let successToastsEnabled = true;
+export const setSuccessToastsEnabled = (enabled: boolean) => {
+  successToastsEnabled = enabled;
+};
+
 export const registerFeedbackMethods = (
   openConfirm: OpenConfirmFn | null,
   addToast: AddToastFn | null
@@ -114,8 +121,9 @@ export const confirmDialog = (options: ConfirmOptions): Promise<boolean> => {
   });
 };
 
-/** Toast simples de sucesso. */
+/** Toast simples de sucesso. Silenciado quando o usuário desliga a preferência. */
 export const notifySuccess = (title: string, text?: string): Promise<void> => {
+  if (!successToastsEnabled) return Promise.resolve();
   if (addToastFn) {
     addToastFn(title, text, "success");
   } else {

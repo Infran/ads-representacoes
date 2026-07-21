@@ -33,4 +33,31 @@ describe("getTheme", () => {
     expect(theme.palette.error.main).toBe(tokens.color.error);
     expect(theme.palette.warning.main).toBe(tokens.color.warning);
   });
+
+  // Acessibilidade (módulo Configurações) — opções que alteram o tema.
+  it("mantém a paleta padrão sem opções de acessibilidade", () => {
+    const normal = getTheme("light");
+    expect(normal.palette.primary.main).toBe(tokens.color.brand.main);
+    expect(normal.palette.text.primary).toBe(tokens.color.ink);
+  });
+
+  it("alto contraste reforça texto e bordas nos dois modos", () => {
+    const lightNormal = getTheme("light");
+    const lightHigh = getTheme("light", { contrast: "high" });
+    expect(lightHigh.palette.text.primary).not.toBe(lightNormal.palette.text.primary);
+    expect(lightHigh.palette.divider).not.toBe(lightNormal.palette.divider);
+
+    const darkNormal = getTheme("dark");
+    const darkHigh = getTheme("dark", { contrast: "high" });
+    expect(darkHigh.palette.text.primary).not.toBe(darkNormal.palette.text.primary);
+    expect(darkHigh.palette.background.default).not.toBe(
+      darkNormal.palette.background.default
+    );
+  });
+
+  it("fonte legível troca a família fora de Poppins", () => {
+    const legible = getTheme("light", { legibleFont: true });
+    expect(legible.typography.fontFamily).not.toContain("Poppins");
+    expect(legible.typography.fontFamily).toContain("system-ui");
+  });
 });
