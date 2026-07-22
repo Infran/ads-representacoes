@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import {
@@ -74,10 +74,34 @@ function CockpitResultsTable<T>({
   emptyLabel,
 }: CockpitResultsTableProps<T>) {
   const total = rows.length;
-  const pages = Math.max(1, Math.ceil(total / perPage));
+
+  // Quantas linhas inteiras cabem no corpo. Mede a altura real de uma linha
+  // renderizada (auto-corrige por densidade) contra a altura disponível do
+  // corpo, para preencher o espaço em vez de fixar um número. `perPage` serve
+  // só de fallback antes da primeira medição.
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [fittedPerPage, setFittedPerPage] = useState(perPage);
+
+  useLayoutEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const measure = () => {
+      const firstRow = el.querySelector<HTMLElement>("[data-cockpit-row]");
+      const rowH = firstRow?.offsetHeight ?? 0;
+      if (!rowH) return; // sem linhas (ex.: total===0) → mantém fallback
+      const fit = Math.max(1, Math.floor(el.clientHeight / rowH));
+      setFittedPerPage((prev) => (prev === fit ? prev : fit));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [density, total]); // densidade muda a altura da linha; total garante 1ª medição c/ dados
+
+  const pages = Math.max(1, Math.ceil(total / fittedPerPage));
   const safePage = Math.min(page, pages - 1);
-  const start = safePage * perPage;
-  const slice = rows.slice(start, start + perPage);
+  const start = safePage * fittedPerPage;
+  const slice = rows.slice(start, start + fittedPerPage);
   const rangeLabel =
     total === 0 ? "0 de 0" : `${start + 1}–${start + slice.length} de ${total}`;
 
@@ -220,7 +244,7 @@ function CockpitResultsTable<T>({
             </Box>
 
             {/* Corpo */}
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <Box ref={bodyRef} sx={{ flex: 1, overflowY: "auto" }}>
               {slice.map((row) => {
                 const id = columns.getRowId(row);
                 const isSelected = id === selectedId;
@@ -229,6 +253,7 @@ function CockpitResultsTable<T>({
                 return (
                   <Box
                     key={id}
+                    data-cockpit-row
                     onClick={() => onSelect(row)}
                     sx={{
                       display: "grid",
