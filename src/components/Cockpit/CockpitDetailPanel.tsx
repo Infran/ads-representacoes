@@ -326,23 +326,34 @@ function CockpitDetailPanel<T>({
       </Box>
 
       {/* Ações */}
-      <Box sx={{ display: "flex", gap: 1.25, p: 2, borderTop: "1px solid", borderColor: "divider" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+          p: 2,
+          borderTop: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Button
+          variant="contained"
+          onClick={() => onPrimaryAction(item)}
+          startIcon={<RequestQuote />}
+          fullWidth
+          sx={{ whiteSpace: "nowrap" }}
+        >
+          {config.primaryActionLabel}
+        </Button>
         <Button
           variant="outlined"
           color="inherit"
           onClick={() => onEdit(item)}
           startIcon={<EditOutlined />}
-          sx={{ flex: 1, color: "text.secondary", borderColor: "divider" }}
+          fullWidth
+          sx={{ color: "text.secondary", borderColor: "divider" }}
         >
           Editar
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => onPrimaryAction(item)}
-          startIcon={<RequestQuote />}
-          sx={{ flex: 1.4 }}
-        >
-          {config.primaryActionLabel}
         </Button>
       </Box>
     </Paper>
