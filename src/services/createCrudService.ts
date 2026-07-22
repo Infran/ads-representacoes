@@ -96,24 +96,33 @@ export function createCrudService<T extends { id: string | number }>(
 
   const getAll = async (): Promise<T[]> => {
     const snapshot = await getDocs(collection(db, collectionName));
-    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as T[];
+    // O id do documento é autoritativo: vem por ÚLTIMO para não ser sombreado
+    // por um campo `id` legado gravado como number dentro do próprio doc (que,
+    // como number, quebraria doc()/getById mais adiante — ver getById).
+    return snapshot.docs.map((d) => ({ ...d.data(), id: d.id })) as T[];
   };
 
   const getById = async (id: string): Promise<T | null> => {
+    // Docs legados gravaram o campo `id` como number. doc() exige string e
+    // estoura ("path.indexOf is not a function") com number — por isso o id é
+    // coagido aqui, igual update/remove já fazem com `id.toString()`. Sem isso,
+    // abrir a modal de edição de um registro legado dá erro engolido (o logger
+    // é silencioso em produção) e a modal aparece vazia.
+    const key = id == null ? "" : String(id);
     if (idPattern) {
-      if (!idPattern.test(id)) {
+      if (!idPattern.test(key)) {
         logger.warn(`getById(${collectionName}) com ID inválido:`, id);
         return null;
       }
-    } else if (!id) {
+    } else if (!key) {
       logger.warn(`getById(${collectionName}) chamado com ID vazio`);
       return null;
     }
 
     try {
-      const snap = await getDoc(doc(db, collectionName, id));
+      const snap = await getDoc(doc(db, collectionName, key));
       if (!snap.exists()) return null;
-      return { id: snap.id, ...snap.data() } as T;
+      return { ...snap.data(), id: snap.id } as T;
     } catch (error) {
       logger.error(`Erro ao buscar ${collectionName}:`, error);
       throw error;
@@ -205,7 +214,7 @@ export function createCrudService<T extends { id: string | number }>(
 
     const snapshot = await getDocs(q);
     const docs = snapshot.docs;
-    const items = docs.map((d) => ({ id: d.id, ...d.data() })) as T[];
+    const items = docs.map((d) => ({ ...d.data(), id: d.id })) as T[];
 
     return {
       items,
