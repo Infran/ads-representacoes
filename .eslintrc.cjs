@@ -57,7 +57,7 @@ module.exports = {
       //  - theme/*        → a FONTE dos tokens (incl. a ponte de CSS vars --ads-*);
       //  - Login          → gradiente de marca da tela pré-auth;
       //  - BudgetPdf      → paleta do documento PDF (@react-pdf, fora do tema MUI);
-      //  - GlobalSearch / NotificationBell → cores CATEGÓRICas por entidade
+      //  - GlobalSearch   → cores CATEGÓRICas por entidade
       //    (cliente/orçamento/produto/representante).
       files: [
         'src/theme/tokens.ts',
@@ -65,7 +65,6 @@ module.exports = {
         'src/components/Login/Login.tsx',
         'src/utils/PDFGenerator/BudgetPdf.tsx',
         'src/components/Layout/AppHeader/GlobalSearch.tsx',
-        'src/components/Layout/AppHeader/NotificationBell.tsx',
       ],
       rules: { 'no-restricted-syntax': 'off' },
     },

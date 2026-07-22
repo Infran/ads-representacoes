@@ -1,12 +1,11 @@
 import React from "react";
-import { Toolbar, Box, Typography, IconButton, Divider, AppBar as MuiAppBar, AppBarProps as MuiAppBarProps, styled } from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
-import { useLocation } from "react-router-dom";
+import { Toolbar, Box, Typography, IconButton, Divider, Tooltip, AppBar as MuiAppBar, AppBarProps as MuiAppBarProps, styled } from "@mui/material";
+import { Menu as MenuIcon, HelpOutline } from "@mui/icons-material";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useLayout } from "../LayoutContext";
 import Breadcrumbs from "./Breadcrumbs";
 import GlobalSearch from "./GlobalSearch";
-import NotificationBell from "./NotificationBell";
 import UserMenu from "./UserMenu";
 import { routeTitles } from "../Sidebar/sidebarConfig";
 
@@ -44,6 +43,7 @@ const StyledAppBar = styled(MuiAppBar, {
 const AppHeader: React.FC = () => {
   const { sidebarOpen, toggleSidebar } = useLayout();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Obter título da página baseado na rota
   const getPageTitle = (): string => {
@@ -66,13 +66,13 @@ const AppHeader: React.FC = () => {
     <StyledAppBar position="fixed" open={sidebarOpen}>
       <Toolbar
         sx={{
-          justifyContent: "space-between",
+          gap: 2,
           minHeight: { xs: 56, sm: 64 },
           px: { xs: 2, sm: 3 },
         }}
       >
         {/* Lado esquerdo - Toggle + Título + Breadcrumbs */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0 }}>
           <IconButton
             color="inherit"
             aria-label="Alternar menu lateral"
@@ -90,10 +90,11 @@ const AppHeader: React.FC = () => {
 
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
-          <Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography
               variant="h6"
               component="h1"
+              noWrap
               sx={{
                 fontWeight: 600,
                 fontSize: { xs: "1rem", sm: "1.125rem" },
@@ -107,10 +108,34 @@ const AppHeader: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Lado direito - Busca + Notificações + Usuário */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {/* Centro - Busca global */}
+        <Box sx={{ display: "flex", justifyContent: "center", flexShrink: 0 }}>
           <GlobalSearch />
-          <NotificationBell />
+        </Box>
+
+        {/* Lado direito - Ajuda + Usuário */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 1,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <Tooltip title="Ajuda">
+            <IconButton
+              aria-label="Ajuda"
+              onClick={() => navigate("/Ajuda")}
+              sx={{
+                color: "text.secondary",
+                "&:hover": { backgroundColor: "action.hover" },
+              }}
+            >
+              <HelpOutline />
+            </IconButton>
+          </Tooltip>
           <UserMenu />
         </Box>
       </Toolbar>
