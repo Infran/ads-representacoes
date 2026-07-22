@@ -86,6 +86,7 @@
 
 .budget-list-item.expanded {
   background-color: var(--ads-expanded);
+  box-shadow: inset 3px 0 0 0 var(--ads-brand);
 }
 
 .budget-row {
@@ -238,6 +239,24 @@
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--ads-border);
+}
+
+/* Pagination bar (rodapé da lista) */
+.budget-pagination {
+  border-top: 1px solid var(--ads-border);
+  background: var(--ads-surface-alt);
+}
+
+.budget-pagination .MuiTablePagination-toolbar {
+  padding-left: 20px;
+  padding-right: 12px;
+}
+
+.budget-pagination .MuiTablePagination-selectLabel,
+.budget-pagination .MuiTablePagination-displayedRows {
+  color: var(--ads-text-muted);
+  font-size: 0.85rem;
+  margin: 0;
 }
 
 /* Empty State */

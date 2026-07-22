@@ -2,29 +2,31 @@ import React from "react";
 import {
   Box,
   Button,
+  Chip,
   FormControl,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Select,
   TextField,
   Typography,
 } from "@mui/material";
+import { FilterAltOff, Search } from "@mui/icons-material";
 import { SortOption, UseBudgetFiltersReturn } from "./useBudgetFilters";
 
 interface BudgetFiltersProps {
   filters: UseBudgetFiltersReturn;
   totalCount: number;
-  onAdd: () => void;
 }
 
 /**
  * UI de filtros da lista de orçamentos (EST F3.2) — apresentacional,
- * consome o estado de `useBudgetFilters`.
+ * consome o estado de `useBudgetFilters`. A ação de cadastro vive no
+ * PageHeader (não aqui): esta barra é só para *operar* a lista.
  */
 const BudgetFilters: React.FC<BudgetFiltersProps> = ({
   filters,
   totalCount,
-  onAdd,
 }) => (
   <Box className="filters-container">
     <Box className="filters-row">
@@ -35,6 +37,13 @@ const BudgetFilters: React.FC<BudgetFiltersProps> = ({
         size="small"
         value={filters.search}
         onChange={(e) => filters.setSearch(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search fontSize="small" />
+            </InputAdornment>
+          ),
+        }}
       />
 
       <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -105,10 +114,6 @@ const BudgetFilters: React.FC<BudgetFiltersProps> = ({
           onChange={(e) => filters.setMaxValue(e.target.value)}
         />
       </Box>
-
-      <Button variant="contained" onClick={onAdd}>
-        Adicionar
-      </Button>
     </Box>
 
     <Box
@@ -117,12 +122,21 @@ const BudgetFilters: React.FC<BudgetFiltersProps> = ({
       justifyContent="space-between"
       alignItems="center"
     >
-      <Typography variant="body2">
-        Mostrando <strong>{filters.filteredBudgets.length}</strong> de{" "}
-        <strong>{totalCount}</strong> orçamentos
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Typography variant="body2">
+          Mostrando <strong>{filters.filteredBudgets.length}</strong> de{" "}
+          <strong>{totalCount}</strong> orçamentos
+        </Typography>
+        {filters.hasActiveFilters && (
+          <Chip size="small" color="primary" variant="outlined" label="Filtros ativos" />
+        )}
+      </Box>
       {filters.hasActiveFilters && (
-        <Button size="small" onClick={filters.clearFilters}>
+        <Button
+          size="small"
+          startIcon={<FilterAltOff />}
+          onClick={filters.clearFilters}
+        >
           Limpar filtros
         </Button>
       )}

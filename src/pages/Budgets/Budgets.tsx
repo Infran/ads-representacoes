@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./Budgets.css";
 import PageHeader from "../../components/PageHeader/PageHeader";
 import { NoteAdd, SearchOff } from "@mui/icons-material";
-import { Box } from "@mui/material";
+import { Box, TablePagination } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../../context/DataContext";
 import { IBudget } from "../../interfaces/ibudget";
@@ -22,7 +22,27 @@ const Budgets = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
 
+  // Paginação client-side sobre o resultado já filtrado/ordenado.
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const filters = useBudgetFilters(budgetList);
+  const { filteredBudgets } = filters;
+
+  // Sempre que o conjunto filtrado muda (busca/ordenação/faixa), volta à
+  // primeira página para não ficar "preso" numa página que deixou de existir.
+  useEffect(() => {
+    setPage(0);
+  }, [filteredBudgets]);
+
+  const pageBudgets = useMemo(
+    () =>
+      filteredBudgets.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage
+      ),
+    [filteredBudgets, page, rowsPerPage]
+  );
 
   const toggleExpand = (id: string) =>
     setExpandedId((prev) => (prev === id ? null : id));
@@ -48,13 +68,12 @@ const Budgets = () => {
         title="Orçamentos"
         description="Gerencie seus orçamentos"
         icon={NoteAdd}
+        actionLabel="Novo orçamento"
+        actionIcon={NoteAdd}
+        onAction={() => navigate("/Orcamentos/Adicionar")}
       />
 
-      <BudgetFilters
-        filters={filters}
-        totalCount={budgetList.length}
-        onAdd={() => navigate("/Orcamentos/Adicionar")}
-      />
+      <BudgetFilters filters={filters} totalCount={budgetList.length} />
 
       {/* Budget List */}
       <Box className="budget-list-container">
@@ -73,18 +92,38 @@ const Budgets = () => {
           <Box sx={{ p: 2 }}>
             <ListSkeleton rows={6} />
           </Box>
-        ) : filters.filteredBudgets.length > 0 ? (
-          filters.filteredBudgets.map((budget) => (
-            <BudgetListItem
-              key={budget.id}
-              budget={budget}
-              expanded={expandedId === budget.id}
-              onToggle={toggleExpand}
-              onOpenPdf={handleOpenPdf}
-              onEdit={(id) => navigate(`/Orcamentos/Editar/${id}`)}
-              onDelete={(id) => setDeleteModalId(id)}
+        ) : filteredBudgets.length > 0 ? (
+          <>
+            {pageBudgets.map((budget) => (
+              <BudgetListItem
+                key={budget.id}
+                budget={budget}
+                expanded={expandedId === budget.id}
+                onToggle={toggleExpand}
+                onOpenPdf={handleOpenPdf}
+                onEdit={(id) => navigate(`/Orcamentos/Editar/${id}`)}
+                onDelete={(id) => setDeleteModalId(id)}
+              />
+            ))}
+
+            <TablePagination
+              className="budget-pagination"
+              component="div"
+              count={filteredBudgets.length}
+              page={page}
+              onPageChange={(_, next) => setPage(next)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[5, 10, 20, 50]}
+              labelRowsPerPage="Por página:"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}–${to} de ${count}`
+              }
             />
-          ))
+          </>
         ) : (
           <Box className="empty-state">
             <SearchOff />
