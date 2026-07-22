@@ -335,3 +335,68 @@ export const purgeExpiredAuditLogs = async (): Promise<number> => {
   );
   return snapshot.size;
 };
+
+// ============================================================================
+// EXCLUSÃO PONTUAL / POR INTERVALO (somente admin — regras negam para staff)
+// ============================================================================
+
+/**
+ * Remove UMA entrada pelo id. As regras exigem `isAdmin()` — a UI que chama
+ * isto (painel de Erros) já é admin-only.
+ */
+export const deleteAuditLog = async (id: string): Promise<void> => {
+  await deleteDoc(doc(db, COLLECTION, id));
+};
+
+/**
+ * Remove várias entradas pelos ids, em paralelo. Usado para apagar de uma vez
+ * todas as ocorrências agrupadas de um mesmo erro (mesma assinatura). Retorna
+ * quantas foram removidas.
+ */
+export const deleteAuditLogs = async (ids: string[]): Promise<number> => {
+  await Promise.all(ids.map((id) => deleteDoc(doc(db, COLLECTION, id))));
+  return ids.length;
+};
+
+/**
+ * Expurga entradas cujo `at` cai no intervalo [from, to] (inclusive),
+ * opcionalmente restrito a uma `action` (ex.: só "error").
+ *
+ * Itera em páginas de `pageSize`: como deleta exatamente o que lê, cada volta
+ * re-consulta do topo em vez de paginar por cursor — o cursor apontaria para
+ * um documento que acabou de sumir. Para quando uma página vier incompleta.
+ *
+ * COM `action`, usa o índice composto `{action ASC, at DESC}` já declarado em
+ * `firestore.indexes.json` (igualdade em `action` + faixa/ordenação em `at`).
+ */
+export const purgeAuditLogsInRange = async (
+  from: Date,
+  to: Date,
+  action?: AuditAction,
+  pageSize = 400
+): Promise<number> => {
+  const fromTs = Timestamp.fromDate(from);
+  const toTs = Timestamp.fromDate(to);
+  let removed = 0;
+
+  for (;;) {
+    const constraints = [
+      ...(action ? [where("action", "==", action)] : []),
+      where("at", ">=", fromTs),
+      where("at", "<=", toTs),
+      orderBy("at", "desc"),
+      fsLimit(pageSize),
+    ];
+    const snapshot = await getDocs(query(collection(db, COLLECTION), ...constraints));
+    if (snapshot.empty) break;
+
+    await Promise.all(
+      snapshot.docs.map((d) => deleteDoc(doc(db, COLLECTION, d.id)))
+    );
+    removed += snapshot.size;
+
+    if (snapshot.size < pageSize) break;
+  }
+
+  return removed;
+};

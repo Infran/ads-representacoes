@@ -11,6 +11,7 @@ import {
 import { useData } from "../../../../context/DataContext";
 import useDebounce from "../../../../hooks/useDebounce";
 import { Modal, Button, notifySuccess } from "../../../../ui";
+import { captureError } from "../../../../utils/errorReporter";
 import { logger } from "../../../../utils/logger";
 import {
   INITIAL_SELECT_OPTIONS_LIMIT,
@@ -67,7 +68,11 @@ const EditRepresentativeModal: React.FC<EditRepresentativeModalProps> = ({
           setClientSearchTerm(representativeData.client.name);
         }
       } catch (error) {
-        logger.error("Erro ao buscar representante:", error);
+        captureError({
+          source: "notify",
+          error,
+          title: "Erro ao carregar representante",
+        });
       }
     };
 

@@ -25,67 +25,52 @@ afterEach(() => {
 /** Avança o relógio para além do intervalo mínimo entre escritas. */
 const passRateLimit = () => vi.advanceTimersByTime(2500);
 
-describe("errorReporter — dedup por assinatura", () => {
-  it("um loop de erros idênticos custa UMA escrita", () => {
-    for (let i = 0; i < 200; i++) {
-      captureError({ source: "render", error: new Error("boom") });
-    }
-
-    expect(mockLogAudit).toHaveBeenCalledTimes(1);
-    expect(getReporterHealth().suppressed).toBe(199);
-  });
-
-  it("erros diferentes geram escritas diferentes", () => {
-    captureError({ source: "render", error: new Error("primeiro") });
-    passRateLimit();
-    captureError({ source: "render", error: new Error("segundo") });
-
-    expect(mockLogAudit).toHaveBeenCalledTimes(2);
-  });
-
-  it("depois da janela de 10 min, reporta de novo com o total de ocorrências", () => {
-    captureError({ source: "render", error: new Error("boom") });
-    captureError({ source: "render", error: new Error("boom") });
-    captureError({ source: "render", error: new Error("boom") });
-
-    vi.advanceTimersByTime(11 * 60 * 1000);
-    captureError({ source: "render", error: new Error("boom") });
-
-    expect(mockLogAudit).toHaveBeenCalledTimes(2);
-    // 2 suprimidas na janela + a atual.
-    expect(mockLogAudit).toHaveBeenLastCalledWith(
-      expect.objectContaining({ occurrences: 3 })
-    );
-  });
-});
-
-describe("errorReporter — limites de custo", () => {
-  it("respeita o intervalo mínimo entre escritas", () => {
-    captureError({ source: "render", error: new Error("a") });
-    // Sem avançar o relógio: a segunda assinatura bate no rate limit.
-    captureError({ source: "render", error: new Error("b") });
-
-    expect(mockLogAudit).toHaveBeenCalledTimes(1);
-  });
-
-  it("para no teto de sessão e sinaliza capped", () => {
+describe("errorReporter — gravação transparente", () => {
+  it("grava todo erro real, sem teto de sessão", () => {
     for (let i = 0; i < 40; i++) {
       captureError({ source: "render", error: new Error(`erro-${i}`) });
       passRateLimit();
     }
 
-    expect(mockLogAudit).toHaveBeenCalledTimes(25);
-    expect(getReporterHealth().capped).toBe(true);
+    // Sem teto: as 40 ocorrências viram 40 escritas.
+    expect(mockLogAudit).toHaveBeenCalledTimes(40);
+    expect(getReporterHealth().written).toBe(40);
   });
 
-  it("o teto sobrevive ao reload (estado em sessionStorage)", () => {
-    for (let i = 0; i < 30; i++) {
-      captureError({ source: "render", error: new Error(`erro-${i}`) });
-      passRateLimit();
+  it("erros idênticos espaçados são todos gravados (sem dedup)", () => {
+    captureError({ source: "render", error: new Error("boom") });
+    passRateLimit();
+    captureError({ source: "render", error: new Error("boom") });
+
+    expect(mockLogAudit).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("errorReporter — disjuntor de custo", () => {
+  it("respeita o intervalo mínimo de 2s entre escritas", () => {
+    captureError({ source: "render", error: new Error("a") });
+    // Sem avançar o relógio: a segunda escrita bate no disjuntor.
+    captureError({ source: "render", error: new Error("b") });
+
+    expect(mockLogAudit).toHaveBeenCalledTimes(1);
+  });
+
+  it("um loop de render em rajada custa no máximo uma escrita por 2s", () => {
+    for (let i = 0; i < 200; i++) {
+      captureError({ source: "render", error: new Error("boom") });
     }
-    // O ciclo crash → recarregar → crash não pode zerar as guardas: o estado
-    // vive em sessionStorage justamente por isso.
-    expect(getReporterHealth().written).toBe(25);
+
+    expect(mockLogAudit).toHaveBeenCalledTimes(1);
+    expect(getReporterHealth().written).toBe(1);
+  });
+
+  it("o estado do disjuntor sobrevive ao reload (sessionStorage)", () => {
+    captureError({ source: "render", error: new Error("a") });
+    // O ciclo crash → recarregar → crash não pode zerar a guarda: sem avançar
+    // o relógio, a próxima escrita segue barrada pelo disjuntor.
+    captureError({ source: "render", error: new Error("b") });
+
+    expect(getReporterHealth().written).toBe(1);
   });
 });
 

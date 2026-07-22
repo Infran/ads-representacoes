@@ -2,18 +2,10 @@ import { FC } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { NavLink } from "react-router-dom";
-import {
-  Dashboard,
-  History,
-  BugReport,
-  DeleteSweep,
-  Tune,
-} from "@mui/icons-material";
+import { Dashboard, DeleteSweep, Tune } from "@mui/icons-material";
 
 const links = [
-  { to: "/Admin", label: "Visão geral", icon: Dashboard, end: true },
-  { to: "/Admin/Atividade", label: "Atividades", icon: History, end: false },
-  { to: "/Admin/Erros", label: "Erros", icon: BugReport, end: false },
+  { to: "/Admin", label: "Visão geral & atividades", icon: Dashboard, end: true },
   { to: "/Admin/Lixeira", label: "Lixeira", icon: DeleteSweep, end: false },
   { to: "/Admin/Sistema", label: "Sistema", icon: Tune, end: false },
 ];

@@ -118,8 +118,6 @@ export const routeTitles: Record<string, string> = {
   // Todos os segmentos intermediários precisam estar aqui: `getBreadcrumbs`
   // cai no segmento cru da URL quando não encontra o caminho.
   "/Admin": "Painel Admin",
-  "/Admin/Atividade": "Atividades",
-  "/Admin/Erros": "Erros",
   "/Admin/Lixeira": "Lixeira",
   "/Admin/Sistema": "Sistema",
 };

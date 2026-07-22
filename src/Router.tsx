@@ -37,8 +37,6 @@ const LandingRedirect = () => {
 
 // Painel de administração — só montado para `role: "admin"` (ver AdminRoute).
 const AdminOverview = lazy(() => import("./pages/Admin/AdminOverview"));
-const AdminActivity = lazy(() => import("./pages/Admin/AdminActivity"));
-const AdminErrors = lazy(() => import("./pages/Admin/AdminErrors"));
 const AdminTrash = lazy(() => import("./pages/Admin/AdminTrash"));
 const AdminSystem = lazy(() => import("./pages/Admin/AdminSystem"));
 
@@ -87,8 +85,6 @@ const AppRouter = () => {
                 */}
                 <Route path="Admin" element={<AdminRoute />}>
                   <Route index element={<AdminOverview />} />
-                  <Route path="Atividade" element={<AdminActivity />} />
-                  <Route path="Erros" element={<AdminErrors />} />
                   <Route path="Lixeira" element={<AdminTrash />} />
                   <Route path="Sistema" element={<AdminSystem />} />
                 </Route>

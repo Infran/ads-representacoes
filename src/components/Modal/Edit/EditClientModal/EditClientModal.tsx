@@ -9,6 +9,7 @@ import {
 import { useData } from "../../../../context/DataContext";
 import { isValidCnpj } from "../../../../utils/validators";
 import { Modal, Button, ListSkeleton, notifySuccess } from "../../../../ui";
+import { captureError } from "../../../../utils/errorReporter";
 import { logger } from "../../../../utils/logger";
 import ClientForm from "../../../Forms/ClientForm";
 
@@ -55,7 +56,7 @@ const EditClientModal: React.FC<EditClientModalProps> = ({
         const clientData = await getClientById(id);
         setClient(clientData);
       } catch (error) {
-        logger.error("Erro ao buscar cliente:", error);
+        captureError({ source: "notify", error, title: "Erro ao carregar cliente" });
       } finally {
         setIsLoading(false);
       }

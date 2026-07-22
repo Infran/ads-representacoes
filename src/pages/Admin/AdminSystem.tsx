@@ -1,17 +1,17 @@
 import { FC, useState, useEffect } from "react";
-import { Box, Typography, Divider, Alert } from "@mui/material";
-import { Tune } from "@mui/icons-material";
+import { Box, Typography, Divider, Alert, TextField } from "@mui/material";
+import { Tune, DeleteSweep } from "@mui/icons-material";
 import PageHeader from "../../components/PageHeader/PageHeader";
-import { Card, Button, notifySuccess, notifyError } from "../../ui";
+import { Card, Button, confirmDialog, notifySuccess, notifyError } from "../../ui";
 import { useAuth } from "../../context/ContextAuth";
 import { useData } from "../../context/DataContext";
 import { invalidateAllCache } from "../../services/cacheService";
 import {
   purgeExpiredAuditLogs,
+  purgeAuditLogsInRange,
   getAuditHealth,
   clearAuditHealth,
 } from "../../services/auditService";
-import { getReporterHealth } from "../../utils/errorReporter";
 import { logger } from "../../utils/logger";
 import AdminNav from "./AdminNav";
 
@@ -40,6 +40,9 @@ const AdminSystem: FC = () => {
   const { refreshAll } = useData();
   const [busy, setBusy] = useState(false);
   const [remaining, setRemaining] = useState("—");
+  // Expurgo de erros por intervalo de datas (inputs `type="date"`, "yyyy-MM-dd").
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   // Em estado, e não lido direto no render: `clearAuditHealth` precisa
   // repintar a tela, e `getAuditHealth` sozinho não é reativo.
   const [health, setHealth] = useState(getAuditHealth);
@@ -108,8 +111,51 @@ const AdminSystem: FC = () => {
     }
   };
 
+  // Expurga todos os erros gravados no intervalo [fromDate 00:00, toDate 23:59].
+  const handlePurgeErrorRange = async () => {
+    const start = new Date(`${fromDate}T00:00:00`);
+    const end = new Date(`${toDate}T23:59:59.999`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+    if (start > end) {
+      await notifyError(
+        "Intervalo inválido",
+        "A data inicial não pode ser posterior à data final."
+      );
+      return;
+    }
+
+    const fmt = (d: Date) => d.toLocaleDateString("pt-BR");
+    const ok = await confirmDialog({
+      title: "Expurgar erros no período?",
+      text: `Remove permanentemente todos os erros registrados entre ${fmt(
+        start
+      )} e ${fmt(end)}. Não pode ser desfeito.`,
+      confirmText: "Expurgar",
+      danger: true,
+      icon: "warning",
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      const removed = await purgeAuditLogsInRange(start, end, "error");
+      await notifySuccess(
+        "Expurgo concluído",
+        removed === 0
+          ? "Nenhum erro encontrado no período."
+          : `${removed} registro(s) de erro removido(s).`
+      );
+      setFromDate("");
+      setToDate("");
+    } catch (err) {
+      logger.error("Erro ao expurgar erros por intervalo:", err);
+      await notifyError("Não foi possível expurgar os erros", err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "—";
-  const reporterHealth = getReporterHealth();
 
   return (
     <Box display="flex" flexDirection="column" gap={2} flex={1}>
@@ -163,28 +209,43 @@ const AdminSystem: FC = () => {
             letterSpacing: ".4px",
             textTransform: "uppercase",
             color: "text.secondary",
-            mb: 1,
+            mb: 1.5,
           }}
         >
-          Telemetria
+          Expurgar erros por período
         </Typography>
-        <Row
-          label="Falhas de gravação de auditoria"
-          value={String(health.failures)}
-        />
-        {health.lastFailureMessage && (
-          <>
-            <Divider />
-            <Row label="Última causa" value={health.lastFailureMessage} />
-          </>
-        )}
-        <Divider />
-        <Row label="Erros gravados (sessão)" value={String(reporterHealth.written)} />
-        <Divider />
-        <Row
-          label="Erros suprimidos por dedup/teto"
-          value={String(reporterHealth.suppressed)}
-        />
+        <Box display="flex" gap={1.5} alignItems="center" flexWrap="wrap">
+          <TextField
+            label="De"
+            type="date"
+            size="small"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            label="Até"
+            type="date"
+            size="small"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteSweep />}
+            onClick={handlePurgeErrorRange}
+            disabled={busy || !fromDate || !toDate}
+          >
+            Expurgar no período
+          </Button>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+          Remove permanentemente os registros de <strong>erro</strong> gravados
+          no intervalo informado (datas inclusivas). Não afeta os demais tipos
+          de auditoria.
+        </Typography>
       </Card>
 
       <Card>

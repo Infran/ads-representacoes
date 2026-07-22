@@ -8,25 +8,23 @@
  * Três fontes: ErrorBoundary (render), handlers globais (`window.onerror` e
  * `unhandledrejection`) e o gancho no `notifyError` (erros já tratados).
  *
- * PROTEÇÕES OBRIGATÓRIAS — um coletor de erros sem elas vira um gerador de
- * custo. Um loop de render dispara centenas de erros por segundo, e o Firestore
- * é cobrado por escrita:
- *  - dedup por assinatura, 1 escrita a cada 10 min por assinatura;
- *  - teto de 25 escritas por sessão;
- *  - intervalo mínimo de 2s entre escritas;
- *  - estado em `sessionStorage`, porque o fallback oferece "Recarregar" e o
- *    ciclo crash → reload → crash burlaria qualquer guarda em memória;
- *  - trava de reentrância, para um erro dentro do coletor não se auto-alimentar.
+ * Este é um sistema interno de uso enxuto (no máximo 3 usuários): quando um erro
+ * real acontece, ele deve ser gravado de forma transparente e direta, sem dedup
+ * por assinatura nem teto por sessão que esconderiam a falha que se quer ver.
  *
- * Sem amostragem: nesse volume, amostrar esconderia justamente o bug raro que
- * se está caçando.
+ * A ÚNICA salvaguarda mantida é um disjuntor silencioso: no máximo uma escrita a
+ * cada 2s. Sem ele, um loop de render dispararia centenas de escritas pagas por
+ * segundo no Firestore (a trava de reentrância NÃO cobre esse caso — cada render
+ * é uma chamada nova, não reentrante). O estado vive em `sessionStorage` porque o
+ * fallback de erro oferece "Recarregar", e o ciclo crash → reload → crash
+ * burlaria qualquer guarda em memória. A trava de reentrância impede que um erro
+ * DENTRO do coletor se auto-alimente.
  */
 import { logAudit } from "../services/auditService";
 import { logger } from "./logger";
 import { getErrorMessage, registerErrorReporter } from "../ui/Feedback";
 
-const DEDUP_WINDOW_MS = 10 * 60 * 1000;
-const SESSION_CAP = 25;
+/** Disjuntor: no máximo uma escrita a cada 2s, contra loop de render. */
 const MIN_INTERVAL_MS = 2000;
 const STORAGE_KEY = "ads_error_reporter";
 
@@ -44,23 +42,18 @@ export interface CapturedError {
 }
 
 export interface ReporterHealth {
+  /** Erros gravados nesta sessão. */
   written: number;
-  suppressed: number;
-  capped: boolean;
 }
 
 interface ReporterState {
-  /** assinatura → { último envio, ocorrências acumuladas desde então } */
-  fingerprints: Record<string, { last: number; pending: number }>;
   written: number;
-  suppressed: number;
+  /** Epoch ms da última escrita — base do disjuntor de 2s. */
   lastWriteAt: number;
 }
 
 const emptyState = (): ReporterState => ({
-  fingerprints: {},
   written: 0,
-  suppressed: 0,
   lastWriteAt: 0,
 });
 
@@ -139,26 +132,10 @@ export const captureError = (captured: CapturedError): void => {
 
     const now = Date.now();
     const state = loadState();
-    const seen = state.fingerprints[fingerprint] ?? { last: 0, pending: 0 };
 
-    // Dedup: erro repetido dentro da janela só incrementa o contador.
-    if (seen.last && now - seen.last < DEDUP_WINDOW_MS) {
-      seen.pending += 1;
-      state.fingerprints[fingerprint] = seen;
-      state.suppressed += 1;
-      saveState(state);
-      return;
-    }
-
-    if (state.written >= SESSION_CAP) {
-      state.suppressed += 1;
-      saveState(state);
-      return;
-    }
-
+    // Disjuntor silencioso: um loop de render geraria centenas de escritas
+    // pagas por segundo. Fora esse caso extremo, todo erro é gravado direto.
     if (state.lastWriteAt && now - state.lastWriteAt < MIN_INTERVAL_MS) {
-      state.suppressed += 1;
-      saveState(state);
       return;
     }
 
@@ -173,12 +150,10 @@ export const captureError = (captured: CapturedError): void => {
       errorStack: e?.stack,
       componentStack,
       route,
+      // Mantido como metadado de agrupamento, mesmo sem dedup ativo.
       fingerprint,
-      // +1 pela ocorrência atual, além das que foram suprimidas na janela.
-      occurrences: seen.pending + 1,
     });
 
-    state.fingerprints[fingerprint] = { last: now, pending: 0 };
     state.written += 1;
     state.lastWriteAt = now;
     saveState(state);
@@ -193,14 +168,9 @@ export const captureError = (captured: CapturedError): void => {
   }
 };
 
-export const getReporterHealth = (): ReporterHealth => {
-  const state = loadState();
-  return {
-    written: state.written,
-    suppressed: state.suppressed,
-    capped: state.written >= SESSION_CAP,
-  };
-};
+export const getReporterHealth = (): ReporterHealth => ({
+  written: loadState().written,
+});
 
 // ============================================================================
 // INSTALAÇÃO

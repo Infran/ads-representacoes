@@ -10,6 +10,7 @@ import { useData } from "../../../../context/DataContext";
 import ncmData from "../../../../tabela_ncm.json";
 import { brMoneyMask, formatCurrencyToNumber } from "../../../../utils/Masks";
 import { Modal, Button, notifySuccess } from "../../../../ui";
+import { captureError } from "../../../../utils/errorReporter";
 import { logger } from "../../../../utils/logger";
 import ProductForm from "../../../Forms/ProductForm";
 
@@ -44,7 +45,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           setMaskedUnitValue(brMoneyMask(valueInReais));
         }
       } catch (error) {
-        logger.error("Erro ao buscar produto:", error);
+        captureError({ source: "notify", error, title: "Erro ao carregar produto" });
       }
     };
 
