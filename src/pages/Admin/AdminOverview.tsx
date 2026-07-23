@@ -1,11 +1,21 @@
 import { FC, useMemo, useState, useEffect } from "react";
-import { Box, Typography, Alert, Drawer, Divider, Chip } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Alert,
+  Drawer,
+  Divider,
+  Chip,
+  Tooltip,
+  IconButton,
+} from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import {
   AdminPanelSettings,
   PlaylistAddCheck,
   BugReport,
   DeleteSweep,
+  DeleteOutline,
 } from "@mui/icons-material";
 import { GridColDef } from "@mui/x-data-grid";
 import PageHeader from "../../components/PageHeader/PageHeader";
@@ -16,11 +26,14 @@ import {
   TableSkeleton,
   ErrorState,
   EmptyState,
+  confirmDialog,
+  notifySuccess,
+  notifyError,
 } from "../../ui";
 import CockpitFilterBar from "../../components/Cockpit/CockpitFilterBar";
 import { useCockpit } from "../../components/Cockpit/useCockpit";
 import { useAuditLogs } from "../../hooks/useAuditLogs";
-import { getAuditHealth } from "../../services/auditService";
+import { getAuditHealth, deleteAuditLog } from "../../services/auditService";
 import { countBinItems } from "../../services/binService";
 import { IAuditLog } from "../../interfaces/iaudit";
 import { BIN_ENTITIES } from "../../interfaces/ibin";
@@ -115,6 +128,34 @@ const AdminOverview: FC = () => {
     useCockpit<AuditFilters>(EMPTY_AUDIT_FILTERS);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<IAuditLog | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Exclusão pontual de um registro do histórico (append-only por padrão, mas o
+  // admin pode remover ruído — mesma capacidade que o expurgo por período já dá
+  // em massa). As regras exigem admin; esta tela já é admin-only.
+  const handleDelete = async (log: IAuditLog) => {
+    const ok = await confirmDialog({
+      title: "Excluir este registro?",
+      text: "Remove permanentemente esta entrada do histórico. Não pode ser desfeito.",
+      confirmText: "Excluir",
+      danger: true,
+      icon: "warning",
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      await deleteAuditLog(log.id);
+      setSelected((cur) => (cur?.id === log.id ? null : cur));
+      await notifySuccess("Registro excluído", "A entrada foi removida do histórico.");
+      await reload();
+    } catch (err) {
+      logger.error("[AdminOverview] falha ao excluir registro:", err);
+      await notifyError("Não foi possível excluir o registro", err);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // Contagem REAL da lixeira, via agregação no servidor — restaurar um item faz
   // o número cair, e exclusões antigas continuam contando.
@@ -192,23 +233,37 @@ const AdminOverview: FC = () => {
       renderCell: (params) => <StatusPill status={params.row.status} />,
     },
     {
-      // Coluna própria em vez do `onEdit` do DataTable: aquele renderiza um
-      // ícone de lápis com tooltip "Editar", que mentiria — o registro de
-      // auditoria é append-only e esta ação só abre o detalhe.
+      // Coluna própria em vez do `onEdit`/`onDelete` do DataTable: aquele
+      // renderiza um lápis "Editar" que mentiria (auditoria é append-only).
+      // Aqui só abrimos o detalhe e, opcionalmente, removemos o registro.
       field: "details",
       headerName: "",
-      width: 110,
+      width: 150,
       sortable: false,
       filterable: false,
       display: "flex",
       renderCell: (params) => (
-        <Button
-          size="small"
-          variant="text"
-          onClick={() => setSelected(params.row)}
-        >
-          Detalhes
-        </Button>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Button
+            size="small"
+            variant="text"
+            onClick={() => setSelected(params.row)}
+          >
+            Detalhes
+          </Button>
+          <Tooltip title="Excluir registro">
+            <span>
+              <IconButton
+                size="small"
+                aria-label="Excluir registro"
+                onClick={() => handleDelete(params.row)}
+                disabled={busy}
+              >
+                <DeleteOutline fontSize="small" color="error" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
       ),
     },
   ];
@@ -524,9 +579,20 @@ const AdminOverview: FC = () => {
               </>
             )}
 
-            <Button variant="outlined" onClick={() => setSelected(null)}>
-              Fechar
-            </Button>
+            <Box display="flex" gap={1.5} flexWrap="wrap">
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteOutline />}
+                onClick={() => handleDelete(selected)}
+                disabled={busy}
+              >
+                Excluir registro
+              </Button>
+              <Button variant="outlined" onClick={() => setSelected(null)}>
+                Fechar
+              </Button>
+            </Box>
           </Box>
         )}
       </Drawer>
